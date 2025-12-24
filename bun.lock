@@ -1,0 +1,21 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "voide",
+      "devDependencies": {
+        "@stacksjs/stx": "link:@stacksjs/stx",
+        "bun-plugin-stx": "link:bun-plugin-stx",
+        "typescript": "^5.0.0",
+      },
+    },
+  },
+  "packages": {
+    "@stacksjs/stx": ["@stacksjs/stx@link:@stacksjs/stx", { "bin": { "stx": "./dist/cli.js" } }],
+
+    "bun-plugin-stx": ["bun-plugin-stx@link:bun-plugin-stx", { "bin": { "serve": "./dist/serve.js", "stx-serve": "./dist/serve.js" } }],
+
+    "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+  }
+}
