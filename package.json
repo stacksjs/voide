@@ -13,6 +13,7 @@
   "devDependencies": {
     "@stacksjs/stx": "link:@stacksjs/stx",
     "bun-plugin-stx": "link:bun-plugin-stx",
+    "pickier": "^0.1.10",
     "typescript": "^5.0.0"
   }
 }
