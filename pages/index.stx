@@ -777,6 +777,25 @@ export const drivers = {
         settingsActions: settingsActions,
         uiActions: uiActions,
 
+        // Composables (Nuxt-style browser API utilities)
+        useStorage: stores.useStorage,
+        useLocalStorage: stores.useLocalStorage,
+        useSessionStorage: stores.useSessionStorage,
+        useCookie: stores.useCookie,
+        useClipboard: stores.useClipboard,
+        useMediaQuery: stores.useMediaQuery,
+        usePreferredDark: stores.usePreferredDark,
+        useNetwork: stores.useNetwork,
+        useOnline: stores.useOnline,
+        useWindowSize: stores.useWindowSize,
+        useScroll: stores.useScroll,
+        useVisibility: stores.useVisibility,
+        useTitle: stores.useTitle,
+        useFavicon: stores.useFavicon,
+        useIsMobile: stores.useIsMobile,
+        useIsDesktop: stores.useIsDesktop,
+        copyToClipboard: stores.copyToClipboard,
+
         // Legacy accessors (for component compatibility)
         get state() { return appStore.get(); },
         get messages() { return chatStore.get().messages; },

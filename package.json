@@ -7,7 +7,11 @@
     "dev": "bun run build:stores && bun run --bun ../stx/packages/stx/bin/cli.ts dev",
     "build": "bun run build:stores && bun run --bun ../stx/packages/stx/bin/cli.ts build",
     "build:stores": "bun run lib/build.ts",
-    "preview": "bun run --bun ../stx/packages/stx/bin/cli.ts preview"
+    "preview": "bun run --bun ../stx/packages/stx/bin/cli.ts preview",
+    "lint": "bunx --bun pickier run",
+    "lint:fix": "bunx --bun pickier run --fix",
+    "format": "bunx --bun pickier run --mode format --write",
+    "format:check": "bunx --bun pickier run --mode format --check"
   },
   "dependencies": {},
   "devDependencies": {

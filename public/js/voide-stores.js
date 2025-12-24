@@ -34,12 +34,37 @@ window.VoideStores = (function() {
   // lib/stores/index.ts
   var exports_stores = {};
   __export(exports_stores, {
+    useWindowSize: () => useWindowSize,
+    useVisibility: () => useVisibility,
+    useTitle: () => useTitle,
+    useStorage: () => useStorage,
+    useSessionStorage: () => useSessionStorage,
+    useScroll: () => useScroll,
+    usePreferredReducedMotion: () => usePreferredReducedMotion,
+    usePreferredDark: () => usePreferredDark,
+    useOnline: () => useOnline,
+    useNetwork: () => useNetwork,
+    useMediaQuery: () => useMediaQuery,
+    useLocalStorage: () => useLocalStorage,
+    useIsMobile: () => useIsMobile,
+    useIsDesktop: () => useIsDesktop,
+    useFavicon: () => useFavicon,
+    useCookie: () => useCookie,
+    useClipboard: () => useClipboard,
     uiStore: () => uiStore,
     uiActions: () => uiActions,
     settingsStore: () => settingsStore,
     settingsActions: () => settingsActions,
+    setCookie: () => setCookie,
+    removeCookie: () => removeCookie,
+    parseCookies: () => parseCookies,
+    getStorageKeys: () => getStorageKeys,
+    getCookie: () => getCookie,
     createStore: () => createStore,
+    copyToClipboard: () => copyToClipboard,
     computed: () => computed,
+    clearStorage: () => clearStorage,
+    clearCookies: () => clearCookies,
     chatStore: () => chatStore,
     chatActions: () => chatActions,
     appStore: () => appStore,
@@ -467,5 +492,550 @@ window.VoideStores = (function() {
       uiStore.update({ notifications: [] });
     }
   };
+  // lib/composables/use-storage.ts
+  function useStorage(key, defaultValue, options = {}) {
+    const {
+      storage = "local",
+      mergeDefaults = false,
+      listenToStorageChanges = true
+    } = options;
+    const subscribers = new Set;
+    const isClient = typeof window !== "undefined";
+    const getStorage = () => {
+      if (!isClient)
+        return null;
+      return storage === "session" ? sessionStorage : localStorage;
+    };
+    const read = () => {
+      const store = getStorage();
+      if (!store)
+        return defaultValue;
+      try {
+        const raw = store.getItem(key);
+        if (raw === null)
+          return defaultValue;
+        const parsed = JSON.parse(raw);
+        if (mergeDefaults && typeof defaultValue === "object" && defaultValue !== null) {
+          return { ...defaultValue, ...parsed };
+        }
+        return parsed;
+      } catch {
+        return defaultValue;
+      }
+    };
+    const write = (value) => {
+      const store = getStorage();
+      if (!store)
+        return;
+      try {
+        if (value === null || value === undefined) {
+          store.removeItem(key);
+        } else {
+          store.setItem(key, JSON.stringify(value));
+        }
+      } catch (e) {
+        console.warn(`[useStorage] Failed to write key "${key}":`, e);
+      }
+    };
+    let currentValue = read();
+    const notify = (newValue, prevValue) => {
+      for (const callback of subscribers) {
+        try {
+          callback(newValue, prevValue);
+        } catch (e) {
+          console.error("[useStorage]", e);
+        }
+      }
+    };
+    if (isClient && listenToStorageChanges) {
+      window.addEventListener("storage", (event) => {
+        if (event.key === key && event.storageArea === getStorage()) {
+          const prevValue = currentValue;
+          currentValue = event.newValue ? JSON.parse(event.newValue) : defaultValue;
+          notify(currentValue, prevValue);
+        }
+      });
+    }
+    const ref = {
+      get value() {
+        return currentValue;
+      },
+      set value(newValue) {
+        const prevValue = currentValue;
+        currentValue = newValue;
+        write(newValue);
+        notify(newValue, prevValue);
+      },
+      get: () => currentValue,
+      set: (value) => {
+        ref.value = value;
+      },
+      remove: () => {
+        const store = getStorage();
+        if (store) {
+          store.removeItem(key);
+          const prevValue = currentValue;
+          currentValue = defaultValue;
+          notify(defaultValue, prevValue);
+        }
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        callback(currentValue, undefined);
+        return () => subscribers.delete(callback);
+      }
+    };
+    return ref;
+  }
+  function useLocalStorage(key, defaultValue, options) {
+    return useStorage(key, defaultValue, { ...options, storage: "local" });
+  }
+  function useSessionStorage(key, defaultValue, options) {
+    return useStorage(key, defaultValue, { ...options, storage: "session" });
+  }
+  function clearStorage(type = "local") {
+    if (typeof window === "undefined")
+      return;
+    const storage = type === "session" ? sessionStorage : localStorage;
+    storage.clear();
+  }
+  function getStorageKeys(type = "local") {
+    if (typeof window === "undefined")
+      return [];
+    const storage = type === "session" ? sessionStorage : localStorage;
+    return Object.keys(storage);
+  }
+  // lib/composables/use-cookie.ts
+  function parseCookies() {
+    if (typeof document === "undefined")
+      return {};
+    const cookies = {};
+    const pairs = document.cookie.split(";");
+    for (const pair of pairs) {
+      const [key, ...valueParts] = pair.trim().split("=");
+      if (key) {
+        try {
+          cookies[key] = decodeURIComponent(valueParts.join("="));
+        } catch {
+          cookies[key] = valueParts.join("=");
+        }
+      }
+    }
+    return cookies;
+  }
+  function getCookie(name) {
+    return parseCookies()[name] ?? null;
+  }
+  function setCookie(name, value, options = {}) {
+    if (typeof document === "undefined")
+      return;
+    const { maxAge, expires, path = "/", domain, secure, sameSite = "lax" } = options;
+    let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
+    if (maxAge !== undefined)
+      cookieString += `; max-age=${maxAge}`;
+    if (expires !== undefined) {
+      const expiresDate = expires instanceof Date ? expires : typeof expires === "number" ? new Date(Date.now() + expires * 1000) : new Date(expires);
+      cookieString += `; expires=${expiresDate.toUTCString()}`;
+    }
+    if (path)
+      cookieString += `; path=${path}`;
+    if (domain)
+      cookieString += `; domain=${domain}`;
+    if (secure)
+      cookieString += "; secure";
+    if (sameSite)
+      cookieString += `; samesite=${sameSite}`;
+    document.cookie = cookieString;
+  }
+  function removeCookie(name, options = {}) {
+    setCookie(name, "", { ...options, maxAge: 0, expires: new Date(0) });
+  }
+  function useCookie(name, options = {}) {
+    const { default: defaultValue = null } = options;
+    const subscribers = new Set;
+    let pollInterval = null;
+    const read = () => {
+      if (typeof document === "undefined")
+        return defaultValue;
+      const raw = getCookie(name);
+      if (raw === null)
+        return defaultValue;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return raw;
+      }
+    };
+    let currentValue = read();
+    const notify = (newValue, prevValue) => {
+      for (const callback of subscribers) {
+        try {
+          callback(newValue, prevValue);
+        } catch (e) {
+          console.error("[useCookie]", e);
+        }
+      }
+    };
+    const startPolling = () => {
+      if (pollInterval || typeof document === "undefined")
+        return;
+      pollInterval = setInterval(() => {
+        const newValue = read();
+        if (JSON.stringify(newValue) !== JSON.stringify(currentValue)) {
+          const prevValue = currentValue;
+          currentValue = newValue;
+          notify(newValue, prevValue);
+        }
+      }, 1000);
+    };
+    const stopPolling = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    };
+    const ref = {
+      get value() {
+        return currentValue;
+      },
+      set value(newValue) {
+        const prevValue = currentValue;
+        currentValue = newValue;
+        if (newValue === null)
+          removeCookie(name, options);
+        else
+          setCookie(name, typeof newValue === "string" ? newValue : JSON.stringify(newValue), options);
+        notify(newValue, prevValue);
+      },
+      get: () => currentValue,
+      set: (value, customOptions) => {
+        const prevValue = currentValue;
+        currentValue = value;
+        setCookie(name, typeof value === "string" ? value : JSON.stringify(value), { ...options, ...customOptions });
+        notify(value, prevValue);
+      },
+      remove: () => {
+        const prevValue = currentValue;
+        currentValue = null;
+        removeCookie(name, options);
+        notify(null, prevValue);
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        callback(currentValue, null);
+        if (subscribers.size === 1)
+          startPolling();
+        return () => {
+          subscribers.delete(callback);
+          if (subscribers.size === 0)
+            stopPolling();
+        };
+      }
+    };
+    return ref;
+  }
+  function clearCookies(options = {}) {
+    for (const name of Object.keys(parseCookies()))
+      removeCookie(name, options);
+  }
+  // lib/composables/use-browser.ts
+  function useClipboard(options = {}) {
+    const { timeout = 1500 } = options;
+    let currentText = "";
+    let copied = false;
+    let copiedTimeout = null;
+    const isSupported = typeof navigator !== "undefined" && "clipboard" in navigator;
+    const copy = async (text) => {
+      try {
+        if (isSupported) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.cssText = "position:fixed;opacity:0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textarea);
+        }
+        currentText = text;
+        copied = true;
+        if (copiedTimeout)
+          clearTimeout(copiedTimeout);
+        copiedTimeout = setTimeout(() => {
+          copied = false;
+        }, timeout);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const read = async () => {
+      if (!isSupported)
+        return "";
+      try {
+        return await navigator.clipboard.readText();
+      } catch {
+        return "";
+      }
+    };
+    return {
+      get text() {
+        return currentText;
+      },
+      get isSupported() {
+        return isSupported;
+      },
+      get copied() {
+        return copied;
+      },
+      copy,
+      read
+    };
+  }
+  async function copyToClipboard(text) {
+    return useClipboard().copy(text);
+  }
+  function useMediaQuery(query) {
+    const subscribers = new Set;
+    const isClient = typeof window !== "undefined";
+    let currentMatches = false;
+    if (isClient) {
+      const mediaQuery = window.matchMedia(query);
+      currentMatches = mediaQuery.matches;
+      const handler = (event) => {
+        currentMatches = event.matches;
+        for (const cb of subscribers) {
+          try {
+            cb(event.matches);
+          } catch {}
+        }
+      };
+      if (mediaQuery.addEventListener)
+        mediaQuery.addEventListener("change", handler);
+      else
+        mediaQuery.addListener(handler);
+    }
+    return {
+      get matches() {
+        return currentMatches;
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        callback(currentMatches);
+        return () => subscribers.delete(callback);
+      }
+    };
+  }
+  function usePreferredDark() {
+    return useMediaQuery("(prefers-color-scheme: dark)");
+  }
+  function usePreferredReducedMotion() {
+    return useMediaQuery("(prefers-reduced-motion: reduce)");
+  }
+  function useIsMobile() {
+    return useMediaQuery("(max-width: 767px)");
+  }
+  function useIsDesktop() {
+    return useMediaQuery("(min-width: 1024px)");
+  }
+  function useNetwork() {
+    const subscribers = new Set;
+    const isClient = typeof window !== "undefined";
+    const getConnection = () => isClient ? navigator.connection : null;
+    const getState = () => {
+      if (!isClient)
+        return { isOnline: true, isOffline: false, effectiveType: null, downlink: null, saveData: false };
+      const conn = getConnection();
+      return {
+        isOnline: navigator.onLine,
+        isOffline: !navigator.onLine,
+        effectiveType: conn?.effectiveType || null,
+        downlink: conn?.downlink || null,
+        saveData: conn?.saveData || false
+      };
+    };
+    let currentState = getState();
+    const notify = () => {
+      currentState = getState();
+      for (const cb of subscribers) {
+        try {
+          cb(currentState);
+        } catch {}
+      }
+    };
+    if (isClient) {
+      window.addEventListener("online", notify);
+      window.addEventListener("offline", notify);
+      getConnection()?.addEventListener("change", notify);
+    }
+    return {
+      get isOnline() {
+        return currentState.isOnline;
+      },
+      get isOffline() {
+        return currentState.isOffline;
+      },
+      get effectiveType() {
+        return currentState.effectiveType;
+      },
+      get downlink() {
+        return currentState.downlink;
+      },
+      get saveData() {
+        return currentState.saveData;
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        callback(currentState);
+        return () => subscribers.delete(callback);
+      }
+    };
+  }
+  function useOnline() {
+    const network = useNetwork();
+    return {
+      get isOnline() {
+        return network.isOnline;
+      },
+      subscribe: (cb) => network.subscribe((s) => cb(s.isOnline))
+    };
+  }
+  function useWindowSize() {
+    const subscribers = new Set;
+    const isClient = typeof window !== "undefined";
+    let current = { width: isClient ? window.innerWidth : 0, height: isClient ? window.innerHeight : 0 };
+    if (isClient) {
+      window.addEventListener("resize", () => {
+        current = { width: window.innerWidth, height: window.innerHeight };
+        for (const cb of subscribers) {
+          try {
+            cb(current);
+          } catch {}
+        }
+      }, { passive: true });
+    }
+    return {
+      get width() {
+        return current.width;
+      },
+      get height() {
+        return current.height;
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        callback(current);
+        return () => subscribers.delete(callback);
+      }
+    };
+  }
+  function useScroll() {
+    const subscribers = new Set;
+    const isClient = typeof window !== "undefined";
+    let current = { x: isClient ? window.scrollX : 0, y: isClient ? window.scrollY : 0 };
+    if (isClient) {
+      window.addEventListener("scroll", () => {
+        current = { x: window.scrollX, y: window.scrollY };
+        for (const cb of subscribers) {
+          try {
+            cb(current);
+          } catch {}
+        }
+      }, { passive: true });
+    }
+    return {
+      get x() {
+        return current.x;
+      },
+      get y() {
+        return current.y;
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        callback(current);
+        return () => subscribers.delete(callback);
+      },
+      scrollTo: (x, y) => isClient && window.scrollTo(x, y),
+      scrollToTop: () => isClient && window.scrollTo({ top: 0, behavior: "smooth" }),
+      scrollToBottom: () => isClient && window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })
+    };
+  }
+  function useVisibility() {
+    const subscribers = new Set;
+    const isClient = typeof document !== "undefined";
+    let isVisible = isClient ? document.visibilityState === "visible" : true;
+    if (isClient) {
+      document.addEventListener("visibilitychange", () => {
+        isVisible = document.visibilityState === "visible";
+        for (const cb of subscribers) {
+          try {
+            cb(isVisible);
+          } catch {}
+        }
+      });
+    }
+    return {
+      get isVisible() {
+        return isVisible;
+      },
+      subscribe: (callback) => {
+        subscribers.add(callback);
+        callback(isVisible);
+        return () => subscribers.delete(callback);
+      }
+    };
+  }
+  function useTitle(initialTitle) {
+    const isClient = typeof document !== "undefined";
+    if (initialTitle && isClient)
+      document.title = initialTitle;
+    return {
+      get value() {
+        return isClient ? document.title : "";
+      },
+      set value(title) {
+        if (isClient)
+          document.title = title;
+      },
+      set: (title) => {
+        if (isClient)
+          document.title = title;
+      }
+    };
+  }
+  function useFavicon(href) {
+    const isClient = typeof document !== "undefined";
+    const getLink = () => {
+      if (!isClient)
+        return null;
+      let link = document.querySelector('link[rel*="icon"]');
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      return link;
+    };
+    if (href) {
+      const link = getLink();
+      if (link)
+        link.href = href;
+    }
+    return {
+      get value() {
+        return getLink()?.href || "";
+      },
+      set value(newHref) {
+        const link = getLink();
+        if (link)
+          link.href = newHref;
+      },
+      set: (newHref) => {
+        const link = getLink();
+        if (link)
+          link.href = newHref;
+      }
+    };
+  }
   return exports_stores;
 })();
