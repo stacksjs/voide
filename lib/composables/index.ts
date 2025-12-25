@@ -52,4 +52,17 @@ export {
   useVisibility,
   useTitle,
   useFavicon,
+  // Geolocation
+  useGeolocation,
+  getCurrentPosition,
+  type GeolocationState,
+  // Mouse & Pointer
+  useMouse,
+  usePointer,
+  type MouseState,
+  // Keyboard
+  useKeyboard,
+  useHotkey,
+  useKeyPressed,
+  type KeyboardState,
 } from './use-browser'

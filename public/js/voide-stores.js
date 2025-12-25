@@ -42,12 +42,18 @@ window.VoideStores = (function() {
     useScroll: () => useScroll,
     usePreferredReducedMotion: () => usePreferredReducedMotion,
     usePreferredDark: () => usePreferredDark,
+    usePointer: () => usePointer,
     useOnline: () => useOnline,
     useNetwork: () => useNetwork,
+    useMouse: () => useMouse,
     useMediaQuery: () => useMediaQuery,
     useLocalStorage: () => useLocalStorage,
+    useKeyboard: () => useKeyboard,
+    useKeyPressed: () => useKeyPressed,
     useIsMobile: () => useIsMobile,
     useIsDesktop: () => useIsDesktop,
+    useHotkey: () => useHotkey,
+    useGeolocation: () => useGeolocation,
     useFavicon: () => useFavicon,
     useCookie: () => useCookie,
     useClipboard: () => useClipboard,
@@ -59,6 +65,7 @@ window.VoideStores = (function() {
     removeCookie: () => removeCookie,
     parseCookies: () => parseCookies,
     getStorageKeys: () => getStorageKeys,
+    getCurrentPosition: () => getCurrentPosition,
     getCookie: () => getCookie,
     createStore: () => createStore,
     copyToClipboard: () => copyToClipboard,
@@ -1034,6 +1041,259 @@ window.VoideStores = (function() {
         const link = getLink();
         if (link)
           link.href = newHref;
+      }
+    };
+  }
+  function useGeolocation(options = {}) {
+    const { enableHighAccuracy = true, timeout = 1e4, maximumAge = 0 } = options;
+    const isClient = typeof navigator !== "undefined" && "geolocation" in navigator;
+    const subscribers = new Set;
+    let state = { coords: null, error: null, loading: false };
+    let watchId = null;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const updatePosition = (pos) => {
+      state = {
+        coords: { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy },
+        error: null,
+        loading: false
+      };
+      notify();
+    };
+    const handleError = (err) => {
+      state = { ...state, error: err, loading: false };
+      notify();
+    };
+    return {
+      get coords() {
+        return state.coords;
+      },
+      get error() {
+        return state.error;
+      },
+      get loading() {
+        return state.loading;
+      },
+      subscribe: (fn) => {
+        if (subscribers.size === 0 && isClient) {
+          state = { ...state, loading: true };
+          watchId = navigator.geolocation.watchPosition(updatePosition, handleError, { enableHighAccuracy, timeout, maximumAge });
+        }
+        subscribers.add(fn);
+        fn(state);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0 && watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+          }
+        };
+      },
+      refresh: () => {
+        if (!isClient)
+          return;
+        state = { ...state, loading: true };
+        notify();
+        navigator.geolocation.getCurrentPosition(updatePosition, handleError, { enableHighAccuracy, timeout, maximumAge });
+      }
+    };
+  }
+  function getCurrentPosition(options) {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation)
+        return reject(new Error("Geolocation not supported"));
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+  }
+  function useMouse() {
+    const isClient = typeof window !== "undefined";
+    const subscribers = new Set;
+    let state = { x: 0, y: 0, pageX: 0, pageY: 0, buttons: 0, isPressed: false };
+    let cleanup = null;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const handleMove = (e) => {
+      state = { x: e.clientX, y: e.clientY, pageX: e.pageX, pageY: e.pageY, buttons: e.buttons, isPressed: e.buttons > 0 };
+      notify();
+    };
+    const handleDown = (e) => {
+      state = { ...state, buttons: e.buttons, isPressed: true };
+      notify();
+    };
+    const handleUp = (e) => {
+      state = { ...state, buttons: e.buttons, isPressed: false };
+      notify();
+    };
+    return {
+      get x() {
+        return state.x;
+      },
+      get y() {
+        return state.y;
+      },
+      get isPressed() {
+        return state.isPressed;
+      },
+      subscribe: (fn) => {
+        if (subscribers.size === 0 && isClient) {
+          window.addEventListener("mousemove", handleMove);
+          window.addEventListener("mousedown", handleDown);
+          window.addEventListener("mouseup", handleUp);
+          cleanup = () => {
+            window.removeEventListener("mousemove", handleMove);
+            window.removeEventListener("mousedown", handleDown);
+            window.removeEventListener("mouseup", handleUp);
+          };
+        }
+        subscribers.add(fn);
+        fn(state);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0 && cleanup) {
+            cleanup();
+            cleanup = null;
+          }
+        };
+      }
+    };
+  }
+  function usePointer() {
+    const isClient = typeof window !== "undefined";
+    const subscribers = new Set;
+    let state = { x: 0, y: 0, pageX: 0, pageY: 0, buttons: 0, isPressed: false };
+    let cleanup = null;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const handleMove = (e) => {
+      state = { x: e.clientX, y: e.clientY, pageX: e.pageX, pageY: e.pageY, buttons: e.buttons, isPressed: e.buttons > 0 || e.pressure > 0 };
+      notify();
+    };
+    return {
+      get x() {
+        return state.x;
+      },
+      get y() {
+        return state.y;
+      },
+      subscribe: (fn) => {
+        if (subscribers.size === 0 && isClient) {
+          window.addEventListener("pointermove", handleMove);
+          cleanup = () => window.removeEventListener("pointermove", handleMove);
+        }
+        subscribers.add(fn);
+        fn(state);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0 && cleanup) {
+            cleanup();
+            cleanup = null;
+          }
+        };
+      }
+    };
+  }
+  function useKeyboard() {
+    const isClient = typeof window !== "undefined";
+    const subscribers = new Set;
+    let state = { pressed: new Set, lastKey: null, ctrl: false, alt: false, shift: false, meta: false };
+    let cleanup = null;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const handleDown = (e) => {
+      const pressed = new Set(state.pressed);
+      pressed.add(e.key.toLowerCase());
+      state = { pressed, lastKey: e.key, ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey };
+      notify();
+    };
+    const handleUp = (e) => {
+      const pressed = new Set(state.pressed);
+      pressed.delete(e.key.toLowerCase());
+      state = { pressed, lastKey: e.key, ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey };
+      notify();
+    };
+    const handleBlur = () => {
+      state = { pressed: new Set, lastKey: null, ctrl: false, alt: false, shift: false, meta: false };
+      notify();
+    };
+    return {
+      get pressed() {
+        return state.pressed;
+      },
+      get ctrl() {
+        return state.ctrl;
+      },
+      get alt() {
+        return state.alt;
+      },
+      get shift() {
+        return state.shift;
+      },
+      get meta() {
+        return state.meta;
+      },
+      isPressed: (key) => state.pressed.has(key.toLowerCase()),
+      subscribe: (fn) => {
+        if (subscribers.size === 0 && isClient) {
+          window.addEventListener("keydown", handleDown);
+          window.addEventListener("keyup", handleUp);
+          window.addEventListener("blur", handleBlur);
+          cleanup = () => {
+            window.removeEventListener("keydown", handleDown);
+            window.removeEventListener("keyup", handleUp);
+            window.removeEventListener("blur", handleBlur);
+          };
+        }
+        subscribers.add(fn);
+        fn(state);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0 && cleanup) {
+            cleanup();
+            cleanup = null;
+          }
+        };
+      }
+    };
+  }
+  function useHotkey(hotkey, callback, options = {}) {
+    const { preventDefault = true, ignoreInputs = true } = options;
+    const isClient = typeof window !== "undefined";
+    if (!isClient)
+      return () => {};
+    const parts = hotkey.toLowerCase().split("+").map((p) => p.trim());
+    const key = parts[parts.length - 1];
+    const needsCtrl = parts.includes("ctrl") || parts.includes("control");
+    const needsAlt = parts.includes("alt");
+    const needsShift = parts.includes("shift");
+    const needsMeta = parts.includes("meta") || parts.includes("cmd");
+    const handler = (e) => {
+      if (ignoreInputs) {
+        const tag = (document.activeElement?.tagName || "").toLowerCase();
+        if (tag === "input" || tag === "textarea" || tag === "select")
+          return;
+      }
+      const keyMatches = e.key.toLowerCase() === key || e.code.toLowerCase() === key || e.code.toLowerCase() === `key${key}` || e.code.toLowerCase() === `digit${key}` || key === "space" && e.code === "Space" || key === "escape" && e.key === "Escape" || key === "esc" && e.key === "Escape" || key === "enter" && e.key === "Enter";
+      if (keyMatches && e.ctrlKey === needsCtrl && e.altKey === needsAlt && e.shiftKey === needsShift && e.metaKey === needsMeta) {
+        if (preventDefault)
+          e.preventDefault();
+        callback(e);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }
+  function useKeyPressed(key) {
+    const keyboard = useKeyboard();
+    const k = key.toLowerCase();
+    return {
+      get isPressed() {
+        return keyboard.isPressed(k);
+      },
+      subscribe: (fn) => {
+        let last = false;
+        return keyboard.subscribe((state) => {
+          const current = state.pressed.has(k);
+          if (current !== last) {
+            last = current;
+            fn(current);
+          }
+        });
       }
     };
   }
