@@ -4,9 +4,11 @@
   "description": "Voice AI Code Assistant",
   "type": "module",
   "scripts": {
-    "dev": "bun run build:stores && bun run --bun ../stx/packages/stx/bin/cli.ts dev",
-    "build": "bun run build:stores && bun run --bun ../stx/packages/stx/bin/cli.ts build",
+    "dev": "bun run build:all && bun run --bun ../stx/packages/stx/bin/cli.ts dev",
+    "build": "bun run build:all && bun run --bun ../stx/packages/stx/bin/cli.ts build",
+    "build:all": "bun run build:stores && bun run build:css",
     "build:stores": "bun run lib/build.ts",
+    "build:css": "bun run lib/build-css.ts",
     "preview": "bun run --bun ../stx/packages/stx/bin/cli.ts preview",
     "lint": "bunx --bun pickier run --mode lint",
     "lint:fix": "bunx --bun pickier run --mode lint --fix",
@@ -15,9 +17,10 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@stacksjs/headwind": "link:@stacksjs/headwind",
     "@stacksjs/stx": "link:@stacksjs/stx",
-    "bun-plugin-stx": "link:bun-plugin-stx",
     "better-dx": "^0.2.5",
+    "bun-plugin-stx": "link:bun-plugin-stx",
     "typescript": "^5.0.0"
   }
 }

@@ -38,35 +38,60 @@ window.VoideStores = (function() {
     useVisibility: () => useVisibility,
     useTitle: () => useTitle,
     useStorage: () => useStorage,
+    useShare: () => useShare,
     useSessionStorage: () => useSessionStorage,
     useScroll: () => useScroll,
+    useResizeObserver: () => useResizeObserver,
     usePreferredReducedMotion: () => usePreferredReducedMotion,
     usePreferredDark: () => usePreferredDark,
     usePointer: () => usePointer,
+    usePermissions: () => usePermissions,
+    usePermission: () => usePermission,
     useOnline: () => useOnline,
+    useNotification: () => useNotification,
     useNetwork: () => useNetwork,
     useMouse: () => useMouse,
     useMediaQuery: () => useMediaQuery,
     useLocalStorage: () => useLocalStorage,
+    useLazyLoad: () => useLazyLoad,
     useKeyboard: () => useKeyboard,
     useKeyPressed: () => useKeyPressed,
     useIsMobile: () => useIsMobile,
     useIsDesktop: () => useIsDesktop,
+    useIntersectionObserver: () => useIntersectionObserver,
+    useInfiniteScroll: () => useInfiniteScroll,
     useHotkey: () => useHotkey,
     useGeolocation: () => useGeolocation,
+    useFullscreen: () => useFullscreen,
+    useFetch: () => useFetch,
     useFavicon: () => useFavicon,
+    useElementVisibility: () => useElementVisibility,
+    useElementSize: () => useElementSize,
     useCookie: () => useCookie,
     useClipboard: () => useClipboard,
+    useBattery: () => useBattery,
+    useAsyncData: () => useAsyncData,
     uiStore: () => uiStore,
     uiActions: () => uiActions,
+    toggleFullscreen: () => toggleFullscreen,
+    shareURL: () => shareURL,
+    shareCurrentPage: () => shareCurrentPage,
+    share: () => share,
     settingsStore: () => settingsStore,
     settingsActions: () => settingsActions,
     setCookie: () => setCookie,
+    sendNotification: () => sendNotification,
     removeCookie: () => removeCookie,
     parseCookies: () => parseCookies,
+    isPermissionGranted: () => isPermissionGranted,
+    isInFullscreen: () => isInFullscreen,
+    isCharging: () => isCharging,
+    hasResizeObserver: () => hasResizeObserver,
+    hasBattery: () => hasBattery,
     getStorageKeys: () => getStorageKeys,
     getCurrentPosition: () => getCurrentPosition,
     getCookie: () => getCookie,
+    getBatteryLevel: () => getBatteryLevel,
     createStore: () => createStore,
     copyToClipboard: () => copyToClipboard,
     computed: () => computed,
@@ -74,6 +99,7 @@ window.VoideStores = (function() {
     clearCookies: () => clearCookies,
     chatStore: () => chatStore,
     chatActions: () => chatActions,
+    canNotify: () => canNotify,
     appStore: () => appStore,
     appActions: () => appActions
   });
@@ -1296,6 +1322,648 @@ window.VoideStores = (function() {
         });
       }
     };
+  }
+  function useIntersectionObserver(target, callback, options = {}) {
+    const { root = null, rootMargin = "0px", threshold = 0, once = false } = options;
+    const isClient = typeof IntersectionObserver !== "undefined";
+    const subscribers = new Set;
+    let state = { isIntersecting: false, intersectionRatio: 0, isVisible: false };
+    let observer = null;
+    const getElement = () => typeof target === "function" ? target() : target;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const start = () => {
+      if (!isClient || observer)
+        return;
+      const el = getElement();
+      if (!el)
+        return;
+      observer = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (!entry)
+          return;
+        state = { isIntersecting: entry.isIntersecting, intersectionRatio: entry.intersectionRatio, isVisible: entry.isIntersecting };
+        notify();
+        if (callback)
+          callback(entry);
+        if (once && entry.isIntersecting)
+          stop();
+      }, { root, rootMargin, threshold });
+      observer.observe(el);
+    };
+    const stop = () => {
+      observer?.disconnect();
+      observer = null;
+    };
+    start();
+    return {
+      get isVisible() {
+        return state.isVisible;
+      },
+      subscribe: (fn) => {
+        subscribers.add(fn);
+        fn(state);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0 && !callback)
+            stop();
+        };
+      },
+      stop,
+      start
+    };
+  }
+  function useElementVisibility(target) {
+    const obs = useIntersectionObserver(target);
+    return {
+      get isVisible() {
+        return obs.isVisible;
+      },
+      subscribe: (fn) => {
+        let last = false;
+        return obs.subscribe((state) => {
+          if (state.isVisible !== last) {
+            last = state.isVisible;
+            fn(state.isVisible);
+          }
+        });
+      }
+    };
+  }
+  function useLazyLoad(target, onVisible) {
+    return useIntersectionObserver(target, (entry) => {
+      if (entry.isIntersecting)
+        onVisible();
+    }, { once: true });
+  }
+  function useInfiniteScroll(sentinel, loadMore, options = {}) {
+    const { rootMargin = "100px", debounce = 100 } = options;
+    let isLoading = false;
+    let timeout = null;
+    const obs = useIntersectionObserver(sentinel, async (entry) => {
+      if (!entry.isIntersecting || isLoading)
+        return;
+      if (timeout)
+        clearTimeout(timeout);
+      timeout = setTimeout(async () => {
+        isLoading = true;
+        try {
+          await loadMore();
+        } finally {
+          isLoading = false;
+        }
+      }, debounce);
+    }, { rootMargin });
+    return { stop: () => {
+      if (timeout)
+        clearTimeout(timeout);
+      obs.stop();
+    }, start: obs.start, isLoading: () => isLoading };
+  }
+  function buildURL(url, baseURL, query) {
+    let fullURL = baseURL ? `${baseURL.replace(/\/$/, "")}/${url.replace(/^\//, "")}` : url;
+    if (query) {
+      const params = new URLSearchParams;
+      for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined)
+          params.append(key, String(value));
+      }
+      const qs = params.toString();
+      if (qs)
+        fullURL += (fullURL.includes("?") ? "&" : "?") + qs;
+    }
+    return fullURL;
+  }
+  function useFetch(url, options = {}) {
+    const {
+      immediate = true,
+      transform,
+      timeout = 30000,
+      retry = 0,
+      retryDelay = 1000,
+      default: defaultValue = null,
+      baseURL,
+      query,
+      body,
+      ...fetchOptions
+    } = options;
+    let state = { data: defaultValue, loading: false, error: null, status: null };
+    const subscribers = new Set;
+    let abortController = null;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const getURL = () => buildURL(typeof url === "function" ? url() : url, baseURL, query);
+    const doFetch = async (attempt = 0) => {
+      if (abortController)
+        abortController.abort();
+      abortController = new AbortController;
+      state = { ...state, loading: true, error: null };
+      notify();
+      const timeoutId = setTimeout(() => abortController?.abort(), timeout);
+      try {
+        let requestBody;
+        const headers = { ...fetchOptions.headers };
+        if (body && typeof body === "object" && !(body instanceof FormData)) {
+          requestBody = JSON.stringify(body);
+          headers["Content-Type"] = "application/json";
+        } else if (body) {
+          requestBody = body;
+        }
+        const response = await fetch(getURL(), { ...fetchOptions, headers, body: requestBody, signal: abortController.signal });
+        clearTimeout(timeoutId);
+        state.status = response.status;
+        if (!response.ok)
+          throw new Error(`HTTP ${response.status}`);
+        let data = await response.json();
+        if (transform)
+          data = transform(data);
+        state = { ...state, data, loading: false, error: null };
+        notify();
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err instanceof Error && err.name === "AbortError")
+          return;
+        if (attempt < retry) {
+          await new Promise((r) => setTimeout(r, retryDelay));
+          return doFetch(attempt + 1);
+        }
+        state = { ...state, loading: false, error: err instanceof Error ? err : new Error(String(err)) };
+        notify();
+      }
+    };
+    if (immediate)
+      doFetch();
+    return {
+      get data() {
+        return state.data;
+      },
+      get loading() {
+        return state.loading;
+      },
+      get error() {
+        return state.error;
+      },
+      subscribe: (fn) => {
+        subscribers.add(fn);
+        fn(state);
+        return () => subscribers.delete(fn);
+      },
+      refresh: doFetch,
+      execute: doFetch,
+      abort: () => abortController?.abort()
+    };
+  }
+  function useAsyncData(fetcher, options = {}) {
+    const { immediate = true, transform, default: defaultValue = null } = options;
+    let state = { data: defaultValue, loading: false, error: null, status: null };
+    const subscribers = new Set;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const doFetch = async () => {
+      state = { ...state, loading: true, error: null };
+      notify();
+      try {
+        let data = await fetcher();
+        if (transform)
+          data = transform(data);
+        state = { ...state, data, loading: false, error: null };
+        notify();
+      } catch (err) {
+        state = { ...state, loading: false, error: err instanceof Error ? err : new Error(String(err)) };
+        notify();
+      }
+    };
+    if (immediate)
+      doFetch();
+    return {
+      get data() {
+        return state.data;
+      },
+      get loading() {
+        return state.loading;
+      },
+      get error() {
+        return state.error;
+      },
+      subscribe: (fn) => {
+        subscribers.add(fn);
+        fn(state);
+        return () => subscribers.delete(fn);
+      },
+      refresh: doFetch,
+      execute: doFetch
+    };
+  }
+  function getFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+  function useFullscreen(target) {
+    const isClient = typeof document !== "undefined";
+    const supported = isClient && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+    const subscribers = new Set;
+    let state = { isFullscreen: false, isSupported: supported };
+    let cleanup = null;
+    const getElement = () => {
+      if (!target)
+        return document.documentElement;
+      return typeof target === "function" ? target() || document.documentElement : target;
+    };
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const updateState = () => {
+      state = { ...state, isFullscreen: !!getFullscreenElement() };
+      notify();
+    };
+    const enter = async () => {
+      if (!supported)
+        return;
+      const el = getElement();
+      if (el.requestFullscreen)
+        await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen)
+        await el.webkitRequestFullscreen();
+    };
+    const exit = async () => {
+      if (!supported || !getFullscreenElement())
+        return;
+      if (document.exitFullscreen)
+        await document.exitFullscreen();
+      else if (document.webkitExitFullscreen)
+        await document.webkitExitFullscreen();
+    };
+    const toggle = async () => state.isFullscreen ? exit() : enter();
+    return {
+      get isFullscreen() {
+        return state.isFullscreen;
+      },
+      get isSupported() {
+        return supported;
+      },
+      subscribe: (fn) => {
+        if (subscribers.size === 0 && isClient) {
+          document.addEventListener("fullscreenchange", updateState);
+          document.addEventListener("webkitfullscreenchange", updateState);
+          cleanup = () => {
+            document.removeEventListener("fullscreenchange", updateState);
+            document.removeEventListener("webkitfullscreenchange", updateState);
+          };
+          updateState();
+        }
+        subscribers.add(fn);
+        fn(state);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0 && cleanup) {
+            cleanup();
+            cleanup = null;
+          }
+        };
+      },
+      enter,
+      exit,
+      toggle
+    };
+  }
+  function toggleFullscreen() {
+    return useFullscreen().toggle();
+  }
+  function isInFullscreen() {
+    return !!getFullscreenElement();
+  }
+  var activeNotifications = new Map;
+  function useNotification() {
+    const isSupported = typeof window !== "undefined" && "Notification" in window;
+    let state = {
+      permission: isSupported ? Notification.permission : "denied",
+      isSupported
+    };
+    const subscribers = new Set;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const requestPermission = async () => {
+      if (!isSupported)
+        return "denied";
+      const result = await Notification.requestPermission();
+      state = { ...state, permission: result };
+      notify();
+      return result;
+    };
+    const show = (title, options = {}) => {
+      if (!isSupported || state.permission !== "granted")
+        return null;
+      const { autoClose, ...notificationOptions } = options;
+      try {
+        const notification = new Notification(title, notificationOptions);
+        if (options.tag) {
+          activeNotifications.get(options.tag)?.close();
+          activeNotifications.set(options.tag, notification);
+          notification.addEventListener("close", () => activeNotifications.delete(options.tag));
+        }
+        if (autoClose && autoClose > 0)
+          setTimeout(() => notification.close(), autoClose);
+        return notification;
+      } catch {
+        return null;
+      }
+    };
+    const close = (tag) => {
+      activeNotifications.get(tag)?.close();
+      activeNotifications.delete(tag);
+    };
+    return {
+      get permission() {
+        return state.permission;
+      },
+      get isSupported() {
+        return isSupported;
+      },
+      subscribe: (fn) => {
+        subscribers.add(fn);
+        fn(state);
+        return () => subscribers.delete(fn);
+      },
+      requestPermission,
+      show,
+      close
+    };
+  }
+  async function sendNotification(title, options) {
+    const notifier = useNotification();
+    if (notifier.permission === "default")
+      await notifier.requestPermission();
+    return notifier.show(title, options);
+  }
+  function canNotify() {
+    return typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted";
+  }
+  function useShare() {
+    const supported = typeof navigator !== "undefined" && "share" in navigator;
+    const fileSupported = typeof navigator !== "undefined" && "canShare" in navigator;
+    const canShare = (data) => {
+      if (!supported)
+        return false;
+      if (!data)
+        return true;
+      if (data.files?.length) {
+        if (!fileSupported)
+          return false;
+        try {
+          return navigator.canShare(data);
+        } catch {
+          return false;
+        }
+      }
+      return !!(data.title || data.text || data.url);
+    };
+    const share = async (data) => {
+      if (!supported)
+        return { success: false, error: new Error("Web Share API not supported") };
+      if (!canShare(data))
+        return { success: false, error: new Error("Content cannot be shared") };
+      try {
+        await navigator.share(data);
+        return { success: true };
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError")
+          return { success: false, cancelled: true };
+        return { success: false, error: err instanceof Error ? err : new Error(String(err)) };
+      }
+    };
+    return { isSupported: () => supported, canShare, share };
+  }
+  async function share(data) {
+    return useShare().share(data);
+  }
+  async function shareURL(url, title, text) {
+    return share({ url, title, text });
+  }
+  async function shareCurrentPage(text) {
+    if (typeof document === "undefined")
+      return { success: false, error: new Error("Not in browser") };
+    return share({ title: document.title, url: location.href, text });
+  }
+  function createPermissionStatus(state) {
+    return { state, isGranted: state === "granted", isDenied: state === "denied", isPrompt: state === "prompt" };
+  }
+  function usePermission(name) {
+    const supported = typeof navigator !== "undefined" && "permissions" in navigator;
+    let status = createPermissionStatus("prompt");
+    const subscribers = new Set;
+    let permStatus = null;
+    const notify = () => subscribers.forEach((fn) => fn(status));
+    const query = async () => {
+      if (!supported)
+        return createPermissionStatus("prompt");
+      try {
+        permStatus = await navigator.permissions.query({ name });
+        status = createPermissionStatus(permStatus.state);
+        permStatus.addEventListener("change", () => {
+          status = createPermissionStatus(permStatus.state);
+          notify();
+        });
+        return status;
+      } catch {
+        return createPermissionStatus("prompt");
+      }
+    };
+    return {
+      get state() {
+        return status.state;
+      },
+      get isGranted() {
+        return status.isGranted;
+      },
+      subscribe: (fn) => {
+        if (subscribers.size === 0 && supported)
+          query();
+        subscribers.add(fn);
+        fn(status);
+        return () => subscribers.delete(fn);
+      },
+      query,
+      isSupported: () => supported
+    };
+  }
+  function usePermissions(names) {
+    const refs = Object.fromEntries(names.map((n) => [n, usePermission(n)]));
+    const subscribers = new Set;
+    let states = Object.fromEntries(names.map((n) => [n, createPermissionStatus("prompt")]));
+    const notify = () => subscribers.forEach((fn) => fn(states));
+    return {
+      get: () => states,
+      subscribe: (fn) => {
+        const unsubs = names.map((n) => refs[n].subscribe((s) => {
+          states[n] = s;
+          notify();
+        }));
+        subscribers.add(fn);
+        fn(states);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0)
+            unsubs.forEach((u) => u());
+        };
+      },
+      queryAll: async () => {
+        await Promise.all(names.map((n) => refs[n].query()));
+        return states;
+      }
+    };
+  }
+  async function isPermissionGranted(name) {
+    const perm = usePermission(name);
+    const status = await perm.query();
+    return status.isGranted;
+  }
+  function useResizeObserver(target, callback) {
+    const supported = typeof ResizeObserver !== "undefined";
+    const subscribers = new Set;
+    let state = { width: 0, height: 0, contentRect: null };
+    let observer = null;
+    const getElement = () => typeof target === "function" ? target() : target;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const start = () => {
+      if (!supported || observer)
+        return;
+      const el = getElement();
+      if (!el)
+        return;
+      observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry)
+          return;
+        state = { width: entry.contentRect.width, height: entry.contentRect.height, contentRect: entry.contentRect };
+        notify();
+        if (callback)
+          callback(entry);
+      });
+      observer.observe(el);
+    };
+    const stop = () => {
+      observer?.disconnect();
+      observer = null;
+    };
+    return {
+      get width() {
+        return state.width;
+      },
+      get height() {
+        return state.height;
+      },
+      get isSupported() {
+        return supported;
+      },
+      subscribe: (fn) => {
+        if (subscribers.size === 0)
+          start();
+        subscribers.add(fn);
+        fn(state);
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0 && !callback)
+            stop();
+        };
+      },
+      observe: start,
+      disconnect: stop
+    };
+  }
+  function useElementSize(target) {
+    let size = { width: 0, height: 0 };
+    const subscribers = new Set;
+    const observer = useResizeObserver(target, (entry) => {
+      size = { width: entry.contentRect.width, height: entry.contentRect.height };
+      subscribers.forEach((fn) => fn(size));
+    });
+    return {
+      get width() {
+        return size.width;
+      },
+      get height() {
+        return size.height;
+      },
+      subscribe: (fn) => {
+        subscribers.add(fn);
+        fn(size);
+        if (subscribers.size === 1)
+          observer.observe();
+        return () => {
+          subscribers.delete(fn);
+          if (subscribers.size === 0)
+            observer.disconnect();
+        };
+      }
+    };
+  }
+  function hasResizeObserver() {
+    return typeof ResizeObserver !== "undefined";
+  }
+  function useBattery() {
+    const supported = typeof navigator !== "undefined" && "getBattery" in navigator;
+    let state = { charging: false, chargingTime: 0, dischargingTime: 0, level: 1 };
+    const subscribers = new Set;
+    let battery = null;
+    let initialized = false;
+    const notify = () => subscribers.forEach((fn) => fn(state));
+    const updateState = () => {
+      if (battery) {
+        state = { charging: battery.charging, chargingTime: battery.chargingTime, dischargingTime: battery.dischargingTime, level: battery.level };
+        notify();
+      }
+    };
+    const init = async () => {
+      if (initialized || !supported)
+        return;
+      try {
+        battery = await navigator.getBattery();
+        state = { charging: battery.charging, chargingTime: battery.chargingTime, dischargingTime: battery.dischargingTime, level: battery.level };
+        battery.addEventListener("chargingchange", updateState);
+        battery.addEventListener("chargingtimechange", updateState);
+        battery.addEventListener("dischargingtimechange", updateState);
+        battery.addEventListener("levelchange", updateState);
+        initialized = true;
+        notify();
+      } catch {}
+    };
+    return {
+      get charging() {
+        return state.charging;
+      },
+      get level() {
+        return state.level;
+      },
+      get isSupported() {
+        return supported;
+      },
+      getPercentage: () => Math.round(state.level * 100),
+      isLow: (threshold = 0.2) => state.level <= threshold && !state.charging,
+      isCritical: () => state.level <= 0.1 && !state.charging,
+      subscribe: (fn) => {
+        if (subscribers.size === 0)
+          init();
+        subscribers.add(fn);
+        fn(state);
+        return () => subscribers.delete(fn);
+      }
+    };
+  }
+  async function getBatteryLevel() {
+    if (typeof navigator === "undefined" || !("getBattery" in navigator))
+      return null;
+    try {
+      const battery = await navigator.getBattery();
+      return Math.round(battery.level * 100);
+    } catch {
+      return null;
+    }
+  }
+  async function isCharging() {
+    if (typeof navigator === "undefined" || !("getBattery" in navigator))
+      return null;
+    try {
+      const battery = await navigator.getBattery();
+      return battery.charging;
+    } catch {
+      return null;
+    }
+  }
+  function hasBattery() {
+    return typeof navigator !== "undefined" && "getBattery" in navigator;
   }
   return exports_stores;
 })();

@@ -1,25 +1,9 @@
-<script>
-// Server-side: Static data available at build time
-export const title = 'Voide'
-export const version = '1.0.0'
-export const apiBaseUrl = 'http://localhost:3008/voide'
-
-export const drivers = {
-  'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
-  'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
-  'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
-  'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
-  'ollama': { name: 'Ollama', requiresKey: null },
-  'mock': { name: 'Mock', requiresKey: null }
-}
-</script>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>{{ title }} - Voice AI Code Assistant</title>
+  <title>Voide - Voice AI Code Assistant</title>
 
   <style>
     /* Custom animations */
@@ -118,7 +102,7 @@ export const drivers = {
   <div class="orb orb-2"></div>
 
   <!-- Header -->
-  @include('../components/voide/header', { title })
+  @include('../components/voide/header')
 
   <!-- Main Content -->
   <main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
@@ -131,9 +115,9 @@ export const drivers = {
 
   <!-- Footer -->
   <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
-    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">{{ title }}</span>
+    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">Voide</span>
     <span style="margin:0 8px">·</span>
-    <span>v{{ version }}</span>
+    <span>v1.0.0</span>
     <span style="margin:0 8px">·</span>
     <span>Voice AI Code Assistant</span>
   </footer>

@@ -89,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const stores = window.VoideStores
   if (!stores) return
 
-  // Subscribe to settings store for GitHub status updates
   stores.settingsStore.subscribe((state) => {
     const githubUsername = document.getElementById('githubUsername')
     if (state.github.connected && state.github.username) {
