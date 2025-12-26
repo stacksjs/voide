@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!stores && !voide) return
 
-  let lastMessageCount = 1
+  let renderedCount = 0
   const messageElements = new Map()
   const messageUpdates = new Map()
 
@@ -132,8 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    while (lastMessageCount - 1 < messageArray.length) {
-      const idx = lastMessageCount - 1
+    while (renderedCount < messageArray.length) {
+      const idx = renderedCount
       const msg = messageArray[idx]
       if (!msg) break
       const config = typeConfig[msg.type] || typeConfig.system
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       output.appendChild(messageDiv)
       messageElements.set(idx, messageDiv)
       messageUpdates.set(idx, msg.updated || 0)
-      lastMessageCount++
+      renderedCount++
     }
   }
 
