@@ -1,33 +1,23 @@
 <div class="relative">
   <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-5">
     <div class="flex items-start gap-5">
-      <!-- Voice Button -->
-      <div class="flex flex-col items-center gap-2">
+      <!-- Voice Button (fixed width to prevent layout shift) -->
+      <div class="flex flex-col items-center gap-2 w-20 flex-shrink-0">
         <button
           id="micButton"
           class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 border-monokai-border flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
-          title="Hold to record (or press Space)"
-          @mousedown="window.voide?.startRecording()"
-          @mouseup="window.voide?.stopRecording()"
-          @mouseleave="window.voide?.state.isRecording && window.voide?.stopRecording()"
+          title="Click to toggle voice input (or press Space)"
+          @click="window.voide?.toggleRecording()"
         >
           <span id="micIcon" class="text-2xl">🎤</span>
         </button>
-        <span id="statusHint" class="text-[10px] text-monokai-gray text-center">Hold to speak</span>
+        <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full">Click to speak</span>
       </div>
 
       <!-- Input Area -->
       <div class="flex-1 flex flex-col gap-3">
-        <!-- Transcript Preview -->
-        <div
-          id="transcriptPreview"
-          class="hidden p-3 bg-monokai-bg-dark border border-monokai-pink/25 rounded-xl text-sm text-monokai-fg/80 min-h-[44px]"
-        >
-          Listening...
-        </div>
-
         <!-- Text Input -->
-        <div class="flex items-end gap-3 bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3">
+        <div id="inputContainer" class="flex items-end gap-3 bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3">
           <textarea
             id="textInput"
             class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[120px] leading-6 placeholder-monokai-gray"
@@ -99,7 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const micButton = document.getElementById('micButton')
   const micIcon = document.getElementById('micIcon')
   const statusHint = document.getElementById('statusHint')
-  const transcriptPreview = document.getElementById('transcriptPreview')
+  const inputContainer = document.getElementById('inputContainer')
+  const textInput = document.getElementById('textInput')
   const commitBtn = document.getElementById('commitBtn')
   const pushBtn = document.getElementById('pushBtn')
   const charCountDisplay = document.getElementById('charCountDisplay')
@@ -109,19 +100,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (micButton) micButton.classList.add('border-monokai-pink')
       if (micIcon) micIcon.textContent = '🔴'
       if (statusHint) statusHint.textContent = 'Listening...'
-      if (transcriptPreview) {
-        transcriptPreview.classList.remove('hidden')
-        transcriptPreview.classList.add('block')
-        transcriptPreview.textContent = state.transcript || 'Listening...'
+      if (inputContainer) inputContainer.classList.add('border-monokai-pink')
+      // Update textarea with transcript
+      if (textInput && state.transcript) {
+        textInput.value = state.transcript
+        textInput.style.height = 'auto'
+        textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px'
+        stores.chatActions.setInputText(state.transcript)
       }
     } else {
       if (micButton) micButton.classList.remove('border-monokai-pink')
       if (micIcon) micIcon.textContent = '🎤'
-      if (statusHint) statusHint.textContent = 'Hold to speak'
-      if (transcriptPreview) {
-        transcriptPreview.classList.add('hidden')
-        transcriptPreview.classList.remove('block')
-      }
+      if (statusHint) statusHint.textContent = 'Click to speak'
+      if (inputContainer) inputContainer.classList.remove('border-monokai-pink')
     }
 
     if (commitBtn) commitBtn.disabled = !state.hasChanges || state.isProcessing

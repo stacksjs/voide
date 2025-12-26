@@ -557,9 +557,8 @@
         speechRecognition.on('end', function(data) {
           var app = appStore.get();
           if (app.isRecording) {
-            var transcript = data.transcript.trim();
+            // Just stop recording - transcript stays in textarea for user to review/send
             stopRecording();
-            if (transcript) processCommand(transcript);
           }
         });
 
@@ -578,6 +577,15 @@
         appActions.setRecording(false);
         updateTrayStatus('ready');
         speechRecognition.stop();
+      }
+
+      function toggleRecording() {
+        var app = appStore.get();
+        if (app.isRecording) {
+          stopRecording();
+        } else {
+          startRecording();
+        }
       }
 
       // ==========================================================================
@@ -720,18 +728,15 @@
             var isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
             if (!isInput) {
               e.preventDefault();
-              startRecording();
+              toggleRecording();
             }
           }
           if (e.key === 'Escape') {
             uiActions.closeAllModals();
-          }
-        });
-
-        document.addEventListener('keyup', function(e) {
-          if (e.code === 'Space' && appStore.get().isRecording) {
-            e.preventDefault();
-            stopRecording();
+            // Also stop recording if active
+            if (appStore.get().isRecording) {
+              stopRecording();
+            }
           }
         });
       }
@@ -790,6 +795,7 @@
         pushChanges: pushChanges,
         startRecording: startRecording,
         stopRecording: stopRecording,
+        toggleRecording: toggleRecording,
         handleTextSubmit: handleTextSubmit,
         handleDriverChange: handleDriverChange,
         openGithubModal: openGithubModal,
