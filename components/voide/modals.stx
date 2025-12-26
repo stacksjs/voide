@@ -1,34 +1,9 @@
 <!-- GitHub Connection Modal -->
 <div
-  x-data="{
-    isOpen: false,
-    isConnected: false,
-    avatarUrl: '',
-    name: '',
-    username: '',
-    anthropicConfigured: false,
-    openaiConfigured: false
-  }"
-  x-init="
-    const stores = window.VoideStores;
-    if (stores) {
-      stores.uiStore.subscribe((state) => {
-        isOpen = state.modals.github;
-      });
-      stores.settingsStore.subscribe((state) => {
-        isConnected = state.github.connected;
-        avatarUrl = state.github.avatarUrl || '';
-        name = state.github.name || state.github.username || '';
-        username = state.github.username || '';
-      });
-    }
-  "
-  x-ref="githubModal"
-  x-show="isOpen"
-  x-transition
-  @click.self="window.voide?.closeGithubModal()"
+  id="githubModal"
   class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
   style="display: none;"
+  onclick="if (event.target === this) window.voide?.closeGithubModal()"
 >
   <div class="relative w-full max-w-md m-4 animate-fade-in">
     <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
@@ -45,7 +20,7 @@
         </div>
         <button
           class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-          @click="window.voide?.closeGithubModal()"
+          onclick="window.voide?.closeGithubModal()"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -55,12 +30,12 @@
 
       <!-- Modal Body -->
       <div class="p-6">
-        <div x-ref="connectForm" x-show="!isConnected" class="space-y-4">
+        <div id="githubConnectForm" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">Personal Access Token</label>
             <input
               type="password"
-              x-ref="githubToken"
+              id="githubToken"
               class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
               placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
             />
@@ -73,7 +48,7 @@
             <label class="block text-sm font-medium text-slate-300 mb-2">Commit Name <span class="text-slate-500">(optional)</span></label>
             <input
               type="text"
-              x-ref="gitName"
+              id="gitName"
               class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
               placeholder="Your Name"
             />
@@ -83,17 +58,17 @@
             <label class="block text-sm font-medium text-slate-300 mb-2">Commit Email <span class="text-slate-500">(optional)</span></label>
             <input
               type="email"
-              x-ref="gitEmail"
+              id="gitEmail"
               class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
               placeholder="you@example.com"
             />
           </div>
         </div>
 
-        <div x-ref="connectedInfo" x-show="isConnected" class="text-center py-6">
-          <img x-ref="connectedAvatar" :src="avatarUrl" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20" />
-          <div x-ref="connectedName" x-text="name" class="text-xl font-semibold text-white mb-1"></div>
-          <div x-ref="connectedUsername" x-text="'@' + username" class="text-slate-400 mb-3"></div>
+        <div id="githubConnectedInfo" class="text-center py-6" style="display: none;">
+          <img id="connectedAvatar" src="" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20" />
+          <div id="connectedName" class="text-xl font-semibold text-white mb-1"></div>
+          <div id="connectedUsername" class="text-slate-400 mb-3"></div>
           <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -107,19 +82,18 @@
       <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
         <button
           class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
-          @click="window.voide?.closeGithubModal()"
+          onclick="window.voide?.closeGithubModal()"
         >Cancel</button>
         <button
-          x-ref="connectBtn"
-          x-show="!isConnected"
+          id="githubConnectBtn"
           class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
-          @click="window.voide?.connectGithub()"
+          onclick="window.voide?.connectGithub()"
         >Connect</button>
         <button
-          x-ref="disconnectBtn"
-          x-show="isConnected"
+          id="githubDisconnectBtn"
           class="px-4 py-2 text-sm font-medium bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
-          @click="window.voide?.disconnectGithub()"
+          style="display: none;"
+          onclick="window.voide?.disconnectGithub()"
         >Disconnect</button>
       </div>
     </div>
@@ -128,29 +102,10 @@
 
 <!-- API Settings Modal -->
 <div
-  x-data="{
-    isOpen: false,
-    anthropicConfigured: false,
-    openaiConfigured: false
-  }"
-  x-init="
-    const stores = window.VoideStores;
-    if (stores) {
-      stores.uiStore.subscribe((state) => {
-        isOpen = state.modals.settings;
-      });
-      stores.settingsStore.subscribe((state) => {
-        anthropicConfigured = !!state.apiKeys.anthropic;
-        openaiConfigured = !!state.apiKeys.openai;
-      });
-    }
-  "
-  x-ref="settingsModal"
-  x-show="isOpen"
-  x-transition
-  @click.self="window.voide?.closeSettingsModal()"
+  id="settingsModal"
   class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
   style="display: none;"
+  onclick="if (event.target === this) window.voide?.closeSettingsModal()"
 >
   <div class="relative w-full max-w-md m-4 animate-fade-in">
     <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
@@ -168,7 +123,7 @@
         </div>
         <button
           class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-          @click="window.voide?.closeSettingsModal()"
+          onclick="window.voide?.closeSettingsModal()"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -183,7 +138,6 @@
           <input
             type="password"
             id="anthropicApiKey"
-            x-ref="anthropicApiKey"
             class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
             placeholder="sk-ant-api03-xxxxxxxxxxxx"
           />
@@ -197,7 +151,6 @@
           <input
             type="password"
             id="openaiApiKey"
-            x-ref="openaiApiKey"
             class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
             placeholder="sk-xxxxxxxxxxxx"
           />
@@ -208,7 +161,6 @@
           <input
             type="text"
             id="claudeCliHost"
-            x-ref="claudeCliHost"
             class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
             placeholder="http://your-ec2-instance:3456"
           />
@@ -217,12 +169,12 @@
         <!-- API Status -->
         <div class="p-4 bg-slate-800/30 border border-white/5 rounded-xl space-y-2">
           <div class="flex items-center gap-3">
-            <span x-ref="anthropicStatus" :class="anthropicConfigured ? 'bg-emerald-500' : 'bg-slate-600'" class="w-2 h-2 rounded-full"></span>
-            <span class="text-sm text-slate-400">Anthropic: <span x-ref="anthropicStatusText" x-text="anthropicConfigured ? 'Configured' : 'Not configured'" class="text-slate-300"></span></span>
+            <span id="anthropicStatus" class="w-2 h-2 rounded-full bg-slate-600"></span>
+            <span class="text-sm text-slate-400">Anthropic: <span id="anthropicStatusText" class="text-slate-300">Not configured</span></span>
           </div>
           <div class="flex items-center gap-3">
-            <span x-ref="openaiStatus" :class="openaiConfigured ? 'bg-emerald-500' : 'bg-slate-600'" class="w-2 h-2 rounded-full"></span>
-            <span class="text-sm text-slate-400">OpenAI: <span x-ref="openaiStatusText" x-text="openaiConfigured ? 'Configured' : 'Not configured'" class="text-slate-300"></span></span>
+            <span id="openaiStatus" class="w-2 h-2 rounded-full bg-slate-600"></span>
+            <span class="text-sm text-slate-400">OpenAI: <span id="openaiStatusText" class="text-slate-300">Not configured</span></span>
           </div>
         </div>
       </div>
@@ -231,13 +183,74 @@
       <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
         <button
           class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
-          @click="window.voide?.closeSettingsModal()"
+          onclick="window.voide?.closeSettingsModal()"
         >Cancel</button>
         <button
           class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
-          @click="window.voide?.saveApiSettings()"
+          onclick="window.voide?.saveApiSettings()"
         >Save Settings</button>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+(function() {
+  function initModals() {
+    var stores = window.VoideStores;
+    if (!stores) return;
+
+    stores.uiStore.subscribe(function(state) {
+      var githubModal = document.getElementById('githubModal');
+      var settingsModal = document.getElementById('settingsModal');
+      if (githubModal) githubModal.style.display = state.modals.github ? 'flex' : 'none';
+      if (settingsModal) settingsModal.style.display = state.modals.settings ? 'flex' : 'none';
+    });
+
+    stores.settingsStore.subscribe(function(state) {
+      var connectForm = document.getElementById('githubConnectForm');
+      var connectedInfo = document.getElementById('githubConnectedInfo');
+      var connectBtn = document.getElementById('githubConnectBtn');
+      var disconnectBtn = document.getElementById('githubDisconnectBtn');
+      var connectedAvatar = document.getElementById('connectedAvatar');
+      var connectedName = document.getElementById('connectedName');
+      var connectedUsername = document.getElementById('connectedUsername');
+      var anthropicStatus = document.getElementById('anthropicStatus');
+      var anthropicStatusText = document.getElementById('anthropicStatusText');
+      var openaiStatus = document.getElementById('openaiStatus');
+      var openaiStatusText = document.getElementById('openaiStatusText');
+
+      var isConnected = state.github.connected;
+      if (connectForm) connectForm.style.display = isConnected ? 'none' : 'block';
+      if (connectedInfo) connectedInfo.style.display = isConnected ? 'block' : 'none';
+      if (connectBtn) connectBtn.style.display = isConnected ? 'none' : 'block';
+      if (disconnectBtn) disconnectBtn.style.display = isConnected ? 'block' : 'none';
+
+      if (isConnected) {
+        if (connectedAvatar) connectedAvatar.src = state.github.avatarUrl || '';
+        if (connectedName) connectedName.textContent = state.github.name || state.github.username || '';
+        if (connectedUsername) connectedUsername.textContent = '@' + (state.github.username || '');
+      }
+
+      var hasAnthropic = !!state.apiKeys.anthropic;
+      var hasOpenai = !!state.apiKeys.openai;
+      if (anthropicStatus) anthropicStatus.className = 'w-2 h-2 rounded-full ' + (hasAnthropic ? 'bg-emerald-500' : 'bg-slate-600');
+      if (anthropicStatusText) anthropicStatusText.textContent = hasAnthropic ? 'Configured' : 'Not configured';
+      if (openaiStatus) openaiStatus.className = 'w-2 h-2 rounded-full ' + (hasOpenai ? 'bg-emerald-500' : 'bg-slate-600');
+      if (openaiStatusText) openaiStatusText.textContent = hasOpenai ? 'Configured' : 'Not configured';
+    });
+  }
+
+  // Wait for stores if not immediately available
+  if (window.VoideStores) {
+    initModals();
+  } else {
+    var checkInterval = setInterval(function() {
+      if (window.VoideStores) {
+        clearInterval(checkInterval);
+        initModals();
+      }
+    }, 10);
+  }
+})();
+</script>

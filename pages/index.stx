@@ -74,27 +74,34 @@
   <!-- Load Headwind CSS -->
   <script>
     // Dynamically load Headwind CSS to bypass bundler
-    (function() {
-      var link = document.createElement('link');
+    (() => {
+      const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = '/dist/voide.css';
-      link.onload = function() { document.body.style.visibility = 'visible'; };
+      link.onload = () => {
+        if (document.body) {
+          document.body.style.visibility = 'visible';
+        }
+      };
       document.head.appendChild(link);
       // Hide body until CSS loads to prevent FOUC
       document.write('<style>body{visibility:hidden}</style>');
     })();
   </script>
 
-  <!-- Voide Stores (loaded synchronously before main script) -->
+  <!-- Voide Stores (loaded synchronously before body parses) -->
   <script>
-    // Load stores synchronously
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/js/voide-stores.js', false); // false = synchronous
-    xhr.send();
-    if (xhr.status === 200) {
-      eval(xhr.responseText);
+    // Use document.write to load synchronously and bypass bundler resolution
+    document.write('<scr' + 'ipt src="/js/voide-stores.js"></scr' + 'ipt>');
+  </script>
+  <script>
+    if (window.VoideStores) {
+      console.log('[Voide] Stores loaded successfully');
+    } else {
+      console.error('[Voide] Failed to load stores!');
     }
   </script>
+
 </head>
 <body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
   <!-- Floating orbs -->
@@ -127,22 +134,22 @@
 
   <!-- Craft Native Bridge -->
   <script>
-    (function() {
+    (() => {
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.craftBridge) {
         window.craft = {
           _callbacks: {},
           _callbackId: 0,
           _invoke: function(method, args) {
             args = args || {};
-            var self = this;
+            const self = this;
             return new Promise(function(resolve, reject) {
-              var id = ++self._callbackId;
+              const id = ++self._callbackId;
               self._callbacks[id] = { resolve: resolve, reject: reject };
               window.webkit.messageHandlers.craftBridge.postMessage({ id: id, method: method, args: args });
             });
           },
           _handleResponse: function(id, result, error) {
-            var cb = this._callbacks[id];
+            const cb = this._callbacks[id];
             if (cb) {
               delete this._callbacks[id];
               error ? cb.reject(new Error(error)) : cb.resolve(result);
@@ -150,18 +157,18 @@
           },
           window: {
             setTitle: function(title) { return window.craft._invoke('window.setTitle', { title: title }); },
-            close: function() { return window.craft._invoke('window.close'); },
-            minimize: function() { return window.craft._invoke('window.minimize'); },
-            maximize: function() { return window.craft._invoke('window.maximize'); }
+            close: () => { return window.craft._invoke('window.close'); },
+            minimize: () => { return window.craft._invoke('window.minimize'); },
+            maximize: () => { return window.craft._invoke('window.maximize'); }
           },
           tray: {
             setTitle: function(title) { return window.craft._invoke('tray.setTitle', { title: title }); },
             setTooltip: function(tooltip) { return window.craft._invoke('tray.setTooltip', { tooltip: tooltip }); },
             setMenu: function(menu) { return window.craft._invoke('tray.setMenu', { menu: menu }); },
-            onClickToggleWindow: function() { return window.craft._invoke('tray.onClickToggleWindow'); }
+            onClickToggleWindow: () => { return window.craft._invoke('tray.onClickToggleWindow'); }
           },
           app: {
-            quit: function() { return window.craft._invoke('app.quit'); },
+            quit: () => { return window.craft._invoke('app.quit'); },
             notify: function(options) { return window.craft._invoke('app.notify', options); }
           }
         };
@@ -172,31 +179,62 @@
 
   <!-- Voide Client Runtime (Plain JS - No ES Modules) -->
   <script>
-    (function() {
+    (() => {
       'use strict';
 
       // ==========================================================================
       // Store References (from VoideStores)
       // ==========================================================================
 
-      var stores = window.VoideStores;
-      var appStore = stores.appStore;
-      var appActions = stores.appActions;
-      var chatStore = stores.chatStore;
-      var chatActions = stores.chatActions;
-      var settingsStore = stores.settingsStore;
-      var settingsActions = stores.settingsActions;
-      var uiStore = stores.uiStore;
-      var uiActions = stores.uiActions;
+      function initVoide() {
+        const stores = window.VoideStores;
+        if (!stores) {
+          console.error('[Voide] CRITICAL: VoideStores not available! App will not function.');
+          document.body.innerHTML = '<div style="padding:20px;color:red;">Error: Stores failed to load. Check console for details.</div>';
+          return;
+        }
+        console.log('[Voide] Stores found, initializing app...');
+        setupApp(stores);
+      }
+
+      // Wait for stores if not immediately available
+      if (window.VoideStores) {
+        initVoide();
+      } else {
+        console.log('[Voide] Waiting for stores to load...');
+        let checkCount = 0;
+        const checkInterval = setInterval(() => {
+          checkCount++;
+          if (window.VoideStores) {
+            clearInterval(checkInterval);
+            initVoide();
+          } else if (checkCount > 50) { // 5 seconds max
+            clearInterval(checkInterval);
+            console.error('[Voide] Stores failed to load after 5 seconds');
+            document.body.innerHTML = '<div style="padding:20px;color:red;">Error: Stores failed to load. Check console for details.</div>';
+          }
+        }, 100);
+      }
+
+      function setupApp(stores) {
+
+      const appStore = stores.appStore;
+      const appActions = stores.appActions;
+      const chatStore = stores.chatStore;
+      const chatActions = stores.chatActions;
+      const settingsStore = stores.settingsStore;
+      const settingsActions = stores.settingsActions;
+      const uiStore = stores.uiStore;
+      const uiActions = stores.uiActions;
 
       // Initialize speech recognition using the composable
-      var speechRecognition = stores.useSpeechRecognition({
+      const speechRecognition = stores.useSpeechRecognition({
         continuous: false,
         interimResults: true,
         lang: 'en-US'
       });
 
-      var config = {
+      const config = {
         title: 'Voide',
         version: '1.0.0',
         apiBaseUrl: 'http://localhost:3008/voide',
@@ -215,15 +253,15 @@
       // ==========================================================================
 
       function saveChat() {
-        var app = appStore.get();
+        const app = appStore.get();
         chatActions.saveCurrentChat(app.repoPath, app.currentDriver);
       }
 
       function loadChat(chatId) {
-        var success = chatActions.loadChat(chatId);
+        const success = chatActions.loadChat(chatId);
         if (success) {
-          var chats = chatActions.getAllChats();
-          var chat = chats[chatId];
+          const chats = chatActions.getAllChats();
+          const chat = chats[chatId];
           if (chat) {
             appActions.setRepoPath(chat.repoPath || '');
             appActions.setDriver(chat.driver || 'claude-cli-local');
@@ -234,13 +272,13 @@
       }
 
       function startNewChat() {
-        var app = appStore.get();
+        const app = appStore.get();
         return chatActions.startNewChat(app.repoPath, app.currentDriver);
       }
 
       function getCurrentDriverName() {
-        var app = appStore.get();
-        var driver = config.drivers[app.currentDriver];
+        const app = appStore.get();
+        const driver = config.drivers[app.currentDriver];
         return driver ? driver.name : 'AI';
       }
 
@@ -249,8 +287,8 @@
       // ==========================================================================
 
       function addMessage(type, content, header) {
-        var driverName = getCurrentDriverName();
-        var headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+        const driverName = getCurrentDriverName();
+        const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
 
         chatActions.addMessage(type, content, headerText);
 
@@ -259,8 +297,8 @@
 
         // Only scroll to bottom when user sends a new prompt
         if (type === 'user') {
-          setTimeout(function() {
-            var output = document.getElementById('output');
+          setTimeout(() => {
+            const output = document.getElementById('output');
             if (output) output.scrollTop = output.scrollHeight;
           }, 10);
         }
@@ -268,11 +306,11 @@
 
       function checkBackendAPI() {
         return fetch(config.apiBaseUrl + '/state')
-          .then(function(res) { return res.ok; })
-          .catch(function() { return false; });
+          .then((res) => { return res.ok; })
+          .catch(() => { return false; });
       }
 
-      var saveChatDebounceTimer = null;
+      let saveChatDebounceTimer = null;
       function updateLastMessage(type, content) {
         chatActions.updateLastMessage(type, content);
 
@@ -283,9 +321,9 @@
 
       function processWithStreaming(command) {
         return new Promise(function(resolve, reject) {
-          var fullContent = '';
-          var currentEvent = '';
-          var app = appStore.get();
+          let fullContent = '';
+          let currentEvent = '';
+          const app = appStore.get();
 
           fetch(config.apiBaseUrl + '/process/stream', {
             method: 'POST',
@@ -295,14 +333,14 @@
               driver: app.currentDriver,
               repository: app.repoPath
             })
-          }).then(function(response) {
+          }).then((response) => {
             if (!response.ok) {
               throw new Error('Stream request failed');
             }
 
-            var reader = response.body.getReader();
-            var decoder = new TextDecoder();
-            var buffer = '';
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            const buffer = '';
 
             function readChunk() {
               reader.read().then(function(result) {
@@ -312,11 +350,11 @@
                 }
 
                 buffer += decoder.decode(result.value, { stream: true });
-                var lines = buffer.split('\n');
+                const lines = buffer.split('\n');
                 buffer = lines.pop() || '';
 
-                for (var i = 0; i < lines.length; i++) {
-                  var line = lines[i].trim();
+                for (const i = 0; i < lines.length; i++) {
+                  const line = lines[i].trim();
                   if (!line) continue;
 
                   if (line.indexOf('event: ') === 0) {
@@ -326,7 +364,7 @@
 
                   if (line.indexOf('data: ') === 0) {
                     try {
-                      var data = JSON.parse(line.substring(6));
+                      const data = JSON.parse(line.substring(6));
 
                       if (currentEvent === 'chunk' && data.text) {
                         fullContent += data.text;
@@ -356,14 +394,14 @@
       function processCommand(command) {
         if (!command.trim()) return;
 
-        var chat = chatStore.get();
-        var app = appStore.get();
+        const chat = chatStore.get();
+        const app = appStore.get();
 
         // Start a new chat on first prompt if not already in a chat
         if (!chat.currentChatId) {
           // Create the user message first, then start chat with it included
           // This ensures the message is saved to localStorage BEFORE the URL change
-          var userMessage = {
+          const userMessage = {
             type: 'user',
             content: command,
             header: 'You',
@@ -384,13 +422,13 @@
         appActions.setProcessing(true);
         addMessage('assistant', '...');
 
-        checkBackendAPI().then(function(hasBackend) {
+        checkBackendAPI().then((hasBackend) => {
           if (hasBackend) {
             // Use streaming endpoint
             return processWithStreaming(command);
           } else if (appStore.get().currentDriver === 'mock') {
             return new Promise(function(resolve) {
-              setTimeout(function() {
+              setTimeout(() => {
                 resolve({
                   message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.',
                   hasChanges: command.toLowerCase().indexOf('fix') !== -1
@@ -400,7 +438,7 @@
           } else {
             return Promise.reject(new Error('Backend API not available. Start the server at localhost:3008.'));
           }
-        }).then(function(response) {
+        }).then((response) => {
           // Streaming already updated the message, just handle completion
           if (response.hasChanges) {
             appActions.setHasChanges(true);
@@ -410,21 +448,21 @@
 
           appActions.setTerminalTitle(config.title + ' - Ready');
           updateTrayStatus('success');
-          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
-        }).catch(function(error) {
+          setTimeout(() => { updateTrayStatus('ready'); }, 2000);
+        }).catch((error) => {
           chatActions.removeLastMessage();
           addMessage('error', 'Failed: ' + error.message);
           appActions.setTerminalTitle(config.title + ' - Error');
           updateTrayStatus('error');
-          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
-        }).finally(function() {
+          setTimeout(() => { updateTrayStatus('ready'); }, 3000);
+        }).finally(() => {
           appActions.setProcessing(false);
         });
       }
 
       function handleRepoAction() {
-        var input = document.getElementById('repoInput');
-        var inputValue = input ? input.value.trim() : '';
+        const input = document.getElementById('repoInput');
+        const inputValue = input ? input.value.trim() : '';
 
         if (!inputValue) {
           addMessage('error', 'Please enter a repository URL or path.');
@@ -433,13 +471,13 @@
 
         addMessage('system', 'Opening repository: ' + inputValue);
 
-        checkBackendAPI().then(function(hasBackend) {
+        checkBackendAPI().then((hasBackend) => {
           if (hasBackend) {
             return fetch(config.apiBaseUrl + '/repo', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ input: inputValue })
-            }).then(function(res) { return res.json(); });
+            }).then((res) => { return res.json(); });
           } else {
             return {
               success: true,
@@ -448,10 +486,10 @@
               }
             };
           }
-        }).then(function(response) {
+        }).then((response) => {
           // Handle both wrapped {success, data} and direct response formats
-          var data = response.data || response;
-          var repo = data.repo;
+          const data = response.data || response;
+          const repo = data.repo;
 
           if (repo) {
             appActions.setRepoPath(repo.path);
@@ -464,7 +502,7 @@
           } else {
             throw new Error('Failed to open repository');
           }
-        }).catch(function(error) {
+        }).catch((error) => {
           addMessage('error', 'Failed: ' + error.message);
         });
       }
@@ -475,24 +513,24 @@
         addMessage('system', 'Creating commit...');
         updateTrayStatus('processing');
 
-        checkBackendAPI().then(function(hasBackend) {
+        checkBackendAPI().then((hasBackend) => {
           if (hasBackend) {
             return fetch(config.apiBaseUrl + '/commit', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' }
-            }).then(function(res) { return res.json(); });
+            }).then((res) => { return res.json(); });
           } else {
             return { success: true, hash: 'mock-commit-hash' };
           }
-        }).then(function(response) {
+        }).then((response) => {
           addMessage('system', 'Committed: ' + (response.hash || 'success'));
           appActions.setHasChanges(false);
           updateTrayStatus('success');
-          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
-        }).catch(function(error) {
+          setTimeout(() => { updateTrayStatus('ready'); }, 2000);
+        }).catch((error) => {
           addMessage('error', 'Failed: ' + error.message);
           updateTrayStatus('error');
-          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+          setTimeout(() => { updateTrayStatus('ready'); }, 3000);
         });
       }
 
@@ -500,7 +538,7 @@
         addMessage('system', 'Pushing to remote...');
         updateTrayStatus('processing');
 
-        checkBackendAPI().then(function(hasBackend) {
+        checkBackendAPI().then((hasBackend) => {
           if (hasBackend) {
             return fetch(config.apiBaseUrl + '/push', {
               method: 'POST',
@@ -508,14 +546,14 @@
             });
           }
           return Promise.resolve();
-        }).then(function() {
+        }).then(() => {
           addMessage('system', 'Pushed successfully.');
           updateTrayStatus('success');
-          setTimeout(function() { updateTrayStatus('ready'); }, 2000);
-        }).catch(function(error) {
+          setTimeout(() => { updateTrayStatus('ready'); }, 2000);
+        }).catch((error) => {
           addMessage('error', 'Failed: ' + error.message);
           updateTrayStatus('error');
-          setTimeout(function() { updateTrayStatus('ready'); }, 3000);
+          setTimeout(() => { updateTrayStatus('ready'); }, 3000);
         });
       }
 
@@ -531,8 +569,8 @@
         }
 
         // Subscribe to speech recognition events
-        speechRecognition.on('start', function() {
-          var app = appStore.get();
+        speechRecognition.on('start', () => {
+          const app = appStore.get();
           // Only clear transcript on fresh start, not on restart
           if (!app.isRecording) {
             appActions.setTranscript('');
@@ -542,17 +580,17 @@
         });
 
         // Track accumulated transcript across restarts (stored in app state scope)
-        var accumulatedTranscript = '';
+        let accumulatedTranscript = '';
 
-        speechRecognition.on('result', function(data) {
+        speechRecognition.on('result', (data) => {
           // Combine accumulated transcript with current result
-          var fullTranscript = accumulatedTranscript + data.transcript;
+          const fullTranscript = accumulatedTranscript + data.transcript;
           appActions.setTranscript(fullTranscript);
         });
 
         // When recognition ends and restarts, save the final transcript
-        speechRecognition.on('end', function(data) {
-          var app = appStore.get();
+        speechRecognition.on('end', (data) => {
+          const app = appStore.get();
           if (app.isRecording) {
             // Save current transcript before restart clears it
             accumulatedTranscript = app.transcript + ' ';
@@ -564,11 +602,11 @@
         });
 
         // Expose reset function for startRecording
-        window._resetAccumulatedTranscript = function() {
+        window._resetAccumulatedTranscript = () => {
           accumulatedTranscript = '';
         };
 
-        speechRecognition.on('error', function(data) {
+        speechRecognition.on('error', (data) => {
           console.error('Speech recognition error:', data.code);
           stopRecording();
           if (data.code !== 'aborted' && data.code !== 'no-speech') {
@@ -581,7 +619,7 @@
       }
 
       function startRecording() {
-        var app = appStore.get();
+        const app = appStore.get();
         if (!app.speechSupported || app.isRecording) return;
         appActions.setTranscript('');
         if (window._resetAccumulatedTranscript) {
@@ -597,7 +635,7 @@
       }
 
       function toggleRecording() {
-        var app = appStore.get();
+        const app = appStore.get();
         if (app.isRecording) {
           stopRecording();
         } else {
@@ -633,7 +671,7 @@
 
       function updateTrayStatus(status) {
         if (!appStore.get().isNativeApp || !window.craft) return;
-        var icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
+        const icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
         try {
           window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide');
         } catch (e) {}
@@ -667,9 +705,9 @@
       }
 
       function saveApiSettings() {
-        var anthropicInput = document.getElementById('anthropicApiKey');
-        var openaiInput = document.getElementById('openaiApiKey');
-        var claudeHostInput = document.getElementById('claudeCliHost');
+        const anthropicInput = document.getElementById('anthropicApiKey');
+        const openaiInput = document.getElementById('openaiApiKey');
+        const claudeHostInput = document.getElementById('claudeCliHost');
 
         settingsActions.setAllApiKeys({
           anthropic: anthropicInput ? anthropicInput.value.trim() || null : null,
@@ -681,13 +719,57 @@
         addMessage('system', 'API settings saved.');
       }
 
+      function connectGithub() {
+        const tokenInput = document.getElementById('githubToken');
+        const nameInput = document.getElementById('gitName');
+        const emailInput = document.getElementById('gitEmail');
+
+        const token = tokenInput ? tokenInput.value.trim() : '';
+        if (!token) {
+          addMessage('error', 'Please enter a GitHub personal access token.');
+          return;
+        }
+
+        // Validate token by fetching user info from GitHub API
+        fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': 'token ' + token,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        })
+        .then((res) => {
+          if (!res.ok) throw new Error('Invalid token');
+          return res.json();
+        })
+        .then(function(user) {
+          settingsActions.connectGithub({
+            token: token,
+            username: user.login,
+            name: nameInput ? nameInput.value.trim() || user.name : user.name,
+            email: emailInput ? emailInput.value.trim() || user.email : user.email,
+            avatarUrl: user.avatar_url
+          });
+          addMessage('system', 'Connected to GitHub as @' + user.login);
+          closeGithubModal();
+        })
+        .catch((error) => {
+          addMessage('error', 'GitHub connection failed: ' + error.message);
+        });
+      }
+
+      function disconnectGithub() {
+        settingsActions.disconnectGithub();
+        addMessage('system', 'Disconnected from GitHub.');
+        closeGithubModal();
+      }
+
       // ==========================================================================
       // Text Input Handling
       // ==========================================================================
 
       function handleTextSubmit() {
-        var chat = chatStore.get();
-        var text = chat.inputText.trim();
+        const chat = chatStore.get();
+        const text = chat.inputText.trim();
         if (text && !appStore.get().isProcessing) {
           chatActions.clearInput();
           processCommand(text);
@@ -704,6 +786,10 @@
       // ==========================================================================
 
       function init() {
+        console.log('[Voide] Initializing...');
+        console.log('[Voide] VoideStores available:', !!window.VoideStores);
+        console.log('[Voide] VoideTerminal available:', !!window.VoideTerminal);
+
         // Initialize native features
         initNativeFeatures();
 
@@ -711,7 +797,7 @@
         initSpeechRecognition();
 
         // Check URL for existing chat
-        var chatIdFromUrl = chatActions.getChatIdFromUrl();
+        const chatIdFromUrl = chatActions.getChatIdFromUrl();
         if (chatIdFromUrl) {
           if (!loadChat(chatIdFromUrl)) {
             // Chat not found, redirect to home
@@ -719,17 +805,17 @@
           }
         } else {
           // No chat in URL, load last repo path for new session
-          var settings = settingsStore.get();
+          const settings = settingsStore.get();
           if (settings.lastRepoPath) {
             appActions.setRepoPath(settings.lastRepoPath);
-            var repoInput = document.getElementById('repoInput');
+            const repoInput = document.getElementById('repoInput');
             if (repoInput) repoInput.value = settings.lastRepoPath;
           }
         }
 
         // Handle browser back/forward navigation
-        window.addEventListener('popstate', function(e) {
-          var chatId = chatActions.getChatIdFromUrl();
+        window.addEventListener('popstate', (e) => {
+          const chatId = chatActions.getChatIdFromUrl();
           if (chatId) {
             loadChat(chatId);
           } else {
@@ -739,10 +825,10 @@
         });
 
         // Setup keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', (e) => {
           if (e.code === 'Space' && !e.repeat) {
-            var active = document.activeElement;
-            var isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+            const active = document.activeElement;
+            const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
             if (!isInput) {
               e.preventDefault();
               toggleRecording();
@@ -817,6 +903,8 @@
         handleDriverChange: handleDriverChange,
         openGithubModal: openGithubModal,
         closeGithubModal: closeGithubModal,
+        connectGithub: connectGithub,
+        disconnectGithub: disconnectGithub,
         openSettingsModal: openSettingsModal,
         closeSettingsModal: closeSettingsModal,
         saveApiSettings: saveApiSettings,
@@ -829,11 +917,14 @@
       };
 
       // Initialize when DOM is ready
+      console.log('[Voide] Setting up window.voide object...');
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
       } else {
         init();
       }
+      console.log('[Voide] window.voide created with methods:', Object.keys(window.voide).join(', '));
+      } // end setupApp function
     })();
   </script>
 </body>

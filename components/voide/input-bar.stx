@@ -1,76 +1,38 @@
-<div
-  x-data="{
-    isRecording: false,
-    micIcon: '🎤',
-    statusHint: 'Click to speak',
-    charCount: '',
-    hasChanges: false,
-    isProcessing: false,
-    inputBorderClass: ''
-  }"
-  x-init="
-    const stores = window.VoideStores;
-    if (stores) {
-      stores.appStore.subscribe((state) => {
-        isRecording = state.isRecording;
-        micIcon = state.isRecording ? '🔴' : '🎤';
-        statusHint = state.isRecording ? 'Listening...' : 'Click to speak';
-        inputBorderClass = state.isRecording ? 'border-monokai-pink' : 'border-monokai-border';
-        hasChanges = state.hasChanges;
-        isProcessing = state.isProcessing;
-
-        if (state.isRecording && state.transcript && $refs.textInput) {
-          $refs.textInput.value = state.transcript;
-          $refs.textInput.style.height = 'auto';
-          $refs.textInput.style.height = Math.min($refs.textInput.scrollHeight, 120) + 'px';
-          stores.chatActions.setInputText(state.transcript);
-        }
-      });
-
-      stores.chatStore.subscribe((state) => {
-        const count = state.charCount || 0;
-        charCount = count > 0 ? count + ' chars' : '';
-      });
-    }
-  "
-  class="relative"
->
+<div class="relative">
   <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-5">
     <div class="flex items-start gap-5">
-      <!-- Voice Button (fixed width to prevent layout shift) -->
+      <!-- Voice Button -->
       <div class="flex flex-col items-center gap-2 w-20 flex-shrink-0">
         <button
-          x-ref="micButton"
-          :class="isRecording ? 'border-monokai-pink' : 'border-monokai-border'"
-          class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
+          id="micButton"
+          class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 border-monokai-border flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
           title="Click to toggle voice input (or press Space)"
-          @click="window.voide?.toggleRecording()"
+          onclick="window.voide?.toggleRecording()"
         >
-          <span x-ref="micIcon" x-text="micIcon" class="text-2xl"></span>
+          <span id="micIcon" class="text-2xl">🎤</span>
         </button>
-        <span x-ref="statusHint" x-text="statusHint" class="text-[10px] text-monokai-gray text-center w-full"></span>
+        <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full">Click to speak</span>
       </div>
 
       <!-- Input Area -->
       <div class="flex-1 flex flex-col gap-3">
         <!-- Text Input -->
         <div
-          x-ref="inputContainer"
-          :class="inputBorderClass"
-          class="flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3"
+          id="inputContainer"
+          class="flex items-end gap-3 bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3"
         >
           <textarea
-            x-ref="textInput"
+            id="textInput"
             class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[120px] leading-6 placeholder-monokai-gray"
             placeholder="Type a command or ask a question..."
-            @input="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.chatActions.setInputText(this.value);"
-            @keydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
+            oninput="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.chatActions.setInputText(this.value);"
+            onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
           ></textarea>
           <button
-            x-ref="sendBtn"
+            id="sendBtn"
             class="flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-cyan flex items-center justify-center cursor-pointer hover:bg-monokai-cyan/90 transition-colors"
             title="Send (Enter)"
-            @click="window.voide?.handleTextSubmit(); $refs.textInput.value = '';"
+            onclick="window.voide?.handleTextSubmit(); document.getElementById('textInput').value = '';"
           >
             <svg class="w-5 h-5 text-monokai-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
@@ -85,17 +47,17 @@
             <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Shift+Enter</kbd> new line</span>
             <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Space</kbd> voice</span>
           </div>
-          <span x-ref="charCountDisplay" x-text="charCount"></span>
+          <span id="charCountDisplay"></span>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="flex flex-col gap-2">
         <button
-          x-ref="commitBtn"
-          :disabled="!hasChanges || isProcessing"
+          id="commitBtn"
+          disabled
           class="px-4 py-2.5 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
-          @click="window.voide?.commitChanges()"
+          onclick="window.voide?.commitChanges()"
         >
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,10 +67,10 @@
           </div>
         </button>
         <button
-          x-ref="pushBtn"
-          :disabled="!hasChanges || isProcessing"
+          id="pushBtn"
+          disabled
           class="px-4 py-2.5 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
-          @click="window.voide?.pushChanges()"
+          onclick="window.voide?.pushChanges()"
         >
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,3 +83,74 @@
     </div>
   </div>
 </div>
+
+<script>
+(function() {
+  console.log('[Voide Input] Script initializing...');
+
+  function initInputBar() {
+    const stores = window.VoideStores;
+    if (!stores) {
+      console.error('[Voide Input] VoideStores not available!');
+      return;
+    }
+    console.log('[Voide Input] Setting up store subscriptions...');
+    setupInputBar(stores);
+  }
+
+  // Wait for stores if not immediately available
+  if (window.VoideStores) {
+    initInputBar();
+  } else {
+    const checkInterval = setInterval(function() {
+      if (window.VoideStores) {
+        clearInterval(checkInterval);
+        initInputBar();
+      }
+    }, 10);
+  }
+
+  function setupInputBar(stores) {
+
+  stores.appStore.subscribe(function(state) {
+    const micBtn = document.getElementById('micButton');
+    const micIcon = document.getElementById('micIcon');
+    const statusHint = document.getElementById('statusHint');
+    const inputContainer = document.getElementById('inputContainer');
+    const textInput = document.getElementById('textInput');
+    const commitBtn = document.getElementById('commitBtn');
+    const pushBtn = document.getElementById('pushBtn');
+
+    if (micBtn) {
+      micBtn.className = 'w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink ' +
+        (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
+    }
+    if (micIcon) micIcon.textContent = state.isRecording ? '🔴' : '🎤';
+    if (statusHint) statusHint.textContent = state.isRecording ? 'Listening...' : 'Click to speak';
+    if (inputContainer) {
+      inputContainer.className = 'flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3 ' +
+        (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
+    }
+
+    if (state.isRecording && state.transcript && textInput) {
+      textInput.value = state.transcript;
+      textInput.style.height = 'auto';
+      textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
+      stores.chatActions.setInputText(state.transcript);
+    }
+
+    const canAct = state.hasChanges && !state.isProcessing;
+    if (commitBtn) commitBtn.disabled = !canAct;
+    if (pushBtn) pushBtn.disabled = !canAct;
+  });
+
+  stores.chatStore.subscribe(function(state) {
+    const charCount = document.getElementById('charCountDisplay');
+    if (charCount) {
+      charCount.textContent = state.charCount > 0 ? state.charCount + ' chars' : '';
+    }
+  });
+
+  } // end setupInputBar
+})();
+</script>

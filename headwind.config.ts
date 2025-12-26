@@ -13,6 +13,21 @@ export default {
     'animate-blink',
     'hidden',
     'flex',
+    'block',
+    // Hover states
+    'hover:opacity-80',
+    'hover:border-monokai-pink',
+    'hover:border-monokai-gray',
+    'hover:bg-monokai-cyan/90',
+    'hover:bg-monokai-green/90',
+    'hover:text-monokai-cyan/80',
+    // Disabled states
+    'disabled:opacity-40',
+    'disabled:cursor-not-allowed',
+    // Transitions
+    'transition-all',
+    'transition-colors',
+    'transition-opacity',
   ],
   theme: {
     extend: {
