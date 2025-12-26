@@ -189,7 +189,12 @@
       var uiStore = stores.uiStore;
       var uiActions = stores.uiActions;
 
-      var recognition = null;
+      // Initialize speech recognition using the composable
+      var speechRecognition = stores.useSpeechRecognition({
+        continuous: false,
+        interimResults: true,
+        lang: 'en-US'
+      });
 
       var config = {
         title: 'Voide',
@@ -361,10 +366,18 @@
 
         // Start a new chat on first prompt if not already in a chat
         if (!chat.currentChatId) {
-          startNewChat();
+          // Create the user message first, then start chat with it included
+          // This ensures the message is saved to localStorage BEFORE the URL change
+          var userMessage = {
+            type: 'user',
+            content: command,
+            header: 'You',
+            timestamp: Date.now()
+          };
+          chatActions.startNewChat(app.repoPath, app.currentDriver, userMessage);
+        } else {
+          addMessage('user', command);
         }
-
-        addMessage('user', command);
         appActions.setTerminalTitle('Processing...');
 
         if (!app.repoPath) {
@@ -512,57 +525,43 @@
       }
 
       // ==========================================================================
-      // Speech Recognition
+      // Speech Recognition (using composable)
       // ==========================================================================
 
       function initSpeechRecognition() {
-        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
+        if (!speechRecognition.isSupported) {
           appActions.setSpeechSupported(false);
           addMessage('system', 'Speech recognition not available. Please use text input.');
           return false;
         }
 
-        recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        recognition.maxAlternatives = 1;
-
-        recognition.onstart = function() {
+        // Subscribe to speech recognition events
+        speechRecognition.on('start', function() {
           appActions.setRecording(true);
           appActions.setTranscript('');
           updateTrayStatus('recording');
-        };
+        });
 
-        recognition.onresult = function(event) {
-          var transcript = '';
-          for (var i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-          }
-          appActions.setTranscript(transcript);
-        };
+        speechRecognition.on('result', function(data) {
+          appActions.setTranscript(data.transcript);
+        });
 
-        recognition.onerror = function(event) {
-          console.error('Speech recognition error:', event.error);
+        speechRecognition.on('error', function(data) {
+          console.error('Speech recognition error:', data.code);
           stopRecording();
-          if (event.error === 'not-allowed') {
-            addMessage('error', 'Microphone access denied.');
-          } else if (event.error === 'network') {
-            addMessage('error', 'Speech recognition requires internet.');
-          } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-            addMessage('error', 'Speech error: ' + event.error);
+          if (data.code !== 'aborted' && data.code !== 'no-speech') {
+            addMessage('error', data.message);
           }
-        };
+        });
 
-        recognition.onend = function() {
+        speechRecognition.on('end', function(data) {
           var app = appStore.get();
           if (app.isRecording) {
-            var transcript = app.transcript.trim();
+            var transcript = data.transcript.trim();
             stopRecording();
             if (transcript) processCommand(transcript);
           }
-        };
+        });
 
         appActions.setSpeechSupported(true);
         return true;
@@ -572,19 +571,13 @@
         var app = appStore.get();
         if (!app.speechSupported || app.isRecording) return;
         appActions.setTranscript('');
-        try {
-          recognition.start();
-        } catch (e) {
-          addMessage('error', 'Failed to start voice recognition.');
-        }
+        speechRecognition.start();
       }
 
       function stopRecording() {
         appActions.setRecording(false);
         updateTrayStatus('ready');
-        if (recognition) {
-          try { recognition.stop(); } catch (e) {}
-        }
+        speechRecognition.stop();
       }
 
       // ==========================================================================

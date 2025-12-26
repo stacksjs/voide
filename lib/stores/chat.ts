@@ -67,18 +67,20 @@ export const chatActions = {
 
   getAllChats,
 
-  startNewChat: (repoPath: string = '', driver: string = 'claude-cli-local'): string => {
+  startNewChat: (repoPath: string = '', driver: string = 'claude-cli-local', initialMessage?: Message): string => {
     const chatId = chatActions.generateChatId()
+    const messages = initialMessage ? [initialMessage] : []
+
     chatStore.update({
       currentChatId: chatId,
-      messages: []
+      messages
     })
 
-    // Save to persistent storage
+    // Save to persistent storage (including initial message if provided)
     const chats = getAllChats()
     chats[chatId] = {
       id: chatId,
-      messages: [],
+      messages,
       repoPath,
       driver,
       createdAt: Date.now(),
@@ -86,7 +88,7 @@ export const chatActions = {
     }
     saveAllChats(chats)
 
-    // Update URL
+    // Update URL AFTER messages are saved
     history.pushState({ chatId }, '', `/chat/${chatId}`)
 
     return chatId

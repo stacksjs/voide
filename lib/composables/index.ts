@@ -114,4 +114,17 @@ export {
   isCharging,
   hasBattery,
   type BatteryState,
+  // Speech Recognition
+  useSpeechRecognition,
+  isSpeechRecognitionSupported,
+  type SpeechRecognitionState,
+  type SpeechRecognitionOptions,
+  // Speech Synthesis
+  useSpeechSynthesis,
+  isSpeechSynthesisSupported,
+  speak,
+  stopSpeaking,
+  getVoices,
+  type SpeechSynthesisState,
+  type SpeechSynthesisOptions,
 } from './use-browser'

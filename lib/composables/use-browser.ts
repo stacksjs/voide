@@ -1264,3 +1264,273 @@ export async function isCharging(): Promise<boolean | null> {
 export function hasBattery(): boolean {
   return typeof navigator !== 'undefined' && 'getBattery' in navigator
 }
+
+// ============================================================================
+// Speech Recognition
+// ============================================================================
+
+export interface SpeechRecognitionState {
+  isListening: boolean
+  transcript: string
+  finalTranscript: string
+  interimTranscript: string
+  confidence: number
+  isSupported: boolean
+  error: string | null
+}
+
+export interface SpeechRecognitionOptions {
+  continuous?: boolean
+  interimResults?: boolean
+  lang?: string
+  maxAlternatives?: number
+}
+
+function getSpeechRecognition(): any {
+  if (typeof window === 'undefined') return null
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null
+}
+
+export function isSpeechRecognitionSupported(): boolean {
+  return getSpeechRecognition() !== null
+}
+
+export function useSpeechRecognition(options: SpeechRecognitionOptions = {}) {
+  const SpeechRecognitionClass = getSpeechRecognition()
+  const supported = SpeechRecognitionClass !== null
+
+  let state: SpeechRecognitionState = {
+    isListening: false,
+    transcript: '',
+    finalTranscript: '',
+    interimTranscript: '',
+    confidence: 0,
+    isSupported: supported,
+    error: null,
+  }
+
+  const subscribers = new Set<(state: SpeechRecognitionState) => void>()
+  const eventListeners: Record<string, Set<(data?: any) => void>> = {
+    result: new Set(),
+    error: new Set(),
+    start: new Set(),
+    end: new Set(),
+  }
+  let recognition: any = null
+
+  const notify = () => subscribers.forEach(fn => fn(state))
+  const emitEvent = (event: string, data?: any) => eventListeners[event]?.forEach(fn => fn(data))
+
+  if (supported && SpeechRecognitionClass) {
+    recognition = new SpeechRecognitionClass()
+    recognition.continuous = options.continuous ?? false
+    recognition.interimResults = options.interimResults ?? true
+    recognition.lang = options.lang ?? 'en-US'
+    recognition.maxAlternatives = options.maxAlternatives ?? 1
+
+    recognition.onstart = () => {
+      state = { ...state, isListening: true, error: null }
+      notify()
+      emitEvent('start')
+    }
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = ''
+      let interimTranscript = ''
+      let confidence = 0
+
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i]
+        const transcript = result[0].transcript
+        confidence = Math.max(confidence, result[0].confidence || 0)
+
+        if (result.isFinal) {
+          finalTranscript += transcript
+        } else {
+          interimTranscript += transcript
+        }
+      }
+
+      state = {
+        ...state,
+        finalTranscript: state.finalTranscript + finalTranscript,
+        interimTranscript,
+        transcript: state.finalTranscript + finalTranscript + interimTranscript,
+        confidence,
+      }
+
+      notify()
+      emitEvent('result', { transcript: state.transcript, isFinal: finalTranscript.length > 0 })
+    }
+
+    recognition.onerror = (event: any) => {
+      const errorMessages: Record<string, string> = {
+        'no-speech': 'No speech detected',
+        'audio-capture': 'No microphone found',
+        'not-allowed': 'Microphone permission denied',
+        'network': 'Network error - requires internet',
+        'aborted': 'Recognition aborted',
+      }
+      state = { ...state, error: errorMessages[event.error] || event.error, isListening: false }
+      notify()
+      emitEvent('error', { code: event.error, message: state.error })
+    }
+
+    recognition.onend = () => {
+      state = { ...state, isListening: false }
+      notify()
+      emitEvent('end', { transcript: state.transcript })
+    }
+  }
+
+  const start = () => {
+    if (!supported || !recognition || state.isListening) return
+    state = { ...state, transcript: '', finalTranscript: '', interimTranscript: '', confidence: 0, error: null }
+    try { recognition.start() } catch { state = { ...state, error: 'Failed to start' }; notify() }
+  }
+
+  const stop = () => {
+    if (!recognition || !state.isListening) return
+    try { recognition.stop() } catch {}
+  }
+
+  const abort = () => {
+    if (!recognition) return
+    try { recognition.abort() } catch {}
+    state = { ...state, isListening: false }
+    notify()
+  }
+
+  return {
+    get isListening() { return state.isListening },
+    get transcript() { return state.transcript },
+    get isSupported() { return supported },
+    get error() { return state.error },
+    start,
+    stop,
+    abort,
+    toggle: () => state.isListening ? stop() : start(),
+    subscribe: (fn: (s: SpeechRecognitionState) => void) => {
+      subscribers.add(fn)
+      fn(state)
+      return () => subscribers.delete(fn)
+    },
+    on: (event: string, callback: (data?: any) => void) => {
+      eventListeners[event]?.add(callback)
+      return () => eventListeners[event]?.delete(callback)
+    },
+  }
+}
+
+// ============================================================================
+// Speech Synthesis
+// ============================================================================
+
+export interface SpeechSynthesisState {
+  isSpeaking: boolean
+  isPaused: boolean
+  isSupported: boolean
+  voices: SpeechSynthesisVoice[]
+}
+
+export interface SpeechSynthesisOptions {
+  voice?: string | number
+  rate?: number
+  pitch?: number
+  volume?: number
+  lang?: string
+}
+
+export function isSpeechSynthesisSupported(): boolean {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window
+}
+
+export function useSpeechSynthesis(defaultOptions: SpeechSynthesisOptions = {}) {
+  const supported = isSpeechSynthesisSupported()
+
+  let state: SpeechSynthesisState = {
+    isSpeaking: false,
+    isPaused: false,
+    isSupported: supported,
+    voices: [],
+  }
+
+  const subscribers = new Set<(state: SpeechSynthesisState) => void>()
+  const notify = () => subscribers.forEach(fn => fn(state))
+
+  const loadVoices = () => {
+    if (!supported) return
+    state = { ...state, voices: window.speechSynthesis.getVoices() }
+    notify()
+  }
+
+  if (supported) {
+    loadVoices()
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices
+    }
+  }
+
+  const findVoice = (v: string | number | undefined): SpeechSynthesisVoice | null => {
+    if (v === undefined) return null
+    if (typeof v === 'number') return state.voices[v] || null
+    return state.voices.find(voice => voice.name.toLowerCase().includes((v as string).toLowerCase())) || null
+  }
+
+  const speak = (text: string, options: SpeechSynthesisOptions = {}) => {
+    if (!supported || !text.trim()) return
+    window.speechSynthesis.cancel()
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    const opts = { ...defaultOptions, ...options }
+
+    utterance.rate = opts.rate ?? 1
+    utterance.pitch = opts.pitch ?? 1
+    utterance.volume = opts.volume ?? 1
+    if (opts.lang) utterance.lang = opts.lang
+
+    const voice = findVoice(opts.voice)
+    if (voice) utterance.voice = voice
+
+    utterance.onstart = () => { state = { ...state, isSpeaking: true, isPaused: false }; notify() }
+    utterance.onend = () => { state = { ...state, isSpeaking: false, isPaused: false }; notify() }
+    utterance.onpause = () => { state = { ...state, isPaused: true }; notify() }
+    utterance.onresume = () => { state = { ...state, isPaused: false }; notify() }
+
+    window.speechSynthesis.speak(utterance)
+  }
+
+  const stop = () => { if (supported) { window.speechSynthesis.cancel(); state = { ...state, isSpeaking: false, isPaused: false }; notify() } }
+  const pause = () => { if (supported && state.isSpeaking) window.speechSynthesis.pause() }
+  const resume = () => { if (supported && state.isPaused) window.speechSynthesis.resume() }
+
+  return {
+    get isSpeaking() { return state.isSpeaking },
+    get isPaused() { return state.isPaused },
+    get isSupported() { return supported },
+    get voices() { return state.voices },
+    speak,
+    stop,
+    pause,
+    resume,
+    toggle: () => state.isPaused ? resume() : (state.isSpeaking ? pause() : null),
+    subscribe: (fn: (s: SpeechSynthesisState) => void) => {
+      subscribers.add(fn)
+      fn(state)
+      return () => subscribers.delete(fn)
+    },
+  }
+}
+
+export function speak(text: string, options?: SpeechSynthesisOptions): void {
+  useSpeechSynthesis(options).speak(text)
+}
+
+export function stopSpeaking(): void {
+  if (isSpeechSynthesisSupported()) window.speechSynthesis.cancel()
+}
+
+export function getVoices(): SpeechSynthesisVoice[] {
+  if (!isSpeechSynthesisSupported()) return []
+  return window.speechSynthesis.getVoices()
+}
