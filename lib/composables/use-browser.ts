@@ -1474,6 +1474,7 @@ export function useSpeechSynthesis(defaultOptions: SpeechSynthesisOptions = {}) 
   const findVoice = (v: string | number | undefined): SpeechSynthesisVoice | null => {
     if (v === undefined) return null
     if (typeof v === 'number') return state.voices[v] || null
+    // @ts-expect-error - voice.name is the standard property, TS deprecation is overly aggressive
     return state.voices.find(voice => voice.name.toLowerCase().includes((v as string).toLowerCase())) || null
   }
 

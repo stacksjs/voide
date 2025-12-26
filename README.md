@@ -55,7 +55,10 @@ Browser API utilities available via `VoideStores`:
 | Permissions | `usePermission`, `usePermissions` |
 | Device | `useBattery`, `useDeviceOrientation`, `useDeviceMotion` |
 | Speech | `useSpeechRecognition`, `useSpeechSynthesis` |
-| Communication | `useWebSocket`, `useBroadcastChannel` |
+| Communication | `useWebSocket`, `useBroadcastChannel`, `useEventSource` |
+| Idle | `useIdle`, `useIdleState`, `useAutoLogout` |
+| Selection | `useTextSelection`, `useCopySelection` |
+| Screen | `useWakeLock`, `useEyeDropper` |
 
 ### Components
 

@@ -227,12 +227,7 @@
           if (chat) {
             appActions.setRepoPath(chat.repoPath || '');
             appActions.setDriver(chat.driver || 'claude-cli-local');
-
-            // Update repo input if it exists
-            var repoInput = document.getElementById('repoInput');
-            if (repoInput && chat.repoPath) {
-              repoInput.value = chat.repoPath;
-            }
+            // Store will update the input via x-model binding
           }
         }
         return success;
@@ -537,28 +532,47 @@
 
         // Subscribe to speech recognition events
         speechRecognition.on('start', function() {
+          var app = appStore.get();
+          // Only clear transcript on fresh start, not on restart
+          if (!app.isRecording) {
+            appActions.setTranscript('');
+          }
           appActions.setRecording(true);
-          appActions.setTranscript('');
           updateTrayStatus('recording');
         });
 
+        // Track accumulated transcript across restarts (stored in app state scope)
+        var accumulatedTranscript = '';
+
         speechRecognition.on('result', function(data) {
-          appActions.setTranscript(data.transcript);
+          // Combine accumulated transcript with current result
+          var fullTranscript = accumulatedTranscript + data.transcript;
+          appActions.setTranscript(fullTranscript);
         });
+
+        // When recognition ends and restarts, save the final transcript
+        speechRecognition.on('end', function(data) {
+          var app = appStore.get();
+          if (app.isRecording) {
+            // Save current transcript before restart clears it
+            accumulatedTranscript = app.transcript + ' ';
+            speechRecognition.start();
+          } else {
+            // User stopped - reset accumulated
+            accumulatedTranscript = '';
+          }
+        });
+
+        // Expose reset function for startRecording
+        window._resetAccumulatedTranscript = function() {
+          accumulatedTranscript = '';
+        };
 
         speechRecognition.on('error', function(data) {
           console.error('Speech recognition error:', data.code);
           stopRecording();
           if (data.code !== 'aborted' && data.code !== 'no-speech') {
             addMessage('error', data.message);
-          }
-        });
-
-        speechRecognition.on('end', function(data) {
-          var app = appStore.get();
-          if (app.isRecording) {
-            // Just stop recording - transcript stays in textarea for user to review/send
-            stopRecording();
           }
         });
 
@@ -570,6 +584,9 @@
         var app = appStore.get();
         if (!app.speechSupported || app.isRecording) return;
         appActions.setTranscript('');
+        if (window._resetAccumulatedTranscript) {
+          window._resetAccumulatedTranscript();
+        }
         speechRecognition.start();
       }
 
