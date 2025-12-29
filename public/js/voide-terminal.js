@@ -1,0 +1,112 @@
+/**
+ * Voide Terminal - Message Renderer
+ */
+(() => {
+  const typeConfig = {
+    user: { bgClass: 'bg-monokai-cyan/10', borderClass: 'border-monokai-cyan/25', iconBg: 'bg-monokai-cyan', icon: '👤' },
+    assistant: { bgClass: 'bg-monokai-green/10', borderClass: 'border-monokai-green/25', iconBg: 'bg-monokai-green', icon: '🤖' },
+    system: { bgClass: 'bg-monokai-yellow/10', borderClass: 'border-monokai-yellow/25', iconBg: 'bg-monokai-yellow', icon: '⚡' },
+    error: { bgClass: 'bg-monokai-pink/10', borderClass: 'border-monokai-pink/25', iconBg: 'bg-monokai-pink', icon: '⚠️' }
+  };
+
+  let renderedCount = 0;
+  const messageElements = new Map();
+  const messageUpdates = new Map();
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function renderMarkdown(text) {
+    if (!text) return '';
+    let html = escapeHtml(text);
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) =>
+      `<pre class="bg-monokai-bg border border-monokai-border/40 rounded-lg p-3 my-2 overflow-x-auto"><code class="text-monokai-green text-xs">${code.trim()}</code></pre>`
+    );
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-monokai-bg text-monokai-cyan px-1.5 py-0.5 rounded text-xs">$1</code>');
+    html = html.replace(/^### (.+)$/gm, '<h3 class="text-monokai-fg text-base font-semibold my-4 mb-2">$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2 class="text-monokai-fg text-lg font-semibold my-4 mb-2">$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1 class="text-monokai-fg text-xl font-bold my-4 mb-2">$1</h1>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-monokai-fg font-semibold">$1</strong>');
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-monokai-cyan underline hover:text-monokai-cyan/80">$1</a>');
+    html = html.replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-monokai-fg/80">$1</li>');
+    html = html.replace(/^---$/gm, '<hr class="border-monokai-border/40 my-4">');
+    return html;
+  }
+
+  function createMessageHtml(msg, config) {
+    const headerText = escapeHtml(msg.header || (msg.type === 'user' ? 'You' : msg.type === 'assistant' ? 'AI' : 'System'));
+    if (msg.content === '...') {
+      return `<div class="p-4 ${config.bgClass} border ${config.borderClass} rounded-xl">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center"><span class="text-sm">${config.icon}</span></div>
+          <span class="text-xs font-semibold text-monokai-fg/50 uppercase tracking-wider">${headerText}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="animate-bounce w-2 h-2 bg-monokai-purple rounded-full"></div>
+          <div class="animate-bounce w-2 h-2 bg-monokai-purple rounded-full" style="animation-delay:150ms"></div>
+          <div class="animate-bounce w-2 h-2 bg-monokai-purple rounded-full" style="animation-delay:300ms"></div>
+        </div>
+      </div>`;
+    }
+    return `<div class="p-4 ${config.bgClass} border ${config.borderClass} rounded-xl">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center"><span class="text-sm">${config.icon}</span></div>
+        <span class="text-xs font-semibold text-monokai-fg/50 uppercase tracking-wider">${headerText}</span>
+      </div>
+      <div class="text-sm text-monokai-fg/80 leading-relaxed whitespace-pre-wrap">${renderMarkdown(msg.content)}</div>
+    </div>`;
+  }
+
+  function renderMessages(messages) {
+    const output = document.getElementById('output');
+    if (!output) return;
+
+    const messageArray = messages || [];
+
+    // Update existing messages that changed
+    for (let i = 0; i < messageArray.length; i++) {
+      const msg = messageArray[i];
+      if (!msg) continue;
+      const existingEl = messageElements.get(i);
+      const lastUpdate = messageUpdates.get(i);
+      if (existingEl && msg.updated && msg.updated !== lastUpdate) {
+        const config = typeConfig[msg.type] || typeConfig.system;
+        existingEl.innerHTML = createMessageHtml(msg, config);
+        messageUpdates.set(i, msg.updated);
+      }
+    }
+
+    // Render new messages
+    while (renderedCount < messageArray.length) {
+      const idx = renderedCount;
+      const msg = messageArray[idx];
+      if (!msg) break;
+      const config = typeConfig[msg.type] || typeConfig.system;
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'animate-fade-in';
+      messageDiv.innerHTML = createMessageHtml(msg, config);
+      output.appendChild(messageDiv);
+      messageElements.set(idx, messageDiv);
+      messageUpdates.set(idx, msg.updated || 0);
+      renderedCount++;
+    }
+  }
+
+  // Expose for external access
+  window.VoideTerminal = { renderMessages };
+
+  // Subscribe to chat store for messages
+  function init() {
+    const stores = window.VoideStores;
+    if (!stores) {
+      setTimeout(init, 10);
+      return;
+    }
+    console.log('[VoideTerminal] Initialized, subscribing to chat store');
+    stores.chatStore.subscribe(state => renderMessages(state.messages));
+  }
+  init();
+})();

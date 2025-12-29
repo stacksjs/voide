@@ -102,6 +102,11 @@
     }
   </script>
 
+  <!-- Voide Terminal (message renderer) -->
+  <script>
+    document.write('<scr' + 'ipt src="/js/voide-terminal.js"></scr' + 'ipt>');
+  </script>
+
 </head>
 <body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
   <!-- Floating orbs -->
