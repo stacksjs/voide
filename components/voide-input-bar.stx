@@ -5,13 +5,14 @@
       <div class="flex flex-col items-center gap-2 w-20 flex-shrink-0">
         <button
           id="micButton"
-          class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 border-monokai-border flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
+          class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
+          :class="$appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border'"
           title="Click to toggle voice input (or press Space)"
           onclick="window.voide?.toggleRecording()"
         >
-          <span id="micIcon" class="text-2xl">🎤</span>
+          <span id="micIcon" class="text-2xl" :text="$appStore.isRecording ? '🔴' : '🎤'">🎤</span>
         </button>
-        <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full">Click to speak</span>
+        <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full" :text="$appStore.isRecording ? 'Listening...' : 'Click to speak'">Click to speak</span>
       </div>
 
       <!-- Input Area -->
@@ -19,7 +20,8 @@
         <!-- Text Input -->
         <div
           id="inputContainer"
-          class="flex items-end gap-3 bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3"
+          class="flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3"
+          :class="$appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border'"
         >
           <textarea
             id="textInput"
@@ -29,7 +31,6 @@
             onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
           ></textarea>
           <button
-            id="sendBtn"
             class="flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-cyan flex items-center justify-center cursor-pointer hover:bg-monokai-cyan/90 transition-colors"
             title="Send (Enter)"
             onclick="window.voide?.handleTextSubmit(); document.getElementById('textInput').value = '';"
@@ -47,7 +48,7 @@
             <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Shift+Enter</kbd> new line</span>
             <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Space</kbd> voice</span>
           </div>
-          <span id="charCountDisplay"></span>
+          <span id="charCountDisplay" :text="$chatStore.charCount > 0 ? $chatStore.charCount + ' chars' : ''"></span>
         </div>
       </div>
 
@@ -55,8 +56,8 @@
       <div class="flex flex-col gap-2">
         <button
           id="commitBtn"
-          disabled
           class="px-4 py-2.5 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
+          :disabled="!($appStore.hasChanges && !$appStore.isProcessing)"
           onclick="window.voide?.commitChanges()"
         >
           <div class="flex items-center gap-2">
@@ -68,8 +69,8 @@
         </button>
         <button
           id="pushBtn"
-          disabled
           class="px-4 py-2.5 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
+          :disabled="!($appStore.hasChanges && !$appStore.isProcessing)"
           onclick="window.voide?.pushChanges()"
         >
           <div class="flex items-center gap-2">
@@ -83,74 +84,3 @@
     </div>
   </div>
 </div>
-
-<script>
-(function() {
-  console.log('[Voide Input] Script initializing...');
-
-  function initInputBar() {
-    const stores = window.VoideStores;
-    if (!stores) {
-      console.error('[Voide Input] VoideStores not available!');
-      return;
-    }
-    console.log('[Voide Input] Setting up store subscriptions...');
-    setupInputBar(stores);
-  }
-
-  // Wait for stores if not immediately available
-  if (window.VoideStores) {
-    initInputBar();
-  } else {
-    const checkInterval = setInterval(() => {
-      if (window.VoideStores) {
-        clearInterval(checkInterval);
-        initInputBar();
-      }
-    }, 10);
-  }
-
-  function setupInputBar(stores) {
-
-  stores.appStore.subscribe((state) => {
-    const micBtn = document.getElementById('micButton');
-    const micIcon = document.getElementById('micIcon');
-    const statusHint = document.getElementById('statusHint');
-    const inputContainer = document.getElementById('inputContainer');
-    const textInput = document.getElementById('textInput');
-    const commitBtn = document.getElementById('commitBtn');
-    const pushBtn = document.getElementById('pushBtn');
-
-    if (micBtn) {
-      micBtn.className = 'w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink ' +
-        (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
-    }
-    if (micIcon) micIcon.textContent = state.isRecording ? '🔴' : '🎤';
-    if (statusHint) statusHint.textContent = state.isRecording ? 'Listening...' : 'Click to speak';
-    if (inputContainer) {
-      inputContainer.className = 'flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3 ' +
-        (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
-    }
-
-    if (state.isRecording && state.transcript && textInput) {
-      textInput.value = state.transcript;
-      textInput.style.height = 'auto';
-      textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
-      stores.chatActions.setInputText(state.transcript);
-    }
-
-    const canAct = state.hasChanges && !state.isProcessing;
-    if (commitBtn) commitBtn.disabled = !canAct;
-    if (pushBtn) pushBtn.disabled = !canAct;
-  });
-
-  stores.chatStore.subscribe((state) => {
-    const charCount = document.getElementById('charCountDisplay');
-    if (charCount) {
-      charCount.textContent = state.charCount > 0 ? state.charCount + ' chars' : '';
-    }
-  });
-
-  } // end setupInputBar
-})();
-</script>
