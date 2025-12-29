@@ -26,7 +26,8 @@
           <textarea
             id="textInput"
             class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[120px] leading-6 placeholder-monokai-gray"
-            placeholder="Type a command or ask a question..."
+            :placeholder="$appStore.isRecording ? 'Listening... speak now' : 'Type a command or ask a question...'"
+            :value="$appStore.isRecording ? $appStore.transcript : $chatStore.inputText"
             oninput="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.chatActions.setInputText(this.value);"
             onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
           ></textarea>
@@ -84,3 +85,65 @@
     </div>
   </div>
 </div>
+
+<script client>
+(() => {
+  function init() {
+    const stores = window.VoideStores;
+    if (!stores) {
+      setTimeout(init, 10);
+      return;
+    }
+
+    console.log('[VoideInputBar] Initialized');
+
+    // Update UI based on app state
+    stores.appStore.subscribe((state) => {
+      const micBtn = document.getElementById('micButton');
+      const micIcon = document.getElementById('micIcon');
+      const statusHint = document.getElementById('statusHint');
+      const inputContainer = document.getElementById('inputContainer');
+      const textInput = document.getElementById('textInput');
+      const commitBtn = document.getElementById('commitBtn');
+      const pushBtn = document.getElementById('pushBtn');
+
+      // Mic button state
+      if (micBtn) {
+        micBtn.className = 'w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink ' +
+          (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
+      }
+      if (micIcon) micIcon.textContent = state.isRecording ? '🔴' : '🎤';
+      if (statusHint) statusHint.textContent = state.isRecording ? 'Listening...' : 'Click to speak';
+
+      // Input container state
+      if (inputContainer) {
+        inputContainer.className = 'flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3 ' +
+          (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
+      }
+
+      // Update text input with transcript while recording
+      if (state.isRecording && state.transcript && textInput) {
+        textInput.value = state.transcript;
+        textInput.style.height = 'auto';
+        textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
+        stores.chatActions.setInputText(state.transcript);
+      }
+
+      // Commit/Push button states
+      const canAct = state.hasChanges && !state.isProcessing;
+      if (commitBtn) commitBtn.disabled = !canAct;
+      if (pushBtn) pushBtn.disabled = !canAct;
+    });
+
+    // Update character count
+    stores.chatStore.subscribe((state) => {
+      const charCount = document.getElementById('charCountDisplay');
+      if (charCount) {
+        charCount.textContent = state.charCount > 0 ? state.charCount + ' chars' : '';
+      }
+    });
+  }
+
+  init();
+})();
+</script>

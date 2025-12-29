@@ -82,3 +82,40 @@
     </div>
   </div>
 </header>
+
+<script client>
+(() => {
+  function init() {
+    const stores = window.VoideStores;
+    if (!stores) {
+      setTimeout(init, 10);
+      return;
+    }
+
+    console.log('[VoideHeader] Initialized');
+
+    // Update GitHub username display
+    stores.settingsStore.subscribe((state) => {
+      const el = document.getElementById('githubUsername');
+      if (el) {
+        el.textContent = (state.github.connected && state.github.username)
+          ? '@' + state.github.username
+          : 'Connect';
+      }
+    });
+
+    // Update app title
+    stores.appStore.subscribe((state) => {
+      const el = document.getElementById('appTitle');
+      if (el && state.terminalTitle) {
+        const title = state.terminalTitle.replace('Voide - ', '');
+        if (title !== 'Voide') {
+          el.textContent = title;
+        }
+      }
+    });
+  }
+
+  init();
+})();
+</script>

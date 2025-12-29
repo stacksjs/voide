@@ -195,3 +195,58 @@
   </div>
 </div>
 
+<script client>
+(() => {
+  function init() {
+    const stores = window.VoideStores;
+    if (!stores) {
+      setTimeout(init, 10);
+      return;
+    }
+
+    console.log('[VoideModals] Initialized');
+
+    // Update modal visibility based on UI state
+    stores.uiStore.subscribe((state) => {
+      const githubModal = document.getElementById('githubModal');
+      const settingsModal = document.getElementById('settingsModal');
+
+      if (githubModal) {
+        githubModal.style.display = state.modals.github ? 'flex' : 'none';
+      }
+      if (settingsModal) {
+        settingsModal.style.display = state.modals.settings ? 'flex' : 'none';
+      }
+    });
+
+    // Pre-fill settings form with current values
+    stores.settingsStore.subscribe((state) => {
+      const anthropicInput = document.getElementById('anthropicApiKey');
+      const openaiInput = document.getElementById('openaiApiKey');
+      const claudeHostInput = document.getElementById('claudeCliHost');
+      const githubTokenInput = document.getElementById('githubToken');
+      const gitNameInput = document.getElementById('gitName');
+      const gitEmailInput = document.getElementById('gitEmail');
+
+      if (anthropicInput && state.apiKeys.anthropic) {
+        anthropicInput.value = state.apiKeys.anthropic;
+      }
+      if (openaiInput && state.apiKeys.openai) {
+        openaiInput.value = state.apiKeys.openai;
+      }
+      if (claudeHostInput && state.apiKeys.claudeCliHost) {
+        claudeHostInput.value = state.apiKeys.claudeCliHost;
+      }
+      if (gitNameInput && state.github.name) {
+        gitNameInput.value = state.github.name;
+      }
+      if (gitEmailInput && state.github.email) {
+        gitEmailInput.value = state.github.email;
+      }
+    });
+  }
+
+  init();
+})();
+</script>
+

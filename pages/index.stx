@@ -102,10 +102,6 @@
     }
   </script>
 
-  <!-- Voide Terminal (message renderer) -->
-  <script>
-    document.write('<scr' + 'ipt src="/js/voide-terminal.js"></scr' + 'ipt>');
-  </script>
 
 </head>
 <body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
@@ -339,7 +335,7 @@
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            const buffer = '';
+            let buffer = '';
 
             function readChunk() {
               reader.read().then(function(result) {
@@ -352,7 +348,7 @@
                 const lines = buffer.split('\n');
                 buffer = lines.pop() || '';
 
-                for (const i = 0; i < lines.length; i++) {
+                for (let i = 0; i < lines.length; i++) {
                   const line = lines[i].trim();
                   if (!line) continue;
 
@@ -569,6 +565,7 @@
 
         // Subscribe to speech recognition events
         speechRecognition.on('start', () => {
+          console.log('[Voide] Speech recognition started');
           const app = appStore.get();
           // Only clear transcript on fresh start, not on restart
           if (!app.isRecording) {
@@ -584,6 +581,7 @@
         speechRecognition.on('result', (data) => {
           // Combine accumulated transcript with current result
           const fullTranscript = accumulatedTranscript + data.transcript;
+          console.log('[Voide] Speech result:', data.transcript, 'Full:', fullTranscript);
           appActions.setTranscript(fullTranscript);
         });
 
@@ -628,6 +626,16 @@
       }
 
       function stopRecording() {
+        const app = appStore.get();
+        // Transfer transcript to chat input before stopping
+        if (app.transcript && app.transcript.trim()) {
+          chatActions.setInputText(app.transcript.trim());
+          // Keep the transcript in the textarea
+          const textInput = document.getElementById('textInput');
+          if (textInput) {
+            textInput.value = app.transcript.trim();
+          }
+        }
         appActions.setRecording(false);
         updateTrayStatus('ready');
         speechRecognition.stop();
@@ -794,6 +802,17 @@
 
         // Initialize speech recognition
         initSpeechRecognition();
+
+        // Subscribe to transcript changes to update the textarea
+        appStore.subscribe((state) => {
+          const textInput = document.getElementById('textInput');
+          if (textInput && state.isRecording) {
+            textInput.value = state.transcript;
+            // Auto-resize textarea
+            textInput.style.height = 'auto';
+            textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
+          }
+        });
 
         // Check URL for existing chat
         const chatIdFromUrl = chatActions.getChatIdFromUrl();
