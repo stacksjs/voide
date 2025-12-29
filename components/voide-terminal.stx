@@ -95,7 +95,7 @@
 
   function renderMarkdown(text) {
     if (!text) return '';
-    const html = escapeHtml(text);
+    let html = escapeHtml(text);
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
       return '<pre class="bg-monokai-bg border border-monokai-border/40 rounded-lg p-3 my-2 overflow-x-auto"><code class="text-monokai-green text-xs">' + code.trim() + '</code></pre>';
     });
@@ -142,7 +142,7 @@
     const messageArray = messages || [];
     console.log('[Voide Terminal] Rendering', messageArray.length, 'messages');
 
-    for (const i = 0; i < messageArray.length; i++) {
+    for (let i = 0; i < messageArray.length; i++) {
       const msg = messageArray[i];
       if (!msg) continue;
       const existingEl = messageElements.get(i);

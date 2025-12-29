@@ -102,7 +102,7 @@
   if (window.VoideStores) {
     initInputBar();
   } else {
-    const checkInterval = setInterval(function() {
+    const checkInterval = setInterval(() => {
       if (window.VoideStores) {
         clearInterval(checkInterval);
         initInputBar();
@@ -112,7 +112,7 @@
 
   function setupInputBar(stores) {
 
-  stores.appStore.subscribe(function(state) {
+  stores.appStore.subscribe((state) => {
     const micBtn = document.getElementById('micButton');
     const micIcon = document.getElementById('micIcon');
     const statusHint = document.getElementById('statusHint');
@@ -144,7 +144,7 @@
     if (pushBtn) pushBtn.disabled = !canAct;
   });
 
-  stores.chatStore.subscribe(function(state) {
+  stores.chatStore.subscribe((state) => {
     const charCount = document.getElementById('charCountDisplay');
     if (charCount) {
       charCount.textContent = state.charCount > 0 ? state.charCount + ' chars' : '';

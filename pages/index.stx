@@ -109,28 +109,22 @@
   <div class="orb orb-2"></div>
 
   <!-- Header -->
-  @include('../components/voide/header')
+  <voide-header />
 
   <!-- Main Content -->
   <main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
     <!-- Terminal -->
-    @include('../components/voide/terminal')
+    <voide-terminal />
 
     <!-- Input Bar -->
-    @include('../components/voide/input-bar')
+    <voide-input-bar />
   </main>
 
   <!-- Footer -->
-  <footer style="position:relative;padding:12px 24px;text-align:center;font-size:12px;color:#727072;border-top:1px solid #403e41">
-    <span style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:500">Voide</span>
-    <span style="margin:0 8px">·</span>
-    <span>v1.0.0</span>
-    <span style="margin:0 8px">·</span>
-    <span>Voice AI Code Assistant</span>
-  </footer>
+  <voide-footer />
 
   <!-- Modals -->
-  @include('../components/voide/modals')
+  <voide-modals />
 
   <!-- Craft Native Bridge -->
   <script>

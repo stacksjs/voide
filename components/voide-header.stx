@@ -85,13 +85,13 @@
 </header>
 
 <script>
-(function() {
+(() => {
   function initHeader() {
-    var stores = window.VoideStores;
+    const stores = window.VoideStores;
     if (!stores) return;
 
-    stores.settingsStore.subscribe(function(state) {
-      var el = document.getElementById('githubUsername');
+    stores.settingsStore.subscribe((state) => {
+      const el = document.getElementById('githubUsername');
       if (el) {
         el.textContent = (state.github.connected && state.github.username)
           ? '@' + state.github.username
@@ -104,7 +104,7 @@
   if (window.VoideStores) {
     initHeader();
   } else {
-    var checkInterval = setInterval(function() {
+    const checkInterval = setInterval(() => {
       if (window.VoideStores) {
         clearInterval(checkInterval);
         initHeader();

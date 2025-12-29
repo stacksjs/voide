@@ -1,0 +1,7 @@
+<footer class="relative py-3 px-6 text-center text-xs border-t border-monokai-border" style="color:#727072">
+  <span class="font-medium" style="background:linear-gradient(to right,#ab9df2,#78dce8);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Voide</span>
+  <span class="mx-2">·</span>
+  <span id="footerVersion">v1.0.0</span>
+  <span class="mx-2">·</span>
+  <span>Voice AI Code Assistant</span>
+</footer>
