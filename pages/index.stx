@@ -109,22 +109,22 @@
   <div class="orb orb-2"></div>
 
   <!-- Header -->
-  <VoideHeader />
+  @include('../partials/voide-header')
 
   <!-- Main Content -->
   <main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
     <!-- Terminal -->
-    <VoideTerminal />
+    @include('../partials/voide-terminal')
 
     <!-- Input Bar -->
-    <VoideInputBar />
+    @include('../partials/voide-input-bar')
   </main>
 
   <!-- Footer -->
-  <VoideFooter />
+  @include('../partials/voide-footer')
 
   <!-- Modals -->
-  <VoideModals />
+  @include('../partials/voide-modals')
 
   <!-- Craft Native Bridge -->
   <script>
