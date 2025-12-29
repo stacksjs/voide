@@ -617,7 +617,16 @@
 
       function startRecording() {
         const app = appStore.get();
-        if (!app.speechSupported || app.isRecording) return;
+        if (!app.speechSupported) {
+          console.error('[Voide] Speech not supported');
+          addMessage('error', 'Speech recognition is not supported in this browser.');
+          return;
+        }
+        if (app.isRecording) {
+          console.log('[Voide] Already recording');
+          return;
+        }
+        console.log('[Voide] Starting recording...');
         appActions.setTranscript('');
         if (window._resetAccumulatedTranscript) {
           window._resetAccumulatedTranscript();
@@ -626,15 +635,19 @@
       }
 
       function stopRecording() {
+        console.log('[Voide] Stopping recording...');
         const app = appStore.get();
         // Transfer transcript to chat input before stopping
         if (app.transcript && app.transcript.trim()) {
+          console.log('[Voide] Transcript:', app.transcript);
           chatActions.setInputText(app.transcript.trim());
           // Keep the transcript in the textarea
           const textInput = document.getElementById('textInput');
           if (textInput) {
             textInput.value = app.transcript.trim();
           }
+        } else {
+          console.log('[Voide] No transcript captured');
         }
         appActions.setRecording(false);
         updateTrayStatus('ready');

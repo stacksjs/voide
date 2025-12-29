@@ -121,6 +121,13 @@
           (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
       }
 
+      // Update placeholder based on recording state
+      if (textInput) {
+        textInput.placeholder = state.isRecording
+          ? 'Listening... speak now'
+          : 'Type a command or ask a question...';
+      }
+
       // Update text input with transcript while recording
       if (state.isRecording && state.transcript && textInput) {
         textInput.value = state.transcript;
