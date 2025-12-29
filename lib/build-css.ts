@@ -15,7 +15,6 @@ const config = {
   content: [
     resolve(import.meta.dir, '../pages/**/*.stx'),
     resolve(import.meta.dir, '../components/**/*.stx'),
-    resolve(import.meta.dir, '../partials/**/*.stx'),
   ],
   output: outputPath,
   minify: false,
