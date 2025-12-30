@@ -10,7 +10,7 @@ Voice-controlled AI code assistant built with [STX](https://github.com/stacksjs/
 - GitHub account connection
 - Native desktop support via Craft
 - Reactive state management with stores
-- Single File Components (SFC) with Vue-style component syntax
+- Single File Components (SFC) with `@component` directive
 
 ## Getting Started
 
@@ -27,28 +27,32 @@ bun run dev
 
 ## Single File Components (SFC)
 
-Voide uses STX Single File Components with Vue-style syntax for a clean, modular architecture.
+Voide uses STX Single File Components for a clean, modular architecture.
 
 ### Component Structure
 
-Components live in `components/` and are used with PascalCase tags:
+Components live in `components/` and are imported with `@component`:
 
 ```html
 <!-- pages/index.stx -->
-<VoideHeader />
+@component('voide-header')
 
 <main class="flex-1 flex flex-col">
-  <VoideTerminal />
-  <VoideInputBar />
+  @component('voide-terminal')
+  @component('voide-input-bar')
 </main>
 
-<VoideFooter />
-<VoideModals />
+@component('voide-footer')
+@component('voide-modals')
 ```
 
-Component files use kebab-case naming:
-- `<VoideHeader />` → `components/voide-header.stx`
-- `<VoideInputBar />` → `components/voide-input-bar.stx`
+### Passing Props
+
+Pass data to components with the optional second parameter:
+
+```html
+@component('message', { text: 'Hello', type: 'success' })
+```
 
 ### Client Scripts
 
