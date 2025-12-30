@@ -2,7 +2,7 @@
 <div
   id="githubModal"
   class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
-  :show="$uiStore.modals.github"
+  show="{{ $uiStore.modals.github }}"
   onclick="if (event.target === this) window.voide?.closeGithubModal()"
 >
   <div class="relative w-full max-w-md m-4 animate-fade-in">
@@ -30,7 +30,7 @@
 
       <!-- Modal Body -->
       <div class="p-6">
-        <div id="githubConnectForm" class="space-y-4" :show="!$settingsStore.github.connected">
+        <div id="githubConnectForm" class="space-y-4" show="{{ !$settingsStore.github.connected }}">
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">Personal Access Token</label>
             <input
@@ -65,10 +65,10 @@
           </div>
         </div>
 
-        <div id="githubConnectedInfo" class="text-center py-6" :show="$settingsStore.github.connected">
-          <img id="connectedAvatar" :src="$settingsStore.github.avatarUrl" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20" />
-          <div id="connectedName" class="text-xl font-semibold text-white mb-1" :text="$settingsStore.github.name || $settingsStore.github.username"></div>
-          <div id="connectedUsername" class="text-slate-400 mb-3" :text="'@' + $settingsStore.github.username"></div>
+        <div id="githubConnectedInfo" class="text-center py-6" show="{{ $settingsStore.github.connected }}">
+          <img id="connectedAvatar" src="{{ $settingsStore.github.avatarUrl }}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20" />
+          <div id="connectedName" class="text-xl font-semibold text-white mb-1" text="{{ $settingsStore.github.name || $settingsStore.github.username }}"></div>
+          <div id="connectedUsername" class="text-slate-400 mb-3" text="{{ '@' + $settingsStore.github.username }}"></div>
           <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -87,13 +87,13 @@
         <button
           id="githubConnectBtn"
           class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
-          :show="!$settingsStore.github.connected"
+          show="{{ !$settingsStore.github.connected }}"
           onclick="window.voide?.connectGithub()"
         >Connect</button>
         <button
           id="githubDisconnectBtn"
           class="px-4 py-2 text-sm font-medium bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
-          :show="$settingsStore.github.connected"
+          show="{{ $settingsStore.github.connected }}"
           onclick="window.voide?.disconnectGithub()"
         >Disconnect</button>
       </div>
@@ -105,7 +105,7 @@
 <div
   id="settingsModal"
   class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
-  :show="$uiStore.modals.settings"
+  show="{{ $uiStore.modals.settings }}"
   onclick="if (event.target === this) window.voide?.closeSettingsModal()"
 >
   <div class="relative w-full max-w-md m-4 animate-fade-in">
@@ -170,12 +170,12 @@
         <!-- API Status -->
         <div class="p-4 bg-slate-800/30 border border-white/5 rounded-xl space-y-2">
           <div class="flex items-center gap-3">
-            <span id="anthropicStatus" class="w-2 h-2 rounded-full" :class="$settingsStore.apiKeys.anthropic ? 'bg-emerald-500' : 'bg-slate-600'"></span>
-            <span class="text-sm text-slate-400">Anthropic: <span id="anthropicStatusText" class="text-slate-300" :text="$settingsStore.apiKeys.anthropic ? 'Configured' : 'Not configured'">Not configured</span></span>
+            <span id="anthropicStatus" class="w-2 h-2 rounded-full {{ $settingsStore.apiKeys.anthropic ? 'bg-emerald-500' : 'bg-slate-600' }}"></span>
+            <span class="text-sm text-slate-400">Anthropic: <span id="anthropicStatusText" class="text-slate-300" text="{{ $settingsStore.apiKeys.anthropic ? 'Configured' : 'Not configured' }}">Not configured</span></span>
           </div>
           <div class="flex items-center gap-3">
-            <span id="openaiStatus" class="w-2 h-2 rounded-full" :class="$settingsStore.apiKeys.openai ? 'bg-emerald-500' : 'bg-slate-600'"></span>
-            <span class="text-sm text-slate-400">OpenAI: <span id="openaiStatusText" class="text-slate-300" :text="$settingsStore.apiKeys.openai ? 'Configured' : 'Not configured'">Not configured</span></span>
+            <span id="openaiStatus" class="w-2 h-2 rounded-full {{ $settingsStore.apiKeys.openai ? 'bg-emerald-500' : 'bg-slate-600' }}"></span>
+            <span class="text-sm text-slate-400">OpenAI: <span id="openaiStatusText" class="text-slate-300" text="{{ $settingsStore.apiKeys.openai ? 'Configured' : 'Not configured' }}">Not configured</span></span>
           </div>
         </div>
       </div>

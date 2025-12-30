@@ -10,7 +10,7 @@ Voice-controlled AI code assistant built with [STX](https://github.com/stacksjs/
 - GitHub account connection
 - Native desktop support via Craft
 - Reactive state management with stores
-- Single File Components (SFC) with Vue-style syntax
+- Single File Components (SFC) with Vue-style component syntax
 
 ## Getting Started
 
@@ -46,49 +46,9 @@ Components live in `components/` and are used with PascalCase tags:
 <VoideModals />
 ```
 
-### Reactive Bindings
-
-STX supports reactive bindings that update the DOM based on store state:
-
-```html
-<!-- :class - Dynamic classes based on store state -->
-<button :class="$appStore.isRecording ? 'border-pink-500' : 'border-gray-500'">
-  Record
-</button>
-
-<!-- :text - Dynamic text content -->
-<span :text="$appStore.isRecording ? 'Listening...' : 'Click to speak'">
-  Click to speak
-</span>
-
-<!-- :show - Conditional visibility -->
-<div :show="$uiStore.settingsModalOpen">
-  Settings content...
-</div>
-
-<!-- :disabled - Dynamic disabled state -->
-<button :disabled="!$appStore.hasChanges">
-  Commit
-</button>
-
-<!-- :value - Dynamic input values -->
-<textarea :value="$appStore.transcript"></textarea>
-```
-
-### Store References
-
-Use `$storeName.property` syntax to reference store values in bindings:
-
-```html
-<!-- Reference appStore -->
-<div :class="$appStore.isProcessing ? 'opacity-50' : ''">
-
-<!-- Reference chatStore -->
-<span :text="$chatStore.charCount + ' chars'"></span>
-
-<!-- Reference uiStore -->
-<div :show="$uiStore.githubModalOpen">
-```
+Component files use kebab-case naming:
+- `<VoideHeader />` → `components/voide-header.stx`
+- `<VoideInputBar />` → `components/voide-input-bar.stx`
 
 ### Client Scripts
 

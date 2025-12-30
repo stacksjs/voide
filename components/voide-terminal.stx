@@ -7,7 +7,7 @@
     </div>
     <div class="flex items-center gap-2">
       <div class="animate-pulse w-2 h-2 rounded-full bg-monokai-green"></div>
-      <span id="terminalTitle" class="text-xs font-medium text-monokai-gray" :text="$appStore.terminalTitle ? $appStore.terminalTitle.replace('Voide - ', '') : 'Ready'">Ready</span>
+      <span id="terminalTitle" class="text-xs font-medium text-monokai-gray" text="{{ $appStore.terminalTitle ? $appStore.terminalTitle.replace('Voide - ', '') : 'Ready' }}">Ready</span>
     </div>
     <div class="w-16"></div>
   </div>

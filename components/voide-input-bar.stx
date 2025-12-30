@@ -5,14 +5,13 @@
       <div class="flex flex-col items-center gap-2 w-20 flex-shrink-0">
         <button
           id="micButton"
-          class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
-          :class="$appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border'"
+          class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink {{ $appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border' }}"
           title="Click to toggle voice input (or press Space)"
           onclick="window.voide?.toggleRecording()"
         >
-          <span id="micIcon" class="text-2xl" :text="$appStore.isRecording ? '🔴' : '🎤'">🎤</span>
+          <span id="micIcon" class="text-2xl" text="{{ $appStore.isRecording ? '🔴' : '🎤' }}">🎤</span>
         </button>
-        <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full" :text="$appStore.isRecording ? 'Listening...' : 'Click to speak'">Click to speak</span>
+        <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full" text="{{ $appStore.isRecording ? 'Listening...' : 'Click to speak' }}">Click to speak</span>
       </div>
 
       <!-- Input Area -->
@@ -20,14 +19,13 @@
         <!-- Text Input -->
         <div
           id="inputContainer"
-          class="flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3"
-          :class="$appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border'"
+          class="flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3 {{ $appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border' }}"
         >
           <textarea
             id="textInput"
             class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[120px] leading-6 placeholder-monokai-gray"
-            :placeholder="$appStore.isRecording ? 'Listening... speak now' : 'Type a command or ask a question...'"
-            :value="$appStore.isRecording ? $appStore.transcript : $chatStore.inputText"
+            placeholder="{{ $appStore.isRecording ? 'Listening... speak now' : 'Type a command or ask a question...' }}"
+            value="{{ $appStore.isRecording ? $appStore.transcript : $chatStore.inputText }}"
             oninput="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.chatActions.setInputText(this.value);"
             onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
           ></textarea>
@@ -49,7 +47,7 @@
             <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Shift+Enter</kbd> new line</span>
             <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Space</kbd> voice</span>
           </div>
-          <span id="charCountDisplay" :text="$chatStore.charCount > 0 ? $chatStore.charCount + ' chars' : ''"></span>
+          <span id="charCountDisplay" text="{{ $chatStore.charCount > 0 ? $chatStore.charCount + ' chars' : '' }}"></span>
         </div>
       </div>
 
@@ -58,7 +56,7 @@
         <button
           id="commitBtn"
           class="px-4 py-2.5 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
-          :disabled="!($appStore.hasChanges && !$appStore.isProcessing)"
+          disabled="{{ !($appStore.hasChanges && !$appStore.isProcessing) }}"
           onclick="window.voide?.commitChanges()"
         >
           <div class="flex items-center gap-2">
@@ -71,7 +69,7 @@
         <button
           id="pushBtn"
           class="px-4 py-2.5 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
-          :disabled="!($appStore.hasChanges && !$appStore.isProcessing)"
+          disabled="{{ !($appStore.hasChanges && !$appStore.isProcessing) }}"
           onclick="window.voide?.pushChanges()"
         >
           <div class="flex items-center gap-2">
