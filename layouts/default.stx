@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Voide - Voice AI Code Assistant</title>
+
+  <style>
+    /* Custom animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+    .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    .animate-bounce { animation: bounce 0.6s ease-in-out infinite; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* Body styling */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Monokai Pro background */
+    .gradient-bg {
+      background: #221f22;
+      position: relative;
+    }
+
+    /* Floating orbs - Monokai colors */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: float 20s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: linear-gradient(to right, #ab9df2, #78dce8);
+      top: -100px;
+      right: -100px;
+      animation-delay: 0s;
+    }
+    .orb-2 {
+      width: 300px;
+      height: 300px;
+      background: linear-gradient(to right, #ff6188, #ab9df2);
+      bottom: -50px;
+      left: -50px;
+      animation-delay: -10s;
+    }
+  </style>
+
+  <!-- Load Headwind CSS -->
+  <script>
+    // Dynamically load Headwind CSS to bypass bundler
+    (() => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/dist/voide.css';
+      link.onload = () => {
+        if (document.body) {
+          document.body.style.visibility = 'visible';
+        }
+      };
+      document.head.appendChild(link);
+      // Hide body until CSS loads to prevent FOUC
+      document.write('<style>body{visibility:hidden}</style>');
+    })();
+  </script>
+
+  <!-- Voide Stores (loaded synchronously before body parses) -->
+  <script>
+    // Use document.write to load synchronously and bypass bundler resolution
+    document.write('<scr' + 'ipt src="/js/voide-stores.js"></scr' + 'ipt>');
+  </script>
+  <script>
+    if (window.VoideStores) {
+      console.log('[Voide] Stores loaded successfully');
+    } else {
+      console.error('[Voide] Failed to load stores!');
+    }
+  </script>
+
+</head>
+<body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
+  <!-- Floating orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Page Content -->
+  @yield('content')
+
+  <!-- Craft Native Bridge -->
+  <script>
+    (() => {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.craftBridge) {
+        window.craft = {
+          _callbacks: {},
+          _callbackId: 0,
+          _invoke: function(method, args) {
+            args = args || {};
+            const self = this;
+            return new Promise(function(resolve, reject) {
+              const id = ++self._callbackId;
+              self._callbacks[id] = { resolve: resolve, reject: reject };
+              window.webkit.messageHandlers.craftBridge.postMessage({ id: id, method: method, args: args });
+            });
+          },
+          _handleResponse: function(id, result, error) {
+            const cb = this._callbacks[id];
+            if (cb) {
+              delete this._callbacks[id];
+              error ? cb.reject(new Error(error)) : cb.resolve(result);
+            }
+          },
+          window: {
+            setTitle: function(title) { return window.craft._invoke('window.setTitle', { title: title }); },
+            close: () => { return window.craft._invoke('window.close'); },
+            minimize: () => { return window.craft._invoke('window.minimize'); },
+            maximize: () => { return window.craft._invoke('window.maximize'); }
+          },
+          tray: {
+            setTitle: function(title) { return window.craft._invoke('tray.setTitle', { title: title }); },
+            setTooltip: function(tooltip) { return window.craft._invoke('tray.setTooltip', { tooltip: tooltip }); },
+            setMenu: function(menu) { return window.craft._invoke('tray.setMenu', { menu: menu }); },
+            onClickToggleWindow: () => { return window.craft._invoke('tray.onClickToggleWindow'); }
+          },
+          app: {
+            quit: () => { return window.craft._invoke('app.quit'); },
+            notify: function(options) { return window.craft._invoke('app.notify', options); }
+          }
+        };
+        console.log('[Voide] Craft native bridge initialized');
+      }
+    })();
+  </script>
+
+  <!-- Voide Client Runtime -->
+  <script>
+    document.write('<scr' + 'ipt src="/js/voide-runtime.js"></scr' + 'ipt>');
+  </script>
+
+</body>
+</html>

@@ -10,6 +10,7 @@ Voice-controlled AI code assistant built with [STX](https://github.com/stacksjs/
 - GitHub account connection
 - Native desktop support via Craft
 - Reactive state management with stores
+- Single File Components (SFC) with Vue-style syntax
 
 ## Getting Started
 
@@ -22,6 +23,102 @@ bun run build:all
 
 # Start development server
 bun run dev
+```
+
+## Single File Components (SFC)
+
+Voide uses STX Single File Components with Vue-style syntax for a clean, modular architecture.
+
+### Component Structure
+
+Components live in `components/` and are used with PascalCase tags:
+
+```html
+<!-- pages/index.stx -->
+<VoideHeader />
+
+<main class="flex-1 flex flex-col">
+  <VoideTerminal />
+  <VoideInputBar />
+</main>
+
+<VoideFooter />
+<VoideModals />
+```
+
+### Reactive Bindings
+
+STX supports reactive bindings that update the DOM based on store state:
+
+```html
+<!-- :class - Dynamic classes based on store state -->
+<button :class="$appStore.isRecording ? 'border-pink-500' : 'border-gray-500'">
+  Record
+</button>
+
+<!-- :text - Dynamic text content -->
+<span :text="$appStore.isRecording ? 'Listening...' : 'Click to speak'">
+  Click to speak
+</span>
+
+<!-- :show - Conditional visibility -->
+<div :show="$uiStore.settingsModalOpen">
+  Settings content...
+</div>
+
+<!-- :disabled - Dynamic disabled state -->
+<button :disabled="!$appStore.hasChanges">
+  Commit
+</button>
+
+<!-- :value - Dynamic input values -->
+<textarea :value="$appStore.transcript"></textarea>
+```
+
+### Store References
+
+Use `$storeName.property` syntax to reference store values in bindings:
+
+```html
+<!-- Reference appStore -->
+<div :class="$appStore.isProcessing ? 'opacity-50' : ''">
+
+<!-- Reference chatStore -->
+<span :text="$chatStore.charCount + ' chars'"></span>
+
+<!-- Reference uiStore -->
+<div :show="$uiStore.githubModalOpen">
+```
+
+### Client Scripts
+
+Components can include client-side JavaScript that runs in the browser:
+
+```html
+<!-- components/my-component.stx -->
+<div id="myElement">Content</div>
+
+<script client>
+(() => {
+  function init() {
+    const stores = window.VoideStores;
+    if (!stores) {
+      setTimeout(init, 10);
+      return;
+    }
+
+    // Subscribe to store changes
+    stores.appStore.subscribe((state) => {
+      const el = document.getElementById('myElement');
+      if (el) {
+        el.textContent = state.transcript;
+      }
+    });
+  }
+
+  init();
+})();
+</script>
 ```
 
 ## Architecture
@@ -62,10 +159,13 @@ Browser API utilities available via `VoideStores`:
 
 ### Components
 
-- `header.stx` - App header with repo input, driver selector, settings
-- `terminal.stx` - Chat output with message rendering
-- `input-bar.stx` - Voice button, text input, action buttons
-- `modals.stx` - GitHub and settings modals
+All components are in `components/` and use the SFC pattern:
+
+- `voide-header.stx` - App header with repo input, driver selector, settings
+- `voide-terminal.stx` - Chat output with message rendering
+- `voide-input-bar.stx` - Voice button, text input, action buttons
+- `voide-footer.stx` - Application footer
+- `voide-modals.stx` - GitHub and settings modals
 
 ## Styling
 

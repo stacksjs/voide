@@ -1,25 +1,17 @@
-<!--
-  Chat Page - Dynamic Route
-  Handles /chat/:id routes
+<!-- Header -->
+<VoideHeader />
 
-  Route params are injected as window.__STX_ROUTE_PARAMS__ by the server.
-  This page includes the main Voide app and passes the chat ID.
--->
+<!-- Main Content -->
+<main class="relative flex-1 flex flex-col p-6 gap-5 overflow-hidden">
+  <!-- Terminal -->
+  <VoideTerminal />
 
-@include('../../pages/index')
+  <!-- Input Bar -->
+  <VoideInputBar />
+</main>
 
-<script>
-// Load chat from route params on page load
-document.addEventListener('DOMContentLoaded', function() {
-  const params = window.__STX_ROUTE_PARAMS__ || {};
-  const chatId = params.id;
+<!-- Footer -->
+<VoideFooter />
 
-  if (chatId && window.voide) {
-    // Load the chat if it exists
-    const loaded = window.voide.loadChat(chatId);
-    if (!loaded) {
-      console.log('Chat not found:', chatId);
-    }
-  }
-});
-</script>
+<!-- Modals -->
+<VoideModals />
