@@ -561,6 +561,32 @@
       }
     }
 
+    function handleInputChange(event) {
+      const el = event.target;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+      chatActions.setInputText(el.value);
+    }
+
+    function handleInputKeydown(event) {
+      // Enter without Shift submits the form
+      if (!event.shiftKey) {
+        event.preventDefault();
+        handleTextSubmit();
+        event.target.value = '';
+        event.target.style.height = 'auto';
+      }
+    }
+
+    function handleSendClick() {
+      handleTextSubmit();
+      const textInput = document.getElementById('textInput');
+      if (textInput) {
+        textInput.value = '';
+        textInput.style.height = 'auto';
+      }
+    }
+
     function handleDriverChange(event) {
       appActions.setDriver(event.target.value);
       addMessage('system', 'Switched to ' + config.drivers[event.target.value].name);
@@ -669,6 +695,9 @@
       stopRecording: stopRecording,
       toggleRecording: toggleRecording,
       handleTextSubmit: handleTextSubmit,
+      handleInputChange: handleInputChange,
+      handleInputKeydown: handleInputKeydown,
+      handleSendClick: handleSendClick,
       handleDriverChange: handleDriverChange,
       openGithubModal: openGithubModal,
       closeGithubModal: closeGithubModal,

@@ -1,3 +1,6 @@
+@layout('default')
+
+@section('content')
 <!-- Header -->
 <VoideHeader />
 
@@ -15,3 +18,4 @@
 
 <!-- Modals -->
 <VoideModals />
+@endsection

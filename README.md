@@ -10,7 +10,7 @@ Voice-controlled AI code assistant built with [STX](https://github.com/stacksjs/
 - GitHub account connection
 - Native desktop support via Craft
 - Reactive state management with stores
-- Single File Components (SFC) with `@component` directive
+- Vue-like Single File Components (SFC)
 
 ## Getting Started
 
@@ -27,41 +27,96 @@ bun run dev
 
 ## Single File Components (SFC)
 
-Voide uses STX Single File Components for a clean, modular architecture.
+Voide uses STX Single File Components with Vue-like syntax.
 
 ### Component Structure
 
-Components live in `components/` and are imported with `@component`:
+Components live in `components/` and are auto-imported using PascalCase:
 
 ```html
 <!-- pages/index.stx -->
-@component('voide-header')
+@layout('default')
+
+@section('content')
+<VoideHeader />
 
 <main class="flex-1 flex flex-col">
-  @component('voide-terminal')
-  @component('voide-input-bar')
+  <VoideTerminal />
+  <VoideInputBar />
 </main>
 
-@component('voide-footer')
-@component('voide-modals')
+<VoideFooter />
+<VoideModals />
+@endsection
+```
+
+### SFC Anatomy
+
+Components use three sections: `<script server>`, `<template>`, and `<script client>`:
+
+```html
+<!-- components/MyComponent.stx -->
+<script server>
+// Server-side only - extracted for SSR, stripped from output
+const title = props.title || 'Default Title'
+const count = props.count || 0
+</script>
+
+<template>
+  <div class="card">
+    <h1>{{ title }}</h1>
+    <p>Count: {{ count }}</p>
+    <slot />
+  </div>
+</template>
+
+<script client>
+// Client-side only - preserved for browser execution
+(() => {
+  console.log('Component mounted');
+})();
+</script>
 ```
 
 ### Passing Props
 
-Pass data to components with the optional second parameter:
+Pass data to components via attributes:
 
 ```html
-@component('message', { text: 'Hello', type: 'success' })
+<!-- String prop -->
+<VoideHeader title="My App" />
+
+<!-- Expression prop with :binding -->
+<Card :count="items.length" />
+
+<!-- Mustache interpolation -->
+<Message text="{{ userName }}" />
 ```
 
-### Client Scripts
+### Slots
 
-Components can include client-side JavaScript that runs in the browser:
+Use `<slot />` to inject content into components:
 
 ```html
-<!-- components/my-component.stx -->
-<div id="myElement">Content</div>
+<!-- Parent -->
+<Card title="Welcome">
+  <p>This content goes into the slot!</p>
+</Card>
 
+<!-- Card component -->
+<template>
+  <div class="card">
+    <h2>{{ props.title }}</h2>
+    <slot />
+  </div>
+</template>
+```
+
+### Client Scripts with Stores
+
+Components can subscribe to reactive stores:
+
+```html
 <script client>
 (() => {
   function init() {
@@ -83,6 +138,20 @@ Components can include client-side JavaScript that runs in the browser:
   init();
 })();
 </script>
+```
+
+### Two-Way Binding (x-element)
+
+For simple reactive forms, use x-element directives:
+
+```html
+<div x-data="{ message: '', count: 0 }">
+  <input x-model="message" placeholder="Type here..." />
+  <p>You typed: <span x-text="message"></span></p>
+
+  <button @click="count++">Increment</button>
+  <span x-text="count"></span>
+</div>
 ```
 
 ## Architecture
@@ -125,11 +194,13 @@ Browser API utilities available via `VoideStores`:
 
 All components are in `components/` and use the SFC pattern:
 
-- `voide-header.stx` - App header with repo input, driver selector, settings
-- `voide-terminal.stx` - Chat output with message rendering
-- `voide-input-bar.stx` - Voice button, text input, action buttons
-- `voide-footer.stx` - Application footer
-- `voide-modals.stx` - GitHub and settings modals
+| Component | Description |
+|-----------|-------------|
+| `VoideHeader` | App header with repo input, driver selector, settings |
+| `VoideTerminal` | Chat output with message rendering |
+| `VoideInputBar` | Voice button, text input, action buttons |
+| `VoideFooter` | Application footer |
+| `VoideModals` | GitHub and settings modals |
 
 ## Styling
 

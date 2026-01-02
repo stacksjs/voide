@@ -1,88 +1,89 @@
-<div class="relative">
-  <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-5">
-    <div class="flex items-start gap-5">
-      <!-- Voice Button -->
-      <div class="flex flex-col items-center gap-2 w-20 flex-shrink-0">
-        <button
-          id="micButton"
-          class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink {{ $appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border' }}"
-          title="Click to toggle voice input (or press Space)"
-          onclick="window.voide?.toggleRecording()"
-        >
-          <span id="micIcon" class="text-2xl" text="{{ $appStore.isRecording ? '🔴' : '🎤' }}">🎤</span>
-        </button>
-        <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full" text="{{ $appStore.isRecording ? 'Listening...' : 'Click to speak' }}">Click to speak</span>
-      </div>
-
-      <!-- Input Area -->
-      <div class="flex-1 flex flex-col gap-3">
-        <!-- Text Input -->
-        <div
-          id="inputContainer"
-          class="flex items-end gap-3 bg-monokai-bg-dark border rounded-xl px-4 py-3 {{ $appStore.isRecording ? 'border-monokai-pink' : 'border-monokai-border' }}"
-        >
-          <textarea
-            id="textInput"
-            class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[120px] leading-6 placeholder-monokai-gray"
-            placeholder="{{ $appStore.isRecording ? 'Listening... speak now' : 'Type a command or ask a question...' }}"
-            value="{{ $appStore.isRecording ? $appStore.transcript : $chatStore.inputText }}"
-            oninput="this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; if (window.voide) window.voide.chatActions.setInputText(this.value);"
-            onkeydown="if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.voide?.handleTextSubmit(); this.value = ''; this.style.height = 'auto'; }"
-          ></textarea>
+<template>
+  <div class="relative">
+    <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-5">
+      <div class="flex items-start gap-5">
+        <!-- Voice Button -->
+        <div class="flex flex-col items-center gap-2 w-20 flex-shrink-0">
           <button
-            class="flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-cyan flex items-center justify-center cursor-pointer hover:bg-monokai-cyan/90 transition-colors"
-            title="Send (Enter)"
-            onclick="window.voide?.handleTextSubmit(); document.getElementById('textInput').value = '';"
+            id="micButton"
+            class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 border-monokai-border flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
+            title="Click to toggle voice input (or press Space)"
+            @click="voide.toggleRecording()"
           >
-            <svg class="w-5 h-5 text-monokai-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-            </svg>
+            <span id="micIcon" class="text-2xl">🎤</span>
+          </button>
+          <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full">Click to speak</span>
+        </div>
+
+        <!-- Input Area -->
+        <div class="flex-1 flex flex-col gap-3">
+          <!-- Text Input -->
+          <div
+            id="inputContainer"
+            class="flex items-end gap-3 bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3"
+          >
+            <textarea
+              id="textInput"
+              class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[120px] leading-6 placeholder-monokai-gray"
+              placeholder="Type a command or ask a question..."
+              @input="voide.handleInputChange($event)"
+              @keydown.enter="voide.handleInputKeydown($event)"
+            ></textarea>
+            <button
+              class="flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-cyan flex items-center justify-center cursor-pointer hover:bg-monokai-cyan/90 transition-colors"
+              title="Send (Enter)"
+              @click="voide.handleSendClick()"
+            >
+              <svg class="w-5 h-5 text-monokai-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Hints -->
+          <div class="flex items-center justify-between text-[10px] text-monokai-gray px-1">
+            <div class="flex items-center gap-3">
+              <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Enter</kbd> send</span>
+              <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Shift+Enter</kbd> new line</span>
+              <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Space</kbd> voice</span>
+            </div>
+            <span id="charCountDisplay"></span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col gap-2">
+          <button
+            id="commitBtn"
+            class="px-4 py-2.5 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
+            disabled
+            @click="voide.commitChanges()"
+          >
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Commit
+            </div>
+          </button>
+          <button
+            id="pushBtn"
+            class="px-4 py-2.5 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
+            disabled
+            @click="voide.pushChanges()"
+          >
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+              </svg>
+              Push
+            </div>
           </button>
         </div>
-
-        <!-- Hints -->
-        <div class="flex items-center justify-between text-[10px] text-monokai-gray px-1">
-          <div class="flex items-center gap-3">
-            <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Enter</kbd> send</span>
-            <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Shift+Enter</kbd> new line</span>
-            <span><kbd class="px-1.5 py-0.5 bg-monokai-bg-dark rounded text-monokai-fg/50">Space</kbd> voice</span>
-          </div>
-          <span id="charCountDisplay" text="{{ $chatStore.charCount > 0 ? $chatStore.charCount + ' chars' : '' }}"></span>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="flex flex-col gap-2">
-        <button
-          id="commitBtn"
-          class="px-4 py-2.5 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
-          disabled="{{ !($appStore.hasChanges && !$appStore.isProcessing) }}"
-          onclick="window.voide?.commitChanges()"
-        >
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            Commit
-          </div>
-        </button>
-        <button
-          id="pushBtn"
-          class="px-4 py-2.5 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
-          disabled="{{ !($appStore.hasChanges && !$appStore.isProcessing) }}"
-          onclick="window.voide?.pushChanges()"
-        >
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-            </svg>
-            Push
-          </div>
-        </button>
       </div>
     </div>
   </div>
-</div>
+</template>
 
 <script client>
 (() => {
