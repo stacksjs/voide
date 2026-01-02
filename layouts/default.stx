@@ -71,21 +71,13 @@
     }
   </style>
 
-  <!-- Load Headwind CSS -->
-  <script>
-    // Dynamically load Headwind CSS to bypass bundler
+  <!-- Load Headwind CSS dynamically to bypass bundler resolution -->
+  <script client>
     (() => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = '/dist/voide.css';
-      link.onload = () => {
-        if (document.body) {
-          document.body.style.visibility = 'visible';
-        }
-      };
       document.head.appendChild(link);
-      // Hide body until CSS loads to prevent FOUC
-      document.write('<style>body{visibility:hidden}</style>');
     })();
   </script>
 
