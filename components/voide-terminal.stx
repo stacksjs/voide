@@ -14,6 +14,20 @@
     </div>
 
     <div id="output" class="flex-1 p-6 overflow-y-auto flex flex-col gap-4">
+      <!-- Prompt UI (shown when Claude CLI asks for input) -->
+      <div id="promptOverlay" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-monokai-yellow flex items-center justify-center">
+              <span class="text-sm">❓</span>
+            </div>
+            <span class="text-xs font-semibold text-monokai-fg/50 uppercase tracking-wider">Input Required</span>
+          </div>
+          <p id="promptText" class="text-sm text-monokai-fg mb-4">Please select an option:</p>
+          <div id="promptOptions" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+
       <!-- Welcome Message -->
       <div class="p-4 bg-monokai-purple/10 border border-monokai-purple/25 rounded-xl">
         <div class="flex items-center gap-2 mb-3">
@@ -194,6 +208,37 @@
 
     // Render messages
     stores.chatStore.subscribe(state => renderMessages(state.messages));
+
+    // Handle pending prompts
+    stores.chatStore.subscribe(state => {
+      const overlay = document.getElementById('promptOverlay');
+      const textEl = document.getElementById('promptText');
+      const optionsEl = document.getElementById('promptOptions');
+
+      if (!overlay || !textEl || !optionsEl) return;
+
+      if (state.pendingPrompt) {
+        textEl.textContent = state.pendingPrompt.text;
+        optionsEl.innerHTML = '';
+
+        state.pendingPrompt.options.forEach((option, i) => {
+          const label = state.pendingPrompt.labels?.[i] || option;
+          const btn = document.createElement('button');
+          btn.className = 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors';
+          btn.textContent = label;
+          btn.onclick = () => {
+            if (window.voide && window.voide.respondToPrompt) {
+              window.voide.respondToPrompt(option);
+            }
+          };
+          optionsEl.appendChild(btn);
+        });
+
+        overlay.classList.remove('hidden');
+      } else {
+        overlay.classList.add('hidden');
+      }
+    });
   }
 
   init();

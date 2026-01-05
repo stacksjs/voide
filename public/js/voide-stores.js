@@ -269,7 +269,8 @@ window.VoideStores = (function() {
     currentChatId: null,
     messages: [],
     inputText: "",
-    charCount: 0
+    charCount: 0,
+    pendingPrompt: null
   }, {
     name: "chat"
   });
@@ -398,9 +399,16 @@ window.VoideStores = (function() {
     newChat: () => {
       chatStore.update({
         currentChatId: null,
-        messages: []
+        messages: [],
+        pendingPrompt: null
       });
       history.pushState({}, "", "/");
+    },
+    setPendingPrompt: (prompt) => {
+      chatStore.update({ pendingPrompt: prompt });
+    },
+    clearPendingPrompt: () => {
+      chatStore.update({ pendingPrompt: null });
     }
   };
   // lib/stores/settings.ts

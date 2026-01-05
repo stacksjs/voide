@@ -4,11 +4,18 @@
 import { createStore } from '../store'
 
 export interface Message {
-  type: 'user' | 'assistant' | 'system' | 'error'
+  type: 'user' | 'assistant' | 'system' | 'error' | 'prompt'
   content: string
   header: string
   timestamp: number
   updated?: number
+}
+
+export interface PendingPrompt {
+  id: string
+  text: string
+  options: string[]  // e.g., ['y', 'n'] or ['1', '2', '3']
+  labels?: string[]  // Human-readable labels for options
 }
 
 export interface Chat {
@@ -25,6 +32,7 @@ export interface ChatState {
   messages: Message[]
   inputText: string
   charCount: number
+  pendingPrompt: PendingPrompt | null
 }
 
 const STORAGE_KEY_CHATS = 'voide:chats'
@@ -34,7 +42,8 @@ export const chatStore = createStore<ChatState>({
   currentChatId: null,
   messages: [],
   inputText: '',
-  charCount: 0
+  charCount: 0,
+  pendingPrompt: null
 }, {
   name: 'chat'
 })
@@ -196,8 +205,17 @@ export const chatActions = {
   newChat: () => {
     chatStore.update({
       currentChatId: null,
-      messages: []
+      messages: [],
+      pendingPrompt: null
     })
     history.pushState({}, '', '/')
+  },
+
+  setPendingPrompt: (prompt: PendingPrompt | null) => {
+    chatStore.update({ pendingPrompt: prompt })
+  },
+
+  clearPendingPrompt: () => {
+    chatStore.update({ pendingPrompt: null })
   }
 }

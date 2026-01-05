@@ -167,10 +167,21 @@
                     if (currentEvent === 'chunk' && data.text) {
                       fullContent += data.text;
                       updateLastMessage('assistant', fullContent);
+                    } else if (currentEvent === 'prompt') {
+                      // Claude CLI is asking for input
+                      chatActions.setPendingPrompt({
+                        id: data.id || Date.now().toString(),
+                        text: data.text || 'Please select an option:',
+                        options: data.options || ['y', 'n'],
+                        labels: data.labels || data.options || ['Yes', 'No']
+                      });
+                      // Don't resolve yet - wait for user response
                     } else if (currentEvent === 'done') {
+                      chatActions.clearPendingPrompt();
                       resolve({ message: fullContent, hasChanges: data.hasChanges || false });
                       return;
                     } else if (currentEvent === 'error') {
+                      chatActions.clearPendingPrompt();
                       reject(new Error(data.error || 'Stream error'));
                       return;
                     }
@@ -341,6 +352,26 @@
         addMessage('error', 'Failed: ' + error.message);
         updateTrayStatus('error');
         setTimeout(() => { updateTrayStatus('ready'); }, 3000);
+      });
+    }
+
+    function respondToPrompt(response) {
+      const chat = chatStore.get();
+      if (!chat.pendingPrompt) return;
+
+      addMessage('user', response, 'You');
+      chatActions.clearPendingPrompt();
+
+      // Send response to backend
+      fetch(config.apiBaseUrl + '/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          promptId: chat.pendingPrompt.id,
+          response: response
+        })
+      }).catch((error) => {
+        addMessage('error', 'Failed to send response: ' + error.message);
       });
     }
 
@@ -691,6 +722,7 @@
       handleRepoAction: handleRepoAction,
       commitChanges: commitChanges,
       pushChanges: pushChanges,
+      respondToPrompt: respondToPrompt,
       startRecording: startRecording,
       stopRecording: stopRecording,
       toggleRecording: toggleRecording,
