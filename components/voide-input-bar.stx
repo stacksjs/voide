@@ -10,7 +10,7 @@
             title="Click to toggle voice input (or press Space)"
             @click="voide.toggleRecording()"
           >
-            <span id="micIcon" class="text-2xl">🎤</span>
+            <svg id="micIcon" class="w-6 h-6" fill="none" stroke="#727072" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
           </button>
           <span id="statusHint" class="text-[10px] text-monokai-gray text-center w-full">Click to speak</span>
         </div>
@@ -34,9 +34,7 @@
               title="Send (Enter)"
               @click="voide.handleSendClick()"
             >
-              <svg class="w-5 h-5 text-white" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"></path>
-              </svg>
+              <svg class="w-5 h-5" fill="none" stroke="#ffffff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"></path></svg>
             </button>
           </div>
 
@@ -97,7 +95,7 @@
         micBtn.className = 'w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink ' +
           (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
       }
-      if (micIcon) micIcon.textContent = state.isRecording ? '🔴' : '🎤';
+      if (micIcon) micIcon.setAttribute('stroke', state.isRecording ? '#ff6188' : '#727072');
       if (statusHint) statusHint.textContent = state.isRecording ? 'Listening...' : 'Click to speak';
 
       // Input container state
