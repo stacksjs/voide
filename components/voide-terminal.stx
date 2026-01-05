@@ -61,6 +61,17 @@
   const messageElements = new Map();
   const messageUpdates = new Map();
 
+  // Auto-scroll: check if user is near bottom (within 100px)
+  function isNearBottom(el) {
+    const threshold = 100;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  }
+
+  // Smooth scroll to bottom
+  function scrollToBottom(el) {
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }
+
   function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -114,6 +125,9 @@
 
     const messageArray = messages || [];
 
+    // Check if user is near bottom BEFORE making changes
+    const shouldAutoScroll = isNearBottom(output);
+
     // Reset if messages were cleared (new chat started)
     if (messageArray.length < renderedCount) {
       renderedCount = 0;
@@ -152,6 +166,11 @@
       messageElements.set(idx, messageDiv);
       messageUpdates.set(idx, msg.updated || 0);
       renderedCount++;
+    }
+
+    // Auto-scroll if user was near bottom
+    if (shouldAutoScroll) {
+      scrollToBottom(output);
     }
   }
 

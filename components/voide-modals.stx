@@ -1,199 +1,201 @@
-<!-- GitHub Connection Modal -->
-<div
-  id="githubModal"
-  class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
-  show="{{ $uiStore.modals.github }}"
-  @click.self="voide.closeGithubModal()"
->
-  <div class="relative w-full max-w-md m-4 animate-fade-in">
-    <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
-    <div class="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
+<template>
+  <!-- GitHub Connection Modal -->
+  <div
+    id="githubModal"
+    class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
+    show="{{ $uiStore.modals.github }}"
+    @click.self="voide.closeGithubModal()"
+  >
+    <div class="relative w-full max-w-md m-4 animate-fade-in">
+      <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
+      <div class="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-white">GitHub Connection</h2>
           </div>
-          <h2 class="text-lg font-semibold text-white">GitHub Connection</h2>
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+            @click="voide.closeGithubModal()"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
         </div>
-        <button
-          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-          @click="voide.closeGithubModal()"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
 
-      <!-- Modal Body -->
-      <div class="p-6">
-        <div id="githubConnectForm" class="space-y-4" show="{{ !$settingsStore.github.connected }}">
+        <!-- Modal Body -->
+        <div class="p-6">
+          <div id="githubConnectForm" class="space-y-4" show="{{ !$settingsStore.github.connected }}">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Personal Access Token</label>
+              <input
+                type="password"
+                id="githubToken"
+                class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              />
+              <p class="mt-2 text-xs text-slate-500">
+                Generate at <a href="https://github.com/settings/tokens" target="_blank" class="text-violet-400 hover:text-violet-300">github.com/settings/tokens</a>
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Commit Name <span class="text-slate-500">(optional)</span></label>
+              <input
+                type="text"
+                id="gitName"
+                class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+                placeholder="Your Name"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Commit Email <span class="text-slate-500">(optional)</span></label>
+              <input
+                type="email"
+                id="gitEmail"
+                class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+                placeholder="you@example.com"
+              />
+            </div>
+          </div>
+
+          <div id="githubConnectedInfo" class="text-center py-6" show="{{ $settingsStore.github.connected }}">
+            <img id="connectedAvatar" src="{{ $settingsStore.github.avatarUrl }}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20" />
+            <div id="connectedName" class="text-xl font-semibold text-white mb-1" text="{{ $settingsStore.github.name || $settingsStore.github.username }}"></div>
+            <div id="connectedUsername" class="text-slate-400 mb-3" text="{{ '@' + $settingsStore.github.username }}"></div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Connected
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
+          <button
+            class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
+            @click="voide.closeGithubModal()"
+          >Cancel</button>
+          <button
+            id="githubConnectBtn"
+            class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
+            show="{{ !$settingsStore.github.connected }}"
+            @click="voide.connectGithub()"
+          >Connect</button>
+          <button
+            id="githubDisconnectBtn"
+            class="px-4 py-2 text-sm font-medium bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
+            show="{{ $settingsStore.github.connected }}"
+            @click="voide.disconnectGithub()"
+          >Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Settings Modal -->
+  <div
+    id="settingsModal"
+    class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
+    show="{{ $uiStore.modals.settings }}"
+    @click.self="voide.closeSettingsModal()"
+  >
+    <div class="relative w-full max-w-md m-4 animate-fade-in">
+      <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
+      <div class="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-white">API Settings</h2>
+          </div>
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+            @click="voide.closeSettingsModal()"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Personal Access Token</label>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Anthropic API Key</label>
             <input
               type="password"
-              id="githubToken"
+              id="anthropicApiKey"
               class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
-              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              placeholder="sk-ant-api03-xxxxxxxxxxxx"
             />
             <p class="mt-2 text-xs text-slate-500">
-              Generate at <a href="https://github.com/settings/tokens" target="_blank" class="text-violet-400 hover:text-violet-300">github.com/settings/tokens</a>
+              Get from <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-violet-400 hover:text-violet-300">console.anthropic.com</a>
             </p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Commit Name <span class="text-slate-500">(optional)</span></label>
+            <label class="block text-sm font-medium text-slate-300 mb-2">OpenAI API Key <span class="text-slate-500">(optional)</span></label>
             <input
-              type="text"
-              id="gitName"
+              type="password"
+              id="openaiApiKey"
               class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
-              placeholder="Your Name"
+              placeholder="sk-xxxxxxxxxxxx"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Commit Email <span class="text-slate-500">(optional)</span></label>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Claude CLI Host <span class="text-slate-500">(optional)</span></label>
             <input
-              type="email"
-              id="gitEmail"
+              type="text"
+              id="claudeCliHost"
               class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
-              placeholder="you@example.com"
+              placeholder="http://your-ec2-instance:3456"
             />
           </div>
-        </div>
 
-        <div id="githubConnectedInfo" class="text-center py-6" show="{{ $settingsStore.github.connected }}">
-          <img id="connectedAvatar" src="{{ $settingsStore.github.avatarUrl }}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20" />
-          <div id="connectedName" class="text-xl font-semibold text-white mb-1" text="{{ $settingsStore.github.name || $settingsStore.github.username }}"></div>
-          <div id="connectedUsername" class="text-slate-400 mb-3" text="{{ '@' + $settingsStore.github.username }}"></div>
-          <div class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            Connected
+          <!-- API Status -->
+          <div class="p-4 bg-slate-800/30 border border-white/5 rounded-xl space-y-2">
+            <div class="flex items-center gap-3">
+              <span id="anthropicStatus" class="w-2 h-2 rounded-full {{ $settingsStore.apiKeys.anthropic ? 'bg-emerald-500' : 'bg-slate-600' }}"></span>
+              <span class="text-sm text-slate-400">Anthropic: <span id="anthropicStatusText" class="text-slate-300" text="{{ $settingsStore.apiKeys.anthropic ? 'Configured' : 'Not configured' }}">Not configured</span></span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="openaiStatus" class="w-2 h-2 rounded-full {{ $settingsStore.apiKeys.openai ? 'bg-emerald-500' : 'bg-slate-600' }}"></span>
+              <span class="text-sm text-slate-400">OpenAI: <span id="openaiStatusText" class="text-slate-300" text="{{ $settingsStore.apiKeys.openai ? 'Configured' : 'Not configured' }}">Not configured</span></span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Modal Footer -->
-      <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
-        <button
-          class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
-          @click="voide.closeGithubModal()"
-        >Cancel</button>
-        <button
-          id="githubConnectBtn"
-          class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
-          show="{{ !$settingsStore.github.connected }}"
-          @click="voide.connectGithub()"
-        >Connect</button>
-        <button
-          id="githubDisconnectBtn"
-          class="px-4 py-2 text-sm font-medium bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"
-          show="{{ $settingsStore.github.connected }}"
-          @click="voide.disconnectGithub()"
-        >Disconnect</button>
+        <!-- Modal Footer -->
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
+          <button
+            class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
+            @click="voide.closeSettingsModal()"
+          >Cancel</button>
+          <button
+            class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
+            @click="voide.saveApiSettings()"
+          >Save Settings</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
-<!-- API Settings Modal -->
-<div
-  id="settingsModal"
-  class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
-  show="{{ $uiStore.modals.settings }}"
-  @click.self="voide.closeSettingsModal()"
->
-  <div class="relative w-full max-w-md m-4 animate-fade-in">
-    <div class="absolute -inset-1 bg-gradient-to-r from-violet-600/20 to-cyan-600/20 rounded-2xl blur-xl"></div>
-    <div class="relative bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-          </div>
-          <h2 class="text-lg font-semibold text-white">API Settings</h2>
-        </div>
-        <button
-          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-          @click="voide.closeSettingsModal()"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Modal Body -->
-      <div class="p-6 space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Anthropic API Key</label>
-          <input
-            type="password"
-            id="anthropicApiKey"
-            class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
-            placeholder="sk-ant-api03-xxxxxxxxxxxx"
-          />
-          <p class="mt-2 text-xs text-slate-500">
-            Get from <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-violet-400 hover:text-violet-300">console.anthropic.com</a>
-          </p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">OpenAI API Key <span class="text-slate-500">(optional)</span></label>
-          <input
-            type="password"
-            id="openaiApiKey"
-            class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
-            placeholder="sk-xxxxxxxxxxxx"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Claude CLI Host <span class="text-slate-500">(optional)</span></label>
-          <input
-            type="text"
-            id="claudeCliHost"
-            class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
-            placeholder="http://your-ec2-instance:3456"
-          />
-        </div>
-
-        <!-- API Status -->
-        <div class="p-4 bg-slate-800/30 border border-white/5 rounded-xl space-y-2">
-          <div class="flex items-center gap-3">
-            <span id="anthropicStatus" class="w-2 h-2 rounded-full {{ $settingsStore.apiKeys.anthropic ? 'bg-emerald-500' : 'bg-slate-600' }}"></span>
-            <span class="text-sm text-slate-400">Anthropic: <span id="anthropicStatusText" class="text-slate-300" text="{{ $settingsStore.apiKeys.anthropic ? 'Configured' : 'Not configured' }}">Not configured</span></span>
-          </div>
-          <div class="flex items-center gap-3">
-            <span id="openaiStatus" class="w-2 h-2 rounded-full {{ $settingsStore.apiKeys.openai ? 'bg-emerald-500' : 'bg-slate-600' }}"></span>
-            <span class="text-sm text-slate-400">OpenAI: <span id="openaiStatusText" class="text-slate-300" text="{{ $settingsStore.apiKeys.openai ? 'Configured' : 'Not configured' }}">Not configured</span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-slate-900/50">
-        <button
-          class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors"
-          @click="voide.closeSettingsModal()"
-        >Cancel</button>
-        <button
-          class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-cyan-500 text-white rounded-lg hover:from-violet-600 hover:to-cyan-600 transition-all shadow-lg shadow-violet-500/25"
-          @click="voide.saveApiSettings()"
-        >Save Settings</button>
-      </div>
-    </div>
-  </div>
-</div>
+</template>
 
 <script client>
 (() => {
@@ -249,4 +251,3 @@
   init();
 })();
 </script>
-

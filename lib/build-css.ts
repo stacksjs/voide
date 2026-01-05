@@ -112,11 +112,15 @@ const config = {
     'transition-opacity',
   ],
   theme: {
-    ...defaultConfig.theme,
+    colors: defaultConfig.theme.colors,
+    spacing: defaultConfig.theme.spacing,
+    fontSize: defaultConfig.theme.fontSize,
+    fontFamily: defaultConfig.theme.fontFamily,
+    screens: defaultConfig.theme.screens,
+    borderRadius: defaultConfig.theme.borderRadius,
+    boxShadow: defaultConfig.theme.boxShadow,
     extend: {
-      ...defaultConfig.theme?.extend,
       colors: {
-        ...defaultConfig.theme?.extend?.colors,
         monokai: {
           bg: '#2d2a2e',
           'bg-dark': '#221f22',
