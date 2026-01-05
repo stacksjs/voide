@@ -34,9 +34,23 @@
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-    /* Body styling */
+    /* Reset and body styling */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html {
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden;
+    }
     body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100vw;
+      max-width: 100vw;
+      overflow-x: hidden;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      position: relative;
     }
 
     /* Monokai Pro background */
@@ -47,11 +61,13 @@
 
     /* Floating orbs - Monokai colors */
     .orb {
-      position: absolute;
+      position: fixed;
       border-radius: 50%;
       filter: blur(80px);
       opacity: 0.15;
       animation: float 20s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
     }
     .orb-1 {
       width: 400px;
@@ -74,10 +90,13 @@
   <!-- Load Headwind CSS dynamically to bypass bundler resolution -->
   <script client>
     (() => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = '/dist/voide.css';
-      document.head.appendChild(link);
+      if (!document.getElementById('voide-css')) {
+        const link = document.createElement('link');
+        link.id = 'voide-css';
+        link.rel = 'stylesheet';
+        link.href = '/dist/voide.css';
+        document.head.appendChild(link);
+      }
     })();
   </script>
 
