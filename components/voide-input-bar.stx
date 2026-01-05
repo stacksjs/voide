@@ -34,8 +34,8 @@
               title="Send (Enter)"
               @click="voide.handleSendClick()"
             >
-              <svg class="w-5 h-5 text-monokai-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+              <svg class="w-5 h-5 text-white" fill="none" stroke-width="1.5" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"></path>
               </svg>
             </button>
           </div>
@@ -58,27 +58,13 @@
             class="px-4 py-2.5 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
             disabled
             @click="voide.commitChanges()"
-          >
-            <div class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Commit
-            </div>
-          </button>
+          >Commit</button>
           <button
             id="pushBtn"
             class="px-4 py-2.5 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
             disabled
             @click="voide.pushChanges()"
-          >
-            <div class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-              </svg>
-              Push
-            </div>
-          </button>
+          >Push</button>
         </div>
       </div>
     </div>

@@ -1,12 +1,8 @@
-<script server>
-const version = props.version || 'v1.0.0'
-</script>
-
 <template>
   <footer class="relative py-3 px-6 text-center text-xs text-monokai-gray border-t border-monokai-border">
     <span class="font-medium bg-gradient-to-r from-monokai-purple to-monokai-cyan bg-clip-text text-transparent">Voide</span>
     <span class="mx-2">·</span>
-    <span id="footerVersion">{{ version }}</span>
+    <span id="footerVersion">v1.0.0</span>
     <span class="mx-2">·</span>
     <span>Voice AI Code Assistant</span>
   </footer>

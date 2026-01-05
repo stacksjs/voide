@@ -1,19 +1,13 @@
-<script server>
-// SSR props with defaults
-const icon = props.icon || '🎙️'
-const title = props.title || 'Voide'
-</script>
-
 <template>
   <header class="relative px-6 py-4 bg-monokai-bg border-b border-monokai-border">
     <div class="flex items-center justify-between">
       <!-- Logo & Title -->
       <div class="flex items-center gap-4">
         <div class="w-12 h-12 rounded-xl bg-monokai-purple flex items-center justify-center shadow-lg shadow-monokai-purple/25">
-          <span class="text-2xl">{{ icon }}</span>
+          <span class="text-2xl">🎙️</span>
         </div>
         <div>
-          <h1 id="appTitle" class="text-xl font-bold bg-gradient-to-r from-monokai-fg to-monokai-fg/60 bg-clip-text text-transparent">{{ title }}</h1>
+          <h1 id="appTitle" class="text-xl font-bold bg-gradient-to-r from-monokai-fg to-monokai-fg/60 bg-clip-text text-transparent">Voide</h1>
           <p class="text-xs text-monokai-gray">Voice AI Assistant</p>
         </div>
       </div>
