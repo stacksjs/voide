@@ -395,6 +395,48 @@
       speechRecognition.on('result', (data) => {
         const fullTranscript = accumulatedTranscript + data.transcript;
         console.log('[Voide] Speech result:', data.transcript, 'Full:', fullTranscript);
+
+        const trimmed = fullTranscript.trim().toLowerCase();
+
+        // Check for "reset" trigger word - clears the prompt area
+        if (trimmed.endsWith(' reset') || trimmed === 'reset') {
+          console.log('[Voide] "Reset" detected, clearing prompt');
+          accumulatedTranscript = '';
+          appActions.setTranscript('');
+          chatActions.setInputText('');
+          const textInput = document.getElementById('textInput');
+          if (textInput) {
+            textInput.value = '';
+            textInput.style.height = 'auto';
+          }
+          return;
+        }
+
+        // Check for "go" trigger word at the end - submits the prompt
+        if (trimmed.endsWith(' go') || trimmed === 'go') {
+          // Remove "go" from the transcript and submit
+          const cleanTranscript = fullTranscript.replace(/\s*go\s*$/i, '').trim();
+          console.log('[Voide] "Go" detected, submitting:', cleanTranscript);
+          appActions.setTranscript(cleanTranscript);
+
+          if (cleanTranscript) {
+            // Stop recording and submit
+            appActions.setRecording(false);
+            speechRecognition.stop();
+            accumulatedTranscript = '';
+            updateTrayStatus('ready');
+
+            // Submit the command
+            chatActions.setInputText(cleanTranscript);
+            const textInput = document.getElementById('textInput');
+            if (textInput) {
+              textInput.value = cleanTranscript;
+            }
+            setTimeout(() => processCommand(cleanTranscript), 100);
+          }
+          return;
+        }
+
         appActions.setTranscript(fullTranscript);
       });
 

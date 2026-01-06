@@ -53,13 +53,13 @@
         <div class="flex flex-col gap-2">
           <button
             id="commitBtn"
-            class="px-4 py-2.5 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
+            class="px-4 py-2 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
             disabled
             @click="voide.commitChanges()"
           >Commit</button>
           <button
             id="pushBtn"
-            class="px-4 py-2.5 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
+            class="px-4 py-2 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
             disabled
             @click="voide.pushChanges()"
           >Push</button>
