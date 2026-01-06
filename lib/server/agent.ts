@@ -47,22 +47,31 @@ User request: ${prompt}`
         permissionMode
       }
     })) {
-      if (message.type === 'assistant' && message.message?.content) {
-        for (const block of message.message.content) {
-          if ('text' in block && block.text) {
-            yield { type: 'chunk', text: block.text }
-          } else if ('name' in block) {
-            yield {
-              type: 'tool',
-              tool: block.name,
-              input: 'input' in block ? block.input : undefined
+      console.log('[Agent] Message type:', message.type, 'has content:', !!(message as any).message?.content)
+
+      if (message.type === 'assistant') {
+        const msg = message as any
+        if (msg.message?.content) {
+          for (const block of msg.message.content) {
+            if ('text' in block && block.text) {
+              console.log('[Agent] Yielding text chunk:', block.text.substring(0, 50))
+              yield { type: 'chunk', text: block.text }
+            } else if ('name' in block) {
+              console.log('[Agent] Yielding tool:', block.name)
+              yield {
+                type: 'tool',
+                tool: block.name,
+                input: 'input' in block ? block.input : undefined
+              }
             }
           }
         }
       } else if (message.type === 'result') {
+        console.log('[Agent] Result received, subtype:', message.subtype)
         yield { type: 'done', subtype: message.subtype }
       }
     }
+    console.log('[Agent] Query loop finished')
   } catch (error) {
     yield {
       type: 'error',

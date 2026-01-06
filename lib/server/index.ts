@@ -56,6 +56,7 @@ async function pushChanges(cwd: string): Promise<void> {
 // Request handlers
 const server = Bun.serve({
   port: PORT,
+  idleTimeout: 255, // Max timeout for long-running agent queries
 
   async fetch(req) {
     const url = new URL(req.url)

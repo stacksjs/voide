@@ -266,8 +266,6 @@
         return;
       }
 
-      addMessage('system', 'Opening repository: ' + inputValue);
-
       checkBackendAPI().then((hasBackend) => {
         if (hasBackend) {
           return fetch(config.apiBaseUrl + '/repo', {
@@ -291,7 +289,7 @@
           appActions.setRepoPath(repo.path);
           settingsActions.setLastRepoPath(repo.path);
           saveChat();
-          addMessage('system', 'Repository "' + repo.name + '" opened.\nPath: ' + repo.path + '\nBranch: ' + repo.branch);
+          addMessage('system', 'Opened "' + repo.name + '"\nPath: ' + repo.path + '\nBranch: ' + repo.branch);
           appActions.setTerminalTitle(config.title + ' - ' + repo.name);
         } else if (response.error) {
           throw new Error(response.error);
@@ -417,21 +415,24 @@
           // Remove "go" from the transcript and submit
           const cleanTranscript = fullTranscript.replace(/\s*go\s*$/i, '').trim();
           console.log('[Voide] "Go" detected, submitting:', cleanTranscript);
-          appActions.setTranscript(cleanTranscript);
 
           if (cleanTranscript) {
-            // Stop recording and submit
+            // Stop recording and clear everything
             appActions.setRecording(false);
             speechRecognition.stop();
             accumulatedTranscript = '';
+            appActions.setTranscript('');
+            chatActions.clearInput();
             updateTrayStatus('ready');
 
-            // Submit the command
-            chatActions.setInputText(cleanTranscript);
+            // Clear the text input
             const textInput = document.getElementById('textInput');
             if (textInput) {
-              textInput.value = cleanTranscript;
+              textInput.value = '';
+              textInput.style.height = 'auto';
             }
+
+            // Submit the command
             setTimeout(() => processCommand(cleanTranscript), 100);
           }
           return;
@@ -627,7 +628,13 @@
       const chat = chatStore.get();
       const text = chat.inputText.trim();
       if (text && !appStore.get().isProcessing) {
+        // Clear input immediately
         chatActions.clearInput();
+        const textInput = document.getElementById('textInput');
+        if (textInput) {
+          textInput.value = '';
+          textInput.style.height = 'auto';
+        }
         processCommand(text);
       }
     }
@@ -651,11 +658,6 @@
 
     function handleSendClick() {
       handleTextSubmit();
-      const textInput = document.getElementById('textInput');
-      if (textInput) {
-        textInput.value = '';
-        textInput.style.height = 'auto';
-      }
     }
 
     function handleDriverChange(event) {
