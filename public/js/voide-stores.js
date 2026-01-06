@@ -223,7 +223,7 @@ window.VoideStores = (function() {
     repoPath: "",
     hasChanges: false,
     speechSupported: false,
-    currentDriver: "claude-cli-local",
+    currentDriver: "claude-sdk",
     isNativeApp: false,
     terminalTitle: "Voide - Ready"
   }, {

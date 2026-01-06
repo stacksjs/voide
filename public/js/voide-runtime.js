@@ -56,9 +56,7 @@
       version: '1.0.0',
       apiBaseUrl: 'http://localhost:3008/voide',
       drivers: {
-        'claude-cli-local': { name: 'Claude CLI (Local)', requiresKey: null },
-        'claude-cli-ec2': { name: 'Claude CLI (EC2)', requiresKey: 'BUDDY_EC2_HOST' },
-        'claude': { name: 'Claude API', requiresKey: 'ANTHROPIC_API_KEY' },
+        'claude-sdk': { name: 'Claude Agent SDK', requiresKey: null },
         'openai': { name: 'OpenAI', requiresKey: 'OPENAI_API_KEY' },
         'ollama': { name: 'Ollama', requiresKey: null },
         'mock': { name: 'Mock', requiresKey: null }

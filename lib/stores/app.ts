@@ -22,7 +22,7 @@ export const appStore = createStore<AppState>({
   repoPath: '',
   hasChanges: false,
   speechSupported: false,
-  currentDriver: 'claude-cli-local',
+  currentDriver: 'claude-sdk',
   isNativeApp: false,
   terminalTitle: 'Voide - Ready'
 }, {

@@ -9,13 +9,17 @@
     "build:all": "bun run build:stores && bun run build:css",
     "build:stores": "bun run lib/build.ts",
     "build:css": "bun run lib/build-css.ts",
+    "server": "bun run lib/server/index.ts",
+    "start": "bun run server & bun run dev",
     "preview": "bun run --bun ../stx/packages/stx/bin/cli.ts preview",
     "lint": "bunx --bun pickier run --mode lint",
     "lint:fix": "bunx --bun pickier run --mode lint --fix",
     "format": "bunx --bun pickier run --mode format --write",
     "format:check": "bunx --bun pickier run --mode format --check"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.76"
+  },
   "devDependencies": {
     "@stacksjs/headwind": "link:@stacksjs/headwind",
     "@stacksjs/stx": "link:@stacksjs/stx",

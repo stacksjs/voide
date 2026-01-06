@@ -42,9 +42,7 @@
             class="appearance-none bg-monokai-bg-dark border border-monokai-border rounded-lg py-2 pl-3 pr-8 text-sm text-monokai-fg cursor-pointer outline-none hover:border-monokai-gray transition-colors"
             @change="voide.handleDriverChange($event)"
           >
-            <option value="claude-cli-local" selected>Claude CLI</option>
-            <option value="claude-cli-ec2">Claude EC2</option>
-            <option value="claude">Claude API</option>
+            <option value="claude-sdk" selected>Claude SDK</option>
             <option value="openai">OpenAI</option>
             <option value="ollama">Ollama</option>
             <option value="mock">Mock</option>
