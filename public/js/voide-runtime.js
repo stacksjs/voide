@@ -435,6 +435,31 @@
           return;
         }
 
+        // Check for "backspace" trigger word - deletes the last word
+        if (trimmed.endsWith(' backspace') || trimmed === 'backspace') {
+          // Remove "backspace" and the word before it
+          var words = fullTranscript.trim().split(/\s+/);
+          // Remove "backspace"
+          words.pop();
+          // Remove the last actual word
+          if (words.length > 0) {
+            words.pop();
+          }
+          var newTranscript = words.join(' ');
+          console.log('[Voide] "Backspace" detected, new transcript:', newTranscript);
+
+          accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
+          appActions.setTranscript(newTranscript);
+          chatActions.setInputText(newTranscript);
+          const textInput = document.getElementById('textInput');
+          if (textInput) {
+            textInput.value = newTranscript;
+            textInput.style.height = 'auto';
+            textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
+          }
+          return;
+        }
+
         // Check for "go" trigger word at the end - submits the prompt
         if (trimmed.endsWith(' go') || trimmed === 'go') {
           // Remove "go" from the transcript and submit
