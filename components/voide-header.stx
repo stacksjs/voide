@@ -36,7 +36,7 @@
       <!-- Right Controls -->
       <div class="flex items-center gap-3">
         <!-- AI Driver -->
-        <div class="relative">
+        <div class="relative inline-flex items-center">
           <select
             id="aiDriver"
             class="appearance-none bg-monokai-bg-dark border border-monokai-border rounded-lg py-2 pl-3 pr-8 text-sm text-monokai-fg cursor-pointer outline-none hover:border-monokai-gray transition-colors focus:border-monokai-purple focus:ring-0 select-none"
@@ -48,7 +48,7 @@
             <option value="ollama" class="bg-monokai-bg-dark text-monokai-fg">Ollama</option>
             <option value="mock" class="bg-monokai-bg-dark text-monokai-fg">Mock</option>
           </select>
-          <svg class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" fill="none" stroke="#727072" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+          <svg class="absolute right-2 w-4 h-4 pointer-events-none" fill="none" stroke="#727072" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
         </div>
 
         <!-- GitHub -->

@@ -123,6 +123,7 @@
         let fullContent = '';
         let currentEvent = '';
         const app = appStore.get();
+        const chat = chatStore.get();
 
         fetch(config.apiBaseUrl + '/process/stream', {
           method: 'POST',
@@ -130,7 +131,8 @@
           body: JSON.stringify({
             command: command,
             driver: app.currentDriver,
-            repository: app.repoPath
+            repository: app.repoPath,
+            sessionId: chat.sessionId  // Continue existing session
           })
         }).then((response) => {
           if (!response.ok) throw new Error('Stream request failed');
@@ -162,7 +164,11 @@
                 if (line.indexOf('data: ') === 0) {
                   try {
                     const data = JSON.parse(line.substring(6));
-                    if (currentEvent === 'chunk' && data.text) {
+                    if (currentEvent === 'session' && data.sessionId) {
+                      // Store session ID for conversation continuity
+                      chatActions.setSessionId(data.sessionId);
+                      console.log('[Voide] Session ID:', data.sessionId);
+                    } else if (currentEvent === 'chunk' && data.text) {
                       fullContent += data.text;
                       updateLastMessage('assistant', fullContent);
                     } else if (currentEvent === 'tool' && data.tool) {

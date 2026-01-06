@@ -270,7 +270,8 @@ window.VoideStores = (function() {
     messages: [],
     inputText: "",
     charCount: 0,
-    pendingPrompt: null
+    pendingPrompt: null,
+    sessionId: null
   }, {
     name: "chat"
   });
@@ -321,7 +322,8 @@ window.VoideStores = (function() {
       if (chat) {
         chatStore.update({
           currentChatId: chatId,
-          messages: chat.messages || []
+          messages: chat.messages || [],
+          sessionId: chat.sessionId || null
         });
         return true;
       }
@@ -337,6 +339,7 @@ window.VoideStores = (function() {
         messages: state.messages,
         repoPath,
         driver,
+        sessionId: state.sessionId || undefined,
         createdAt: chats[state.currentChatId]?.createdAt || Date.now(),
         updatedAt: Date.now()
       };
@@ -400,7 +403,8 @@ window.VoideStores = (function() {
       chatStore.update({
         currentChatId: null,
         messages: [],
-        pendingPrompt: null
+        pendingPrompt: null,
+        sessionId: null
       });
       history.pushState({}, "", "/");
     },
@@ -409,6 +413,9 @@ window.VoideStores = (function() {
     },
     clearPendingPrompt: () => {
       chatStore.update({ pendingPrompt: null });
+    },
+    setSessionId: (sessionId) => {
+      chatStore.update({ sessionId });
     }
   };
   // lib/stores/settings.ts

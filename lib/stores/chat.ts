@@ -23,6 +23,7 @@ export interface Chat {
   messages: Message[]
   repoPath: string
   driver: string
+  sessionId?: string  // Claude Agent SDK session ID for conversation continuity
   createdAt: number
   updatedAt: number
 }
@@ -33,6 +34,7 @@ export interface ChatState {
   inputText: string
   charCount: number
   pendingPrompt: PendingPrompt | null
+  sessionId: string | null  // Claude Agent SDK session ID for conversation continuity
 }
 
 const STORAGE_KEY_CHATS = 'voide:chats'
@@ -43,7 +45,8 @@ export const chatStore = createStore<ChatState>({
   messages: [],
   inputText: '',
   charCount: 0,
-  pendingPrompt: null
+  pendingPrompt: null,
+  sessionId: null
 }, {
   name: 'chat'
 })
@@ -110,7 +113,8 @@ export const chatActions = {
     if (chat) {
       chatStore.update({
         currentChatId: chatId,
-        messages: chat.messages || []
+        messages: chat.messages || [],
+        sessionId: chat.sessionId || null  // Restore session ID for continuity
       })
       return true
     }
@@ -127,6 +131,7 @@ export const chatActions = {
       messages: state.messages,
       repoPath,
       driver,
+      sessionId: state.sessionId || undefined,  // Persist session ID
       createdAt: chats[state.currentChatId]?.createdAt || Date.now(),
       updatedAt: Date.now()
     }
@@ -206,7 +211,8 @@ export const chatActions = {
     chatStore.update({
       currentChatId: null,
       messages: [],
-      pendingPrompt: null
+      pendingPrompt: null,
+      sessionId: null  // Clear session for new chat
     })
     history.pushState({}, '', '/')
   },
@@ -217,5 +223,9 @@ export const chatActions = {
 
   clearPendingPrompt: () => {
     chatStore.update({ pendingPrompt: null })
+  },
+
+  setSessionId: (sessionId: string | null) => {
+    chatStore.update({ sessionId })
   }
 }

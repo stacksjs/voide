@@ -88,7 +88,7 @@ const server = Bun.serve({
 
       // Streaming agent query
       if (path === '/voide/process/stream' && req.method === 'POST') {
-        const body = await req.json() as { command: string; repository: string }
+        const body = await req.json() as { command: string; repository: string; sessionId?: string }
 
         // Track changes before query to detect new changes
         const hadChangesBefore = await hasChanges(body.repository)
@@ -110,12 +110,16 @@ const server = Bun.serve({
               for await (const message of runAgentQuery({
                 prompt: body.command,
                 cwd: body.repository,
+                sessionId: body.sessionId,  // Resume from existing session
                 allowedTools: ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch', 'Task', 'TodoWrite', 'NotebookEdit'],
                 permissionMode: 'acceptEdits'
               })) {
                 lastActivity = Date.now()
 
-                if (message.type === 'chunk') {
+                if (message.type === 'session') {
+                  // Send session ID to client for future continuations
+                  controller.enqueue(encoder.encode(`event: session\ndata: ${JSON.stringify({ sessionId: message.sessionId })}\n\n`))
+                } else if (message.type === 'chunk') {
                   controller.enqueue(encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: message.text })}\n\n`))
                 } else if (message.type === 'tool') {
                   // Track if file-modifying tools were used
