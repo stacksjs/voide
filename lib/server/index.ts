@@ -97,29 +97,43 @@ const server = Bun.serve({
         const stream = new ReadableStream({
           async start(controller) {
             const encoder = new TextEncoder()
+            let lastActivity = Date.now()
 
-            for await (const message of runAgentQuery({
-              prompt: body.command,
-              cwd: body.repository,
-              allowedTools: ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch', 'Task', 'TodoWrite', 'NotebookEdit'],
-              permissionMode: 'acceptEdits'
-            })) {
-              if (message.type === 'chunk') {
-                controller.enqueue(encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: message.text })}\n\n`))
-              } else if (message.type === 'tool') {
-                // Track if file-modifying tools were used
-                if (['Edit', 'Write', 'Bash'].includes(message.tool || '')) {
-                  usedEditTools = true
-                }
-                controller.enqueue(encoder.encode(`event: tool\ndata: ${JSON.stringify({ tool: message.tool, input: message.input })}\n\n`))
-              } else if (message.type === 'done') {
-                // Only report new changes if edit tools were used
-                const hasChangesNow = usedEditTools ? await hasChanges(body.repository) : false
-                const madeNewChanges = usedEditTools && hasChangesNow && !hadChangesBefore
-                controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify({ subtype: message.subtype, hasChanges: madeNewChanges })}\n\n`))
-              } else if (message.type === 'error') {
-                controller.enqueue(encoder.encode(`event: error\ndata: ${JSON.stringify({ error: message.error })}\n\n`))
+            // Send keepalive pings every 30 seconds to prevent timeout
+            const keepaliveInterval = setInterval(() => {
+              if (Date.now() - lastActivity > 25000) {
+                controller.enqueue(encoder.encode(`event: ping\ndata: {}\n\n`))
               }
+            }, 30000)
+
+            try {
+              for await (const message of runAgentQuery({
+                prompt: body.command,
+                cwd: body.repository,
+                allowedTools: ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch', 'Task', 'TodoWrite', 'NotebookEdit'],
+                permissionMode: 'acceptEdits'
+              })) {
+                lastActivity = Date.now()
+
+                if (message.type === 'chunk') {
+                  controller.enqueue(encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: message.text })}\n\n`))
+                } else if (message.type === 'tool') {
+                  // Track if file-modifying tools were used
+                  if (['Edit', 'Write', 'Bash'].includes(message.tool || '')) {
+                    usedEditTools = true
+                  }
+                  controller.enqueue(encoder.encode(`event: tool\ndata: ${JSON.stringify({ tool: message.tool, input: message.input })}\n\n`))
+                } else if (message.type === 'done') {
+                  // Only report new changes if edit tools were used
+                  const hasChangesNow = usedEditTools ? await hasChanges(body.repository) : false
+                  const madeNewChanges = usedEditTools && hasChangesNow && !hadChangesBefore
+                  controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify({ subtype: message.subtype, hasChanges: madeNewChanges })}\n\n`))
+                } else if (message.type === 'error') {
+                  controller.enqueue(encoder.encode(`event: error\ndata: ${JSON.stringify({ error: message.error })}\n\n`))
+                }
+              }
+            } finally {
+              clearInterval(keepaliveInterval)
             }
 
             controller.close()

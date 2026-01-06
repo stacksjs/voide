@@ -165,6 +165,31 @@
                     if (currentEvent === 'chunk' && data.text) {
                       fullContent += data.text;
                       updateLastMessage('assistant', fullContent);
+                    } else if (currentEvent === 'tool' && data.tool) {
+                      // Show tool activity with context
+                      var toolInfo = data.tool;
+                      if (data.input) {
+                        if (data.tool === 'Read' && data.input.file_path) {
+                          toolInfo = 'Reading ' + data.input.file_path.split('/').pop();
+                        } else if (data.tool === 'Edit' && data.input.file_path) {
+                          toolInfo = 'Editing ' + data.input.file_path.split('/').pop();
+                        } else if (data.tool === 'Write' && data.input.file_path) {
+                          toolInfo = 'Writing ' + data.input.file_path.split('/').pop();
+                        } else if (data.tool === 'Bash' && data.input.command) {
+                          var cmd = data.input.command.substring(0, 40);
+                          toolInfo = '$ ' + cmd + (data.input.command.length > 40 ? '...' : '');
+                        } else if (data.tool === 'Glob' && data.input.pattern) {
+                          toolInfo = 'Finding ' + data.input.pattern;
+                        } else if (data.tool === 'Grep' && data.input.pattern) {
+                          toolInfo = 'Searching "' + data.input.pattern + '"';
+                        } else if (data.tool === 'Task' && data.input.description) {
+                          toolInfo = 'Task: ' + data.input.description;
+                        } else if (data.tool === 'WebSearch' && data.input.query) {
+                          toolInfo = 'Searching web: ' + data.input.query;
+                        }
+                      }
+                      fullContent += '\n`' + toolInfo + '`';
+                      updateLastMessage('assistant', fullContent);
                     } else if (currentEvent === 'prompt') {
                       // Claude CLI is asking for input
                       chatActions.setPendingPrompt({
@@ -680,7 +705,21 @@
           textInput.style.height = 'auto';
           textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
         }
+        // Keep repo input synced with store
+        const repoInput = document.getElementById('repoInput');
+        if (repoInput && state.repoPath && !repoInput.value) {
+          repoInput.value = state.repoPath;
+        }
       });
+
+      // Also set repo input immediately on init
+      setTimeout(() => {
+        const app = appStore.get();
+        const repoInput = document.getElementById('repoInput');
+        if (repoInput && app.repoPath) {
+          repoInput.value = app.repoPath;
+        }
+      }, 0);
 
       // Check URL for existing chat (supports both /chat/[id] and query params)
       const chatIdFromUrl = chatActions.getChatIdFromUrl();
@@ -692,11 +731,19 @@
           history.replaceState({}, '', '/');
         }
       } else {
-        const settings = settingsStore.get();
-        if (settings.lastRepoPath) {
-          appActions.setRepoPath(settings.lastRepoPath);
+        // Restore repo path from app store (persisted in localStorage)
+        const app = appStore.get();
+        if (app.repoPath) {
           const repoInput = document.getElementById('repoInput');
-          if (repoInput) repoInput.value = settings.lastRepoPath;
+          if (repoInput) repoInput.value = app.repoPath;
+        } else {
+          // Fallback to settings if app store doesn't have it
+          const settings = settingsStore.get();
+          if (settings.lastRepoPath) {
+            appActions.setRepoPath(settings.lastRepoPath);
+            const repoInput = document.getElementById('repoInput');
+            if (repoInput) repoInput.value = settings.lastRepoPath;
+          }
         }
       }
 
