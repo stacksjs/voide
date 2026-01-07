@@ -342,6 +342,88 @@
     // Speech Recognition
     // =========================================================================
 
+    // Convert spoken punctuation words to actual symbols
+    const punctuationMap = [
+      // Common punctuation
+      [/\bperiod\b/gi, '.'],
+      [/\bfull stop\b/gi, '.'],
+      [/\bcomma\b/gi, ','],
+      [/\bquestion mark\b/gi, '?'],
+      [/\bexclamation mark\b/gi, '!'],
+      [/\bexclamation point\b/gi, '!'],
+      [/\bcolon\b/gi, ':'],
+      [/\bsemicolon\b/gi, ';'],
+      [/\bsemi colon\b/gi, ';'],
+      // Quotes
+      [/\bquote\b/gi, '"'],
+      [/\bend quote\b/gi, '"'],
+      [/\bopen quote\b/gi, '"'],
+      [/\bclose quote\b/gi, '"'],
+      [/\bsingle quote\b/gi, "'"],
+      [/\bapostrophe\b/gi, "'"],
+      // Brackets
+      [/\bopen paren\b/gi, '('],
+      [/\bclose paren\b/gi, ')'],
+      [/\bopen parenthesis\b/gi, '('],
+      [/\bclose parenthesis\b/gi, ')'],
+      [/\bleft paren\b/gi, '('],
+      [/\bright paren\b/gi, ')'],
+      [/\bopen bracket\b/gi, '['],
+      [/\bclose bracket\b/gi, ']'],
+      [/\bleft bracket\b/gi, '['],
+      [/\bright bracket\b/gi, ']'],
+      [/\bopen brace\b/gi, '{'],
+      [/\bclose brace\b/gi, '}'],
+      [/\bleft brace\b/gi, '{'],
+      [/\bright brace\b/gi, '}'],
+      [/\bopen curly\b/gi, '{'],
+      [/\bclose curly\b/gi, '}'],
+      // Special characters
+      [/\bhyphen\b/gi, '-'],
+      [/\bdash\b/gi, '-'],
+      [/\bunderscore\b/gi, '_'],
+      [/\bslash\b/gi, '/'],
+      [/\bforward slash\b/gi, '/'],
+      [/\bbackslash\b/gi, '\\'],
+      [/\bback slash\b/gi, '\\'],
+      [/\bpipe\b/gi, '|'],
+      [/\bampersand\b/gi, '&'],
+      [/\bat sign\b/gi, '@'],
+      [/\bhash\b/gi, '#'],
+      [/\bhashtag\b/gi, '#'],
+      [/\bpound sign\b/gi, '#'],
+      [/\basterisk\b/gi, '*'],
+      [/\bstar\b/gi, '*'],
+      [/\bpercent\b/gi, '%'],
+      [/\bpercent sign\b/gi, '%'],
+      [/\bcaret\b/gi, '^'],
+      [/\btilde\b/gi, '~'],
+      [/\bbacktick\b/gi, '`'],
+      [/\bgrave\b/gi, '`'],
+      [/\bellipsis\b/gi, '...'],
+      [/\bdot dot dot\b/gi, '...'],
+      // Comparison operators
+      [/\bequals\b/gi, '='],
+      [/\bequal sign\b/gi, '='],
+      [/\bless than\b/gi, '<'],
+      [/\bgreater than\b/gi, '>'],
+      // New line
+      [/\bnew line\b/gi, '\n'],
+      [/\bnewline\b/gi, '\n'],
+    ];
+
+    function convertSpokenPunctuation(text) {
+      let result = text;
+      for (const [pattern, replacement] of punctuationMap) {
+        result = result.replace(pattern, replacement);
+      }
+      // Clean up extra spaces around punctuation
+      result = result.replace(/\s+([.,!?;:])/g, '$1');
+      result = result.replace(/([(\[{])\s+/g, '$1');
+      result = result.replace(/\s+([)\]}])/g, '$1');
+      return result;
+    }
+
     function initSpeechRecognition() {
       if (!speechRecognition.isSupported) {
         appActions.setSpeechSupported(false);
@@ -357,8 +439,8 @@
       });
 
       speechRecognition.on('result', (data) => {
-        const fullTranscript = accumulatedTranscript + data.transcript;
-        const trimmed = fullTranscript.trim().toLowerCase();
+        const rawTranscript = accumulatedTranscript + data.transcript;
+        const trimmed = rawTranscript.trim().toLowerCase();
 
         // "reset" clears the prompt
         if (trimmed.endsWith(' reset') || trimmed === 'reset') {
@@ -374,10 +456,10 @@
 
         // "backspace" deletes last word
         if (trimmed.endsWith(' backspace') || trimmed === 'backspace') {
-          const words = fullTranscript.trim().split(/\s+/);
+          const words = rawTranscript.trim().split(/\s+/);
           words.pop(); // remove "backspace"
           if (words.length > 0) words.pop(); // remove last word
-          const newTranscript = words.join(' ');
+          const newTranscript = convertSpokenPunctuation(words.join(' '));
           accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
           appActions.setTranscript(newTranscript);
           chatActions.setInputText(newTranscript);
@@ -391,7 +473,7 @@
 
         // "go" submits the prompt
         if (trimmed.endsWith(' go') || trimmed === 'go') {
-          const cleanTranscript = fullTranscript.replace(/\s*go\s*$/i, '').trim();
+          const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*go\s*$/i, '').trim());
           if (cleanTranscript) {
             appActions.setRecording(false);
             speechRecognition.stop();
@@ -407,13 +489,16 @@
           return;
         }
 
+        // Convert spoken punctuation to symbols and update display
+        const fullTranscript = convertSpokenPunctuation(rawTranscript);
         appActions.setTranscript(fullTranscript);
       });
 
       speechRecognition.on('end', () => {
         const app = appStore.get();
         if (app.isRecording) {
-          accumulatedTranscript = app.transcript + ' ';
+          // Store converted transcript for continuation
+          accumulatedTranscript = (app.transcript || '') + ' ';
           speechRecognition.start();
         } else {
           accumulatedTranscript = '';
