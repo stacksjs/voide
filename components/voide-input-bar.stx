@@ -33,6 +33,15 @@
           >
             <svg id="micIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
           </button>
+
+          <!-- Stop button (shown when processing) -->
+          <button
+            id="stopBtn"
+            class="hidden w-8 h-8 rounded-lg flex items-center justify-center bg-monokai-pink/20 text-monokai-pink hover:bg-monokai-pink/30 transition-colors"
+            title="Stop"
+          >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
+          </button>
         </div>
 
         <div class="flex items-center gap-3">
@@ -46,20 +55,13 @@
             <option value="ollama">Ollama</option>
           </select>
 
-          <!-- Send/Stop button -->
+          <!-- Send button -->
           <button
             id="sendBtn"
             class="w-8 h-8 rounded-lg bg-monokai-yellow flex items-center justify-center cursor-pointer hover:bg-monokai-yellow/90 transition-colors"
             title="Send (Enter)"
           >
             <svg class="w-4 h-4" fill="none" stroke="#1e1e1e" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"></path></svg>
-          </button>
-          <button
-            id="stopBtn"
-            class="hidden w-8 h-8 rounded-lg bg-monokai-pink flex items-center justify-center cursor-pointer hover:bg-monokai-pink/90 transition-colors"
-            title="Stop"
-          >
-            <svg class="w-4 h-4" fill="#ffffff" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
           </button>
         </div>
       </div>
@@ -599,16 +601,24 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       }).then(res => res.json()).then(data => {
-        if (data.success) {
-          appActions.setProcessing(false);
-          const messages = chatStore.get().messages;
-          if (messages.length > 0) {
-            updateLastMessage('assistant', messages[messages.length - 1]?.content + '\n\n*Process stopped by user*');
+        appActions.setProcessing(false);
+        const messages = chatStore.get().messages;
+        if (messages.length > 0) {
+          const lastMsg = messages[messages.length - 1];
+          if (lastMsg && lastMsg.type === 'assistant') {
+            updateLastMessage('assistant', lastMsg.content + '\n\n— *Stopped*');
           }
-          addMessage('system', 'Process stopped.');
         }
       }).catch(error => {
-        console.error('Failed to cancel:', error);
+        // Even on error, stop processing locally
+        appActions.setProcessing(false);
+        const messages = chatStore.get().messages;
+        if (messages.length > 0) {
+          const lastMsg = messages[messages.length - 1];
+          if (lastMsg && lastMsg.type === 'assistant') {
+            updateLastMessage('assistant', lastMsg.content + '\n\n— *Stopped*');
+          }
+        }
       });
     }
 
@@ -642,13 +652,11 @@
     // =========================================================================
 
     appStore.subscribe((state) => {
-      // Toggle send/stop buttons
-      if (sendBtn && stopBtn) {
+      // Show/hide stop button based on processing state
+      if (stopBtn) {
         if (state.isProcessing) {
-          sendBtn.classList.add('hidden');
           stopBtn.classList.remove('hidden');
         } else {
-          sendBtn.classList.remove('hidden');
           stopBtn.classList.add('hidden');
         }
       }

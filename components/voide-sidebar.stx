@@ -4,10 +4,10 @@
     <div class="p-3">
       <button
         id="newChatBtn"
-        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-monokai-fg hover:bg-monokai-bg-dark rounded-lg transition-colors"
+        class="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium text-monokai-fg bg-monokai-bg-dark border border-monokai-border hover:border-monokai-gray rounded-xl transition-all"
       >
-        <svg class="w-4 h-4 text-monokai-gray" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"></path>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
         </svg>
         New chat
       </button>
@@ -64,8 +64,9 @@
     // =========================================================================
 
     function renderChatList() {
-      const chats = chatActions.getAllChats();
-      const currentChatId = chatStore.get().id;
+      const chatsObj = chatActions.getAllChats() || {};
+      const chats = Object.values(chatsObj);
+      const currentChatId = chatStore.get().currentChatId;
 
       if (!chatList) return;
 
@@ -86,16 +87,57 @@
             data-chat-id="${chat.id}"
           >
             <span class="flex-1 text-sm ${isActive ? 'text-monokai-fg font-medium' : 'text-monokai-fg/80'} truncate">${title}</span>
+            <button
+              class="delete-btn opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center text-monokai-gray hover:text-monokai-pink transition-all"
+              data-chat-id="${chat.id}"
+              title="Delete chat"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
           </div>
         `;
       }).join('');
 
+      // Bind click handlers for chat items
       chatList.querySelectorAll('.chat-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+          // Don't load chat if clicking delete button
+          if (e.target.closest('.delete-btn')) return;
           const chatId = item.dataset.chatId;
           loadChat(chatId);
         });
       });
+
+      // Bind click handlers for delete buttons
+      chatList.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const chatId = btn.dataset.chatId;
+          confirmDeleteChat(chatId);
+        });
+      });
+    }
+
+    function confirmDeleteChat(chatId) {
+      const chat = Object.values(chatActions.getAllChats() || {}).find(c => c.id === chatId);
+      const title = chat ? getChatTitle(chat) : 'this chat';
+
+      if (confirm(`Delete "${title}"?\n\nThis action cannot be undone.`)) {
+        deleteChat(chatId);
+      }
+    }
+
+    function deleteChat(chatId) {
+      chatActions.deleteChat(chatId);
+
+      // If we deleted the current chat, start a new one
+      const currentId = chatStore.get().currentChatId;
+      if (chatId === currentId) {
+        chatActions.newChat();
+        history.pushState({}, '', '/');
+      }
+
+      renderChatList();
     }
 
     // =========================================================================
@@ -103,7 +145,7 @@
     // =========================================================================
 
     function loadChat(chatId) {
-      const currentId = chatStore.get().id;
+      const currentId = chatStore.get().currentChatId;
       if (chatId === currentId) return;
 
       const loaded = chatActions.loadChat(chatId);
@@ -145,7 +187,8 @@
     window.voide = window.voide || {};
     Object.assign(window.voide, {
       renderChatList,
-      newChat
+      newChat,
+      deleteChat
     });
   }
 
