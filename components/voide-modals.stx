@@ -148,10 +148,6 @@
                 class="px-4 py-2 text-sm font-medium bg-monokai-bg-dark border border-monokai-border text-monokai-fg rounded-xl hover:border-monokai-gray transition-all"
                 title="Browse for folder"
               >Browse</button>
-              <button
-                id="setProjectBtn"
-                class="px-4 py-2 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl hover:bg-monokai-green/90 transition-all"
-              >Open</button>
             </div>
             <p class="mt-2 text-xs text-monokai-gray">Select a folder or enter the path manually</p>
           </div>
@@ -212,7 +208,7 @@
           >Cancel</button>
           <button
             class="px-4 py-2 text-sm font-medium bg-monokai-purple text-white rounded-lg hover:bg-monokai-purple/90 transition-all"
-            @click="voide.saveApiSettings()"
+            @click="voide.saveSettings()"
           >Save Settings</button>
         </div>
       </div>
@@ -304,15 +300,10 @@
     }
 
     // Bind buttons
-    const setProjectBtn = document.getElementById('setProjectBtn');
     const browseBtn = document.getElementById('browseBtn');
     const projectPathInput = document.getElementById('projectPathInput');
 
-    setProjectBtn?.addEventListener('click', setProjectPath);
     browseBtn?.addEventListener('click', browseForFolder);
-    projectPathInput?.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') setProjectPath();
-    });
 
     // Pre-fill project path
     const currentPath = appStore.get().repoPath;
@@ -324,7 +315,16 @@
     // API Settings
     // =========================================================================
 
-    function saveApiSettings() {
+    function saveSettings() {
+      // Save project path
+      const projectInput = document.getElementById('projectPathInput');
+      const path = projectInput ? projectInput.value.trim() : '';
+      if (path) {
+        appActions.setRepoPath(path);
+        settingsActions.setLastRepoPath(path);
+      }
+
+      // Save API keys
       const anthropicInput = document.getElementById('anthropicApiKey');
       const openaiInput = document.getElementById('openaiApiKey');
       const claudeHostInput = document.getElementById('claudeCliHost');
@@ -336,7 +336,7 @@
       });
 
       closeSettingsModal();
-      addMessage('system', 'API settings saved.');
+      addMessage('system', path ? 'Settings saved. Project: ' + path.split('/').pop() : 'Settings saved.');
     }
 
     // =========================================================================
@@ -493,7 +493,7 @@
       openSettingsModal,
       closeSettingsModal,
       setProjectPath,
-      saveApiSettings,
+      saveSettings,
       connectGithub,
       disconnectGithub
     });

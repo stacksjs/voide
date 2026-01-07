@@ -25,6 +25,7 @@
         <!-- Messages will be rendered here -->
       </div>
     </div>
+
   </div>
 </template>
 
@@ -35,6 +36,7 @@
   let renderedCount = 0;
   const messageElements = new Map();
   const messageUpdates = new Map();
+  let isCurrentlyProcessing = false;
 
   // =========================================================================
   // Greeting
@@ -87,7 +89,11 @@
 
   function renderMarkdown(text) {
     if (!text) return '';
-    let html = escapeHtml(text);
+
+    // Filter out "*thinking*" patterns from Claude's response
+    let cleaned = text.replace(/^\*thinking\*\s*/i, '').replace(/\n\*thinking\*\s*/gi, '\n');
+
+    let html = escapeHtml(cleaned);
 
     // Code blocks (preserve newlines inside)
     const codeBlocks = [];
@@ -138,12 +144,13 @@
     const isError = msg.type === 'error';
     const isSystem = msg.type === 'system';
 
-    // Loading indicator
+    // Loading indicator - show avatar with empty content (thinking will be appended)
     if (msg.content === '...') {
-      return `<div class="flex items-center gap-2 py-2">
-        <div class="animate-bounce w-2 h-2 bg-monokai-purple rounded-full"></div>
-        <div class="animate-bounce w-2 h-2 bg-monokai-purple rounded-full" style="animation-delay:150ms"></div>
-        <div class="animate-bounce w-2 h-2 bg-monokai-purple rounded-full" style="animation-delay:300ms"></div>
+      return `<div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center">
+          <span class="text-white text-xs font-medium">V</span>
+        </div>
+        <div class="flex-1 assistant-content"></div>
       </div>`;
     }
 
@@ -178,7 +185,7 @@
       <div class="flex-shrink-0 w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center">
         <span class="text-white text-xs font-medium">V</span>
       </div>
-      <div class="flex-1 text-sm text-monokai-fg/90 leading-relaxed">${renderMarkdown(msg.content)}</div>
+      <div class="flex-1 text-sm text-monokai-fg/90 leading-relaxed assistant-content">${renderMarkdown(msg.content)}</div>
     </div>`;
   }
 
@@ -242,6 +249,18 @@
     if (shouldAutoScroll && chatState) {
       scrollToBottom(chatState);
     }
+
+    // Re-add thinking indicator if processing
+    if (isCurrentlyProcessing) {
+      const assistantContents = container.querySelectorAll('.assistant-content');
+      const lastContent = assistantContents[assistantContents.length - 1];
+      if (lastContent && !lastContent.querySelector('.thinking-indicator')) {
+        const indicator = document.createElement('div');
+        indicator.className = 'thinking-indicator mt-2';
+        indicator.innerHTML = '<span class="text-sm text-monokai-gray/60 italic animate-pulse">thinking...</span>';
+        lastContent.appendChild(indicator);
+      }
+    }
   }
 
   function init() {
@@ -282,6 +301,31 @@
 
     // Render messages
     chatStore.subscribe(state => renderMessages(state.messages));
+
+    // Subscribe to processing state
+    appStore.subscribe(state => {
+      isCurrentlyProcessing = state.isProcessing;
+
+      // Remove all existing thinking indicators
+      const indicators = document.querySelectorAll('.thinking-indicator');
+      indicators.forEach(el => el.remove());
+
+      // Add indicator if processing
+      if (state.isProcessing) {
+        const container = document.getElementById('messagesContainer');
+        if (!container) return;
+
+        const assistantContents = container.querySelectorAll('.assistant-content');
+        const lastContent = assistantContents[assistantContents.length - 1];
+
+        if (lastContent) {
+          const indicator = document.createElement('div');
+          indicator.className = 'thinking-indicator mt-2';
+          indicator.innerHTML = '<span class="text-sm text-monokai-gray/60 italic animate-pulse">thinking...</span>';
+          lastContent.appendChild(indicator);
+        }
+      }
+    });
 
     // Handle pending prompts
     chatStore.subscribe(state => {

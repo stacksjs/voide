@@ -160,6 +160,14 @@
         const app = appStore.get();
         const chat = chatStore.get();
 
+        // Build conversation history for context (exclude the loading message we just added)
+        const history = chat.messages.slice(0, -1).map(m => ({
+          role: m.type === 'user' ? 'user' : 'assistant',
+          content: m.content
+        })).filter(m => m.role === 'user' || m.role === 'assistant');
+
+        console.log('[Voide] Sending request with', history.length, 'history messages, sessionId:', chat.sessionId || 'NONE');
+
         fetch(API_BASE_URL + '/process/stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -167,7 +175,8 @@
             command: command,
             driver: app.currentDriver,
             repository: app.repoPath,
-            sessionId: chat.sessionId
+            sessionId: chat.sessionId,
+            history: history
           })
         }).then(response => {
           if (!response.ok) throw new Error('Stream request failed');
