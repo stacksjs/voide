@@ -2,7 +2,7 @@
  * Voide Backend Server
  * Handles AI agent requests and repository operations
  */
-import { runAgentQuery } from './agent'
+import { runAgentQuery, cancelCurrentQuery } from './agent'
 
 const PORT = 3008
 
@@ -89,6 +89,7 @@ const server = Bun.serve({
       // Streaming agent query
       if (path === '/voide/process/stream' && req.method === 'POST') {
         const body = await req.json() as { command: string; repository: string; sessionId?: string }
+        console.log('[Server] Received sessionId:', body.sessionId || 'none')
 
         // Track changes before query to detect new changes
         const hadChangesBefore = await hasChanges(body.repository)
@@ -166,6 +167,12 @@ const server = Bun.serve({
         const body = await req.json() as { cwd: string }
         await pushChanges(body.cwd)
         return Response.json({ success: true }, { headers })
+      }
+
+      // Cancel current query
+      if (path === '/voide/cancel' && req.method === 'POST') {
+        const cancelled = await cancelCurrentQuery()
+        return Response.json({ success: cancelled }, { headers })
       }
 
       return Response.json({ error: 'Not found' }, { status: 404, headers })

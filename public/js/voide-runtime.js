@@ -382,6 +382,22 @@
       });
     }
 
+    function cancelProcessing() {
+      fetch(config.apiBaseUrl + '/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }).then((res) => res.json()).then((data) => {
+        if (data.success) {
+          appActions.setProcessing(false);
+          updateLastMessage('assistant', chatStore.get().messages[chatStore.get().messages.length - 1]?.content + '\n\n*Process stopped by user*');
+          addMessage('system', 'Process stopped.');
+          updateTrayStatus('ready');
+        }
+      }).catch((error) => {
+        console.error('Failed to cancel:', error);
+      });
+    }
+
     function respondToPrompt(response) {
       const chat = chatStore.get();
       if (!chat.pendingPrompt) return;
@@ -842,6 +858,7 @@
       handleRepoAction: handleRepoAction,
       commitChanges: commitChanges,
       pushChanges: pushChanges,
+      cancelProcessing: cancelProcessing,
       respondToPrompt: respondToPrompt,
       startRecording: startRecording,
       stopRecording: stopRecording,

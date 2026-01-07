@@ -2,7 +2,28 @@
  * Claude Agent SDK Integration
  * Handles AI agent queries with streaming responses
  */
-import { query } from '@anthropic-ai/claude-agent-sdk'
+import { query, type Query } from '@anthropic-ai/claude-agent-sdk'
+
+// Store reference to current query for cancellation
+let currentQuery: Query | null = null
+
+/**
+ * Cancel the currently running query
+ */
+export async function cancelCurrentQuery(): Promise<boolean> {
+  if (currentQuery) {
+    try {
+      await currentQuery.interrupt()
+      console.log('[Agent] Query interrupted')
+      currentQuery = null
+      return true
+    } catch (error) {
+      console.error('[Agent] Failed to interrupt:', error)
+      return false
+    }
+  }
+  return false
+}
 
 export interface AgentOptions {
   prompt: string
@@ -34,6 +55,8 @@ export async function* runAgentQuery(options: AgentOptions): AsyncGenerator<Stre
     sessionId
   } = options
 
+  console.log('[Agent] Starting query with sessionId:', sessionId || 'NEW SESSION')
+
   // Enhance prompt with directory context (only for new sessions)
   const enhancedPrompt = sessionId
     ? prompt  // Resuming - no need to repeat context
@@ -46,7 +69,8 @@ User request: ${prompt}`
   try {
     let capturedSessionId: string | undefined
 
-    for await (const message of query({
+    // Create query and store reference for cancellation
+    currentQuery = query({
       prompt: enhancedPrompt,
       options: {
         cwd,
@@ -54,7 +78,9 @@ User request: ${prompt}`
         permissionMode,
         ...(sessionId && { resume: sessionId })
       }
-    })) {
+    })
+
+    for await (const message of currentQuery) {
       const msg = message as any
 
       // Capture session ID from system init message
@@ -93,6 +119,8 @@ User request: ${prompt}`
       type: 'error',
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     }
+  } finally {
+    currentQuery = null
   }
 }
 

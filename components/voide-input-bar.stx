@@ -29,12 +29,23 @@
               @input="voide.handleInputChange($event)"
               @keydown.enter="voide.handleInputKeydown($event)"
             ></textarea>
+            <!-- Send Button (shown when not processing) -->
             <button
+              id="sendBtn"
               class="flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-cyan flex items-center justify-center cursor-pointer hover:bg-monokai-cyan/90 transition-colors"
               title="Send (Enter)"
               @click="voide.handleSendClick()"
             >
               <svg class="w-5 h-5" fill="none" stroke="#ffffff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"></path></svg>
+            </button>
+            <!-- Stop Button (shown when processing) -->
+            <button
+              id="stopBtn"
+              class="hidden flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-pink flex items-center justify-center cursor-pointer hover:bg-monokai-pink/90 transition-colors"
+              title="Stop processing"
+              @click="voide.cancelProcessing()"
+            >
+              <svg class="w-5 h-5" fill="#ffffff" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
             </button>
           </div>
 
@@ -89,6 +100,19 @@
       const textInput = document.getElementById('textInput');
       const commitBtn = document.getElementById('commitBtn');
       const pushBtn = document.getElementById('pushBtn');
+      const sendBtn = document.getElementById('sendBtn');
+      const stopBtn = document.getElementById('stopBtn');
+
+      // Toggle send/stop buttons based on processing state
+      if (sendBtn && stopBtn) {
+        if (state.isProcessing) {
+          sendBtn.classList.add('hidden');
+          stopBtn.classList.remove('hidden');
+        } else {
+          sendBtn.classList.remove('hidden');
+          stopBtn.classList.add('hidden');
+        }
+      }
 
       // Mic button state
       if (micBtn) {
