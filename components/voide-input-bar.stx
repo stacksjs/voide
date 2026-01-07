@@ -599,7 +599,8 @@
     function cancelProcessing() {
       fetch(API_BASE_URL + '/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
       }).then(res => res.json()).then(data => {
         appActions.setProcessing(false);
         const messages = chatStore.get().messages;

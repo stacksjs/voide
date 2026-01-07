@@ -88,17 +88,44 @@
   function renderMarkdown(text) {
     if (!text) return '';
     let html = escapeHtml(text);
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) =>
-      `<pre class="bg-monokai-bg-dark border border-monokai-border/40 rounded-lg p-3 my-3 overflow-x-auto"><code class="text-monokai-green text-xs">${code.trim()}</code></pre>`
-    );
+
+    // Code blocks (preserve newlines inside)
+    const codeBlocks = [];
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
+      const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+      codeBlocks.push(`<pre class="bg-monokai-bg-dark border border-monokai-border/40 rounded-lg p-3 my-3 overflow-x-auto"><code class="text-monokai-green text-xs whitespace-pre-wrap">${code.trim()}</code></pre>`);
+      return placeholder;
+    });
+
+    // Inline code
     html = html.replace(/`([^`]+)`/g, '<code class="bg-monokai-bg-dark text-monokai-cyan px-1.5 py-0.5 rounded text-xs">$1</code>');
+
+    // Headers
     html = html.replace(/^### (.+)$/gm, '<h3 class="text-monokai-fg text-base font-semibold mt-4 mb-2">$1</h3>');
     html = html.replace(/^## (.+)$/gm, '<h2 class="text-monokai-fg text-lg font-semibold mt-4 mb-2">$1</h2>');
     html = html.replace(/^# (.+)$/gm, '<h1 class="text-monokai-fg text-xl font-bold mt-4 mb-2">$1</h1>');
+
+    // Bold and italic
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-monokai-fg font-semibold">$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
+
+    // Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-monokai-cyan underline hover:text-monokai-cyan/80">$1</a>');
+
+    // Lists
     html = html.replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-monokai-fg/80">$1</li>');
+
+    // Horizontal rule
     html = html.replace(/^---$/gm, '<hr class="border-monokai-border/40 my-4">');
+
+    // Convert newlines to <br> (after all line-based processing)
+    html = html.replace(/\n/g, '<br>');
+
+    // Restore code blocks
+    codeBlocks.forEach((block, i) => {
+      html = html.replace(`__CODE_BLOCK_${i}__`, block);
+    });
+
     return html;
   }
 
