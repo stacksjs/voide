@@ -84,13 +84,19 @@ User request: ${prompt}`
       const msg = message as any
 
       // Capture session ID from system init message
-      if (message.type === 'system' && msg.subtype === 'init' && msg.session_id && !capturedSessionId) {
-        capturedSessionId = msg.session_id
-        console.log('[Agent] Session ID:', capturedSessionId)
-        yield { type: 'session', sessionId: capturedSessionId }
+      if (message.type === 'system' && msg.subtype === 'init') {
+        console.log('[Agent] System init message:', JSON.stringify(msg, null, 2))
+        if (msg.session_id && !capturedSessionId) {
+          capturedSessionId = msg.session_id
+          console.log('[Agent] Captured session ID:', capturedSessionId)
+          yield { type: 'session', sessionId: capturedSessionId }
+        }
       }
 
-      console.log('[Agent] Message type:', message.type, 'has content:', !!msg.message?.content)
+      // Log all message types for debugging
+      if (message.type !== 'assistant') {
+        console.log('[Agent] Message:', message.type, msg.subtype || '')
+      }
 
       if (message.type === 'assistant') {
         if (msg.message?.content) {
