@@ -135,6 +135,26 @@
 
         <!-- Modal Body -->
         <div class="p-6 space-y-4">
+          <!-- Project Path -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Project Path</label>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                id="projectPathInput"
+                class="flex-1 bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-violet-500/50 focus:outline-none transition-all"
+                placeholder="/path/to/your/project"
+              />
+              <button
+                id="setProjectBtn"
+                class="px-4 py-2 text-sm font-medium bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl hover:bg-emerald-500/30 transition-all"
+              >Open</button>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">Enter the path to your local repository or project folder</p>
+          </div>
+
+          <hr class="border-white/10" />
+
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">Anthropic API Key</label>
             <input
@@ -206,7 +226,7 @@
       return;
     }
 
-    const { settingsStore, settingsActions, uiStore, uiActions, chatActions } = stores;
+    const { appStore, appActions, settingsStore, settingsActions, uiStore, uiActions, chatActions } = stores;
 
     console.log('[VoideModals] Initialized');
 
@@ -237,6 +257,39 @@
 
     function closeSettingsModal() {
       uiActions.closeModal('settings');
+    }
+
+    // =========================================================================
+    // Project Path
+    // =========================================================================
+
+    function setProjectPath() {
+      const input = document.getElementById('projectPathInput');
+      const path = input ? input.value.trim() : '';
+
+      if (!path) {
+        addMessage('error', 'Please enter a project path.');
+        return;
+      }
+
+      appActions.setRepoPath(path);
+      settingsActions.setLastRepoPath(path);
+      addMessage('system', 'Project set to: ' + path.split('/').pop());
+      closeSettingsModal();
+    }
+
+    // Bind set project button
+    const setProjectBtn = document.getElementById('setProjectBtn');
+    const projectPathInput = document.getElementById('projectPathInput');
+    setProjectBtn?.addEventListener('click', setProjectPath);
+    projectPathInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') setProjectPath();
+    });
+
+    // Pre-fill project path
+    const currentPath = appStore.get().repoPath;
+    if (projectPathInput && currentPath) {
+      projectPathInput.value = currentPath;
     }
 
     // =========================================================================
@@ -411,6 +464,7 @@
       closeGithubModal,
       openSettingsModal,
       closeSettingsModal,
+      setProjectPath,
       saveApiSettings,
       connectGithub,
       disconnectGithub

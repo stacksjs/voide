@@ -1,0 +1,161 @@
+<template>
+  <aside class="w-56 bg-monokai-bg border-r border-monokai-border flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center px-4 py-4">
+      <div class="w-6 h-6 rounded-lg bg-monokai-purple flex items-center justify-center">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="#ffffff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="px-3 space-y-1">
+      <button
+        id="newChatBtn"
+        class="w-full flex items-center gap-3 px-3 py-2 text-sm text-monokai-fg hover:bg-monokai-bg-dark rounded-lg transition-colors"
+      >
+        <svg class="w-4 h-4 text-monokai-gray" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"></path>
+        </svg>
+        New chat
+      </button>
+    </div>
+
+    <!-- Your chats -->
+    <div class="mt-4 flex-1 overflow-y-auto">
+      <div class="px-4 py-2">
+        <span class="text-xs text-monokai-gray">Your chats</span>
+      </div>
+      <div id="chatList" class="px-2 space-y-0.5">
+        <!-- Chats will be rendered here -->
+      </div>
+    </div>
+  </aside>
+</template>
+
+<script client>
+(() => {
+  function init() {
+    const stores = window.VoideStores;
+    if (!stores) {
+      setTimeout(init, 10);
+      return;
+    }
+
+    const { chatStore, chatActions } = stores;
+
+    // DOM Elements
+    const chatList = document.getElementById('chatList');
+    const newChatBtn = document.getElementById('newChatBtn');
+
+    console.log('[VoideSidebar] Initialized');
+
+    // =========================================================================
+    // Helper Functions
+    // =========================================================================
+
+    function getFirstMessage(messages) {
+      if (!messages || messages.length === 0) return null;
+      const userMsg = messages.find(m => m.type === 'user');
+      return userMsg ? userMsg.content : null;
+    }
+
+    function getChatTitle(chat) {
+      const firstMessage = getFirstMessage(chat.messages);
+      if (!firstMessage) return 'New Chat';
+      const clean = firstMessage.replace(/\n/g, ' ').trim();
+      return clean.length > 28 ? clean.substring(0, 28) + '...' : clean;
+    }
+
+    // =========================================================================
+    // Render Chat List
+    // =========================================================================
+
+    function renderChatList() {
+      const chats = chatActions.getAllChats();
+      const currentChatId = chatStore.get().id;
+
+      if (!chatList) return;
+
+      if (chats.length === 0) {
+        chatList.innerHTML = '';
+        return;
+      }
+
+      const sortedChats = [...chats].sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+
+      chatList.innerHTML = sortedChats.map(chat => {
+        const isActive = chat.id === currentChatId;
+        const title = getChatTitle(chat);
+
+        return `
+          <div
+            class="chat-item group flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-monokai-bg-dark' : 'hover:bg-monokai-bg-dark/50'}"
+            data-chat-id="${chat.id}"
+          >
+            <span class="flex-1 text-sm ${isActive ? 'text-monokai-fg font-medium' : 'text-monokai-fg/80'} truncate">${title}</span>
+          </div>
+        `;
+      }).join('');
+
+      chatList.querySelectorAll('.chat-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const chatId = item.dataset.chatId;
+          loadChat(chatId);
+        });
+      });
+    }
+
+    // =========================================================================
+    // Chat Actions
+    // =========================================================================
+
+    function loadChat(chatId) {
+      const currentId = chatStore.get().id;
+      if (chatId === currentId) return;
+
+      const loaded = chatActions.loadChat(chatId);
+      if (loaded) {
+        const chat = chatStore.get();
+        if (chat.repoPath) {
+          stores.appActions.setRepoPath(chat.repoPath);
+        }
+        if (chat.driver) {
+          stores.appActions.setDriver(chat.driver);
+        }
+        history.pushState({}, '', '/chat/' + chatId);
+        renderChatList();
+      }
+    }
+
+    function newChat() {
+      chatActions.newChat();
+      history.pushState({}, '', '/');
+      renderChatList();
+    }
+
+    // =========================================================================
+    // Event Bindings
+    // =========================================================================
+
+    newChatBtn?.addEventListener('click', newChat);
+
+    chatStore.subscribe(() => {
+      renderChatList();
+    });
+
+    renderChatList();
+
+    // =========================================================================
+    // Expose to window.voide
+    // =========================================================================
+
+    window.voide = window.voide || {};
+    Object.assign(window.voide, {
+      renderChatList,
+      newChat
+    });
+  }
+
+  init();
+})();
+</script>
