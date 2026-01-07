@@ -454,12 +454,14 @@
           return;
         }
 
-        // "backspace" deletes last word
+        // "backspace" deletes last word only (preserves newlines)
         if (trimmed.endsWith(' backspace') || trimmed === 'backspace') {
-          const words = rawTranscript.trim().split(/\s+/);
-          words.pop(); // remove "backspace"
-          if (words.length > 0) words.pop(); // remove last word
-          const newTranscript = convertSpokenPunctuation(words.join(' '));
+          // Remove "backspace" from the end
+          let text = rawTranscript.replace(/\s*backspace\s*$/i, '');
+          // Remove only the last word and horizontal whitespace before it (preserve newlines)
+          // [ \t]* = optional spaces/tabs, [^ \t\n]+ = word chars, [ \t]*$ = trailing spaces/tabs
+          text = text.replace(/[ \t]*[^ \t\n]+[ \t]*$/, '');
+          const newTranscript = convertSpokenPunctuation(text);
           accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
           appActions.setTranscript(newTranscript);
           chatActions.setInputText(newTranscript);
