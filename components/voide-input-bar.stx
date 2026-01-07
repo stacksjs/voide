@@ -8,7 +8,6 @@
             id="micButton"
             class="w-16 h-16 rounded-full bg-monokai-bg-dark border-2 border-monokai-border flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink"
             title="Click to toggle voice input (or press Space)"
-            @click="voide.toggleRecording()"
           >
             <svg id="micIcon" class="w-6 h-6" fill="none" stroke="#727072" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
           </button>
@@ -26,15 +25,12 @@
               id="textInput"
               class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[120px] leading-6 placeholder-monokai-gray"
               placeholder="Type a command or ask a question..."
-              @input="voide.handleInputChange($event)"
-              @keydown.enter="voide.handleInputKeydown($event)"
             ></textarea>
             <!-- Send Button (shown when not processing) -->
             <button
               id="sendBtn"
               class="flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-cyan flex items-center justify-center cursor-pointer hover:bg-monokai-cyan/90 transition-colors"
               title="Send (Enter)"
-              @click="voide.handleSendClick()"
             >
               <svg class="w-5 h-5" fill="none" stroke="#ffffff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"></path></svg>
             </button>
@@ -43,7 +39,6 @@
               id="stopBtn"
               class="hidden flex-shrink-0 w-10 h-10 rounded-xl bg-monokai-pink flex items-center justify-center cursor-pointer hover:bg-monokai-pink/90 transition-colors"
               title="Stop processing"
-              @click="voide.cancelProcessing()"
             >
               <svg class="w-5 h-5" fill="#ffffff" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
             </button>
@@ -66,13 +61,11 @@
             id="commitBtn"
             class="px-4 py-2 text-sm font-medium bg-monokai-green text-monokai-bg rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:bg-monokai-green/90 transition-colors"
             disabled
-            @click="voide.commitChanges()"
           >Commit</button>
           <button
             id="pushBtn"
             class="px-4 py-2 text-sm font-medium bg-monokai-bg-dark text-monokai-fg border border-monokai-border rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:border-monokai-gray transition-colors"
             disabled
-            @click="voide.pushChanges()"
           >Push</button>
         </div>
       </div>
@@ -82,6 +75,8 @@
 
 <script client>
 (() => {
+  const API_BASE_URL = 'http://localhost:3008/voide';
+
   function init() {
     const stores = window.VoideStores;
     if (!stores) {
@@ -89,21 +84,474 @@
       return;
     }
 
+    const { appStore, appActions, chatStore, chatActions, settingsStore, settingsActions } = stores;
+
+    // Speech recognition setup
+    const speechRecognition = stores.useSpeechRecognition({
+      continuous: false,
+      interimResults: true,
+      lang: 'en-US'
+    });
+
+    let accumulatedTranscript = '';
+
+    // DOM Elements
+    const micButton = document.getElementById('micButton');
+    const micIcon = document.getElementById('micIcon');
+    const statusHint = document.getElementById('statusHint');
+    const inputContainer = document.getElementById('inputContainer');
+    const textInput = document.getElementById('textInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const commitBtn = document.getElementById('commitBtn');
+    const pushBtn = document.getElementById('pushBtn');
+    const charCountDisplay = document.getElementById('charCountDisplay');
+
     console.log('[VoideInputBar] Initialized');
 
-    // Update UI based on app state
-    stores.appStore.subscribe((state) => {
-      const micBtn = document.getElementById('micButton');
-      const micIcon = document.getElementById('micIcon');
-      const statusHint = document.getElementById('statusHint');
-      const inputContainer = document.getElementById('inputContainer');
-      const textInput = document.getElementById('textInput');
-      const commitBtn = document.getElementById('commitBtn');
-      const pushBtn = document.getElementById('pushBtn');
-      const sendBtn = document.getElementById('sendBtn');
-      const stopBtn = document.getElementById('stopBtn');
+    // =========================================================================
+    // API Helpers
+    // =========================================================================
 
-      // Toggle send/stop buttons based on processing state
+    function checkBackendAPI() {
+      return fetch(API_BASE_URL + '/state')
+        .then(res => res.ok)
+        .catch(() => false);
+    }
+
+    function saveChat() {
+      const app = appStore.get();
+      chatActions.saveCurrentChat(app.repoPath, app.currentDriver);
+    }
+
+    let saveChatDebounceTimer = null;
+    function updateLastMessage(type, content) {
+      chatActions.updateLastMessage(type, content);
+      clearTimeout(saveChatDebounceTimer);
+      saveChatDebounceTimer = setTimeout(saveChat, 500);
+    }
+
+    function addMessage(type, content, header) {
+      const app = appStore.get();
+      const driverName = app.currentDriver === 'claude-sdk' ? 'Claude SDK' :
+                         app.currentDriver === 'openai' ? 'OpenAI' :
+                         app.currentDriver === 'ollama' ? 'Ollama' : 'AI';
+      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
+      chatActions.addMessage(type, content, headerText);
+      saveChat();
+    }
+
+    // =========================================================================
+    // Command Processing
+    // =========================================================================
+
+    function processWithStreaming(command) {
+      return new Promise((resolve, reject) => {
+        let fullContent = '';
+        let currentEvent = '';
+        const app = appStore.get();
+        const chat = chatStore.get();
+
+        fetch(API_BASE_URL + '/process/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: command,
+            driver: app.currentDriver,
+            repository: app.repoPath,
+            sessionId: chat.sessionId
+          })
+        }).then(response => {
+          if (!response.ok) throw new Error('Stream request failed');
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          function readChunk() {
+            reader.read().then(result => {
+              if (result.done) {
+                resolve({ message: fullContent, hasChanges: false });
+                return;
+              }
+
+              buffer += decoder.decode(result.value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+
+                if (trimmed.startsWith('event: ')) {
+                  currentEvent = trimmed.substring(7);
+                  continue;
+                }
+
+                if (trimmed.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(trimmed.substring(6));
+
+                    if (currentEvent === 'session' && data.sessionId) {
+                      chatActions.setSessionId(data.sessionId);
+                    } else if (currentEvent === 'chunk' && data.text) {
+                      fullContent += data.text;
+                      updateLastMessage('assistant', fullContent);
+                    } else if (currentEvent === 'tool' && data.tool) {
+                      let toolInfo = data.tool;
+                      if (data.input) {
+                        if (data.tool === 'Read' && data.input.file_path) {
+                          toolInfo = 'Reading ' + data.input.file_path.split('/').pop();
+                        } else if (data.tool === 'Edit' && data.input.file_path) {
+                          toolInfo = 'Editing ' + data.input.file_path.split('/').pop();
+                        } else if (data.tool === 'Write' && data.input.file_path) {
+                          toolInfo = 'Writing ' + data.input.file_path.split('/').pop();
+                        } else if (data.tool === 'Bash' && data.input.command) {
+                          toolInfo = '$ ' + data.input.command.substring(0, 40) + (data.input.command.length > 40 ? '...' : '');
+                        } else if (data.tool === 'Glob' && data.input.pattern) {
+                          toolInfo = 'Finding ' + data.input.pattern;
+                        } else if (data.tool === 'Grep' && data.input.pattern) {
+                          toolInfo = 'Searching "' + data.input.pattern + '"';
+                        } else if (data.tool === 'Task' && data.input.description) {
+                          toolInfo = 'Task: ' + data.input.description;
+                        }
+                      }
+                      fullContent += '\n`' + toolInfo + '`';
+                      updateLastMessage('assistant', fullContent);
+                    } else if (currentEvent === 'prompt') {
+                      chatActions.setPendingPrompt({
+                        id: data.id || Date.now().toString(),
+                        text: data.text || 'Please select an option:',
+                        options: data.options || ['y', 'n'],
+                        labels: data.labels || data.options || ['Yes', 'No']
+                      });
+                    } else if (currentEvent === 'done') {
+                      chatActions.clearPendingPrompt();
+                      resolve({ message: fullContent, hasChanges: data.hasChanges || false });
+                      return;
+                    } else if (currentEvent === 'error') {
+                      chatActions.clearPendingPrompt();
+                      reject(new Error(data.error || 'Stream error'));
+                      return;
+                    }
+                  } catch (e) {}
+                }
+              }
+              readChunk();
+            }).catch(reject);
+          }
+          readChunk();
+        }).catch(reject);
+      });
+    }
+
+    function processCommand(command) {
+      if (!command.trim()) return;
+
+      const chat = chatStore.get();
+      const app = appStore.get();
+
+      if (!chat.currentChatId) {
+        chatActions.startNewChat(app.repoPath, app.currentDriver, {
+          type: 'user',
+          content: command,
+          header: 'You',
+          timestamp: Date.now()
+        });
+      } else {
+        addMessage('user', command);
+      }
+
+      appActions.setTerminalTitle('Processing...');
+
+      if (!app.repoPath) {
+        addMessage('error', 'Please enter a repository URL or path first.');
+        appActions.setTerminalTitle('Voide - Ready');
+        return;
+      }
+
+      appActions.setProcessing(true);
+      addMessage('assistant', '...');
+
+      checkBackendAPI().then(hasBackend => {
+        if (hasBackend) {
+          return processWithStreaming(command);
+        } else if (app.currentDriver === 'mock') {
+          return new Promise(resolve => {
+            setTimeout(() => {
+              resolve({
+                message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.',
+                hasChanges: command.toLowerCase().includes('fix')
+              });
+            }, 1500);
+          });
+        } else {
+          return Promise.reject(new Error('Backend API not available. Start the server at localhost:3008.'));
+        }
+      }).then(response => {
+        if (response.hasChanges) {
+          appActions.setHasChanges(true);
+          addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
+        }
+        appActions.setTerminalTitle('Voide - Ready');
+      }).catch(error => {
+        chatActions.removeLastMessage();
+        addMessage('error', 'Failed: ' + error.message);
+        appActions.setTerminalTitle('Voide - Error');
+      }).finally(() => {
+        appActions.setProcessing(false);
+      });
+    }
+
+    // =========================================================================
+    // Input Handlers
+    // =========================================================================
+
+    function handleInputChange(e) {
+      const el = e.target;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+      chatActions.setInputText(el.value);
+    }
+
+    function handleInputKeydown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleTextSubmit();
+      }
+    }
+
+    function handleTextSubmit() {
+      const chat = chatStore.get();
+      const text = chat.inputText.trim();
+      if (text && !appStore.get().isProcessing) {
+        chatActions.clearInput();
+        if (textInput) {
+          textInput.value = '';
+          textInput.style.height = 'auto';
+        }
+        processCommand(text);
+      }
+    }
+
+    function handleSendClick() {
+      handleTextSubmit();
+    }
+
+    // =========================================================================
+    // Speech Recognition
+    // =========================================================================
+
+    function initSpeechRecognition() {
+      if (!speechRecognition.isSupported) {
+        appActions.setSpeechSupported(false);
+        return false;
+      }
+
+      speechRecognition.on('start', () => {
+        const app = appStore.get();
+        if (!app.isRecording) {
+          appActions.setTranscript('');
+        }
+        appActions.setRecording(true);
+      });
+
+      speechRecognition.on('result', (data) => {
+        const fullTranscript = accumulatedTranscript + data.transcript;
+        const trimmed = fullTranscript.trim().toLowerCase();
+
+        // "reset" clears the prompt
+        if (trimmed.endsWith(' reset') || trimmed === 'reset') {
+          accumulatedTranscript = '';
+          appActions.setTranscript('');
+          chatActions.setInputText('');
+          if (textInput) {
+            textInput.value = '';
+            textInput.style.height = 'auto';
+          }
+          return;
+        }
+
+        // "backspace" deletes last word
+        if (trimmed.endsWith(' backspace') || trimmed === 'backspace') {
+          const words = fullTranscript.trim().split(/\s+/);
+          words.pop(); // remove "backspace"
+          if (words.length > 0) words.pop(); // remove last word
+          const newTranscript = words.join(' ');
+          accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
+          appActions.setTranscript(newTranscript);
+          chatActions.setInputText(newTranscript);
+          if (textInput) {
+            textInput.value = newTranscript;
+            textInput.style.height = 'auto';
+            textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
+          }
+          return;
+        }
+
+        // "go" submits the prompt
+        if (trimmed.endsWith(' go') || trimmed === 'go') {
+          const cleanTranscript = fullTranscript.replace(/\s*go\s*$/i, '').trim();
+          if (cleanTranscript) {
+            appActions.setRecording(false);
+            speechRecognition.stop();
+            accumulatedTranscript = '';
+            appActions.setTranscript('');
+            chatActions.clearInput();
+            if (textInput) {
+              textInput.value = '';
+              textInput.style.height = 'auto';
+            }
+            setTimeout(() => processCommand(cleanTranscript), 100);
+          }
+          return;
+        }
+
+        appActions.setTranscript(fullTranscript);
+      });
+
+      speechRecognition.on('end', () => {
+        const app = appStore.get();
+        if (app.isRecording) {
+          accumulatedTranscript = app.transcript + ' ';
+          speechRecognition.start();
+        } else {
+          accumulatedTranscript = '';
+        }
+      });
+
+      speechRecognition.on('error', (data) => {
+        stopRecording();
+        if (data.code !== 'aborted' && data.code !== 'no-speech') {
+          addMessage('error', data.message);
+        }
+      });
+
+      appActions.setSpeechSupported(true);
+      return true;
+    }
+
+    function startRecording() {
+      const app = appStore.get();
+      if (!app.speechSupported || app.isRecording) return;
+      appActions.setTranscript('');
+      accumulatedTranscript = '';
+      speechRecognition.start();
+    }
+
+    function stopRecording() {
+      const app = appStore.get();
+      if (app.transcript && app.transcript.trim()) {
+        chatActions.setInputText(app.transcript.trim());
+        if (textInput) textInput.value = app.transcript.trim();
+      }
+      appActions.setRecording(false);
+      speechRecognition.stop();
+    }
+
+    function toggleRecording() {
+      const app = appStore.get();
+      if (app.isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }
+
+    // =========================================================================
+    // Git Actions
+    // =========================================================================
+
+    function commitChanges() {
+      if (!appStore.get().hasChanges) return;
+
+      addMessage('system', 'Creating commit...');
+
+      checkBackendAPI().then(hasBackend => {
+        if (hasBackend) {
+          return fetch(API_BASE_URL + '/commit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          }).then(res => res.json());
+        }
+        return { success: true, hash: 'mock-commit-hash' };
+      }).then(response => {
+        addMessage('system', 'Committed: ' + (response.hash || 'success'));
+        appActions.setHasChanges(false);
+      }).catch(error => {
+        addMessage('error', 'Failed: ' + error.message);
+      });
+    }
+
+    function pushChanges() {
+      addMessage('system', 'Pushing to remote...');
+
+      checkBackendAPI().then(hasBackend => {
+        if (hasBackend) {
+          return fetch(API_BASE_URL + '/push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        return Promise.resolve();
+      }).then(() => {
+        addMessage('system', 'Pushed successfully.');
+      }).catch(error => {
+        addMessage('error', 'Failed: ' + error.message);
+      });
+    }
+
+    function cancelProcessing() {
+      fetch(API_BASE_URL + '/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }).then(res => res.json()).then(data => {
+        if (data.success) {
+          appActions.setProcessing(false);
+          const messages = chatStore.get().messages;
+          if (messages.length > 0) {
+            updateLastMessage('assistant', messages[messages.length - 1]?.content + '\n\n*Process stopped by user*');
+          }
+          addMessage('system', 'Process stopped.');
+        }
+      }).catch(error => {
+        console.error('Failed to cancel:', error);
+      });
+    }
+
+    // =========================================================================
+    // Event Bindings
+    // =========================================================================
+
+    // Button click handlers
+    micButton?.addEventListener('click', toggleRecording);
+    sendBtn?.addEventListener('click', handleSendClick);
+    stopBtn?.addEventListener('click', cancelProcessing);
+    commitBtn?.addEventListener('click', commitChanges);
+    pushBtn?.addEventListener('click', pushChanges);
+
+    // Text input handlers
+    textInput?.addEventListener('input', handleInputChange);
+    textInput?.addEventListener('keydown', handleInputKeydown);
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.repeat) {
+        const active = document.activeElement;
+        const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+        if (!isInput) {
+          e.preventDefault();
+          toggleRecording();
+        }
+      }
+    });
+
+    // =========================================================================
+    // State Subscriptions
+    // =========================================================================
+
+    appStore.subscribe((state) => {
+      // Toggle send/stop buttons
       if (sendBtn && stopBtn) {
         if (state.isProcessing) {
           sendBtn.classList.add('hidden');
@@ -115,8 +563,8 @@
       }
 
       // Mic button state
-      if (micBtn) {
-        micBtn.className = 'w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink ' +
+      if (micButton) {
+        micButton.className = 'w-16 h-16 rounded-full bg-monokai-bg-dark border-2 flex items-center justify-center cursor-pointer transition-all hover:border-monokai-pink ' +
           (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
       }
       if (micIcon) micIcon.setAttribute('stroke', state.isRecording ? '#ff6188' : '#727072');
@@ -128,19 +576,15 @@
           (state.isRecording ? 'border-monokai-pink' : 'border-monokai-border');
       }
 
-      // Update placeholder based on recording state
+      // Update placeholder and value based on recording state
       if (textInput) {
-        textInput.placeholder = state.isRecording
-          ? 'Listening... speak now'
-          : 'Type a command or ask a question...';
-      }
-
-      // Update text input with transcript while recording
-      if (state.isRecording && state.transcript && textInput) {
-        textInput.value = state.transcript;
-        textInput.style.height = 'auto';
-        textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
-        stores.chatActions.setInputText(state.transcript);
+        textInput.placeholder = state.isRecording ? 'Listening... speak now' : 'Type a command or ask a question...';
+        if (state.isRecording && state.transcript) {
+          textInput.value = state.transcript;
+          textInput.style.height = 'auto';
+          textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
+          chatActions.setInputText(state.transcript);
+        }
       }
 
       // Commit/Push button states
@@ -149,12 +593,30 @@
       if (pushBtn) pushBtn.disabled = !canAct;
     });
 
-    // Update character count
-    stores.chatStore.subscribe((state) => {
-      const charCount = document.getElementById('charCountDisplay');
-      if (charCount) {
-        charCount.textContent = state.charCount > 0 ? state.charCount + ' chars' : '';
+    chatStore.subscribe((state) => {
+      if (charCountDisplay) {
+        charCountDisplay.textContent = state.charCount > 0 ? state.charCount + ' chars' : '';
       }
+    });
+
+    // Initialize speech recognition
+    initSpeechRecognition();
+
+    // Expose to window.voide for other components
+    window.voide = window.voide || {};
+    Object.assign(window.voide, {
+      toggleRecording,
+      startRecording,
+      stopRecording,
+      handleInputChange,
+      handleInputKeydown,
+      handleSendClick,
+      handleTextSubmit,
+      commitChanges,
+      pushChanges,
+      cancelProcessing,
+      processCommand,
+      addMessage
     });
   }
 

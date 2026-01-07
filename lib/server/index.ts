@@ -86,6 +86,37 @@ const server = Bun.serve({
         return Response.json({ success: true, data: { repo } }, { headers })
       }
 
+      // Validate repository path exists
+      if (path === '/voide/repo/validate' && req.method === 'POST') {
+        const body = await req.json() as { path: string }
+        const pathToCheck = body.path
+
+        if (!pathToCheck) {
+          return Response.json({ valid: false, error: 'No path provided' }, { headers })
+        }
+
+        try {
+          const file = Bun.file(pathToCheck)
+          const exists = await file.exists()
+
+          if (!exists) {
+            return Response.json({ valid: false, error: 'Path does not exist' }, { headers })
+          }
+
+          // Check if it's a directory by trying to read it as a git repo or just checking stat
+          const stat = await Bun.spawn(['test', '-d', pathToCheck]).exited
+          const isDirectory = stat === 0
+
+          if (!isDirectory) {
+            return Response.json({ valid: false, error: 'Path is not a directory' }, { headers })
+          }
+
+          return Response.json({ valid: true }, { headers })
+        } catch (error) {
+          return Response.json({ valid: false, error: 'Path validation failed' }, { headers })
+        }
+      }
+
       // Streaming agent query
       if (path === '/voide/process/stream' && req.method === 'POST') {
         const body = await req.json() as { command: string; repository: string; sessionId?: string }

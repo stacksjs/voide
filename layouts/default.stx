@@ -167,9 +167,9 @@
     })();
   </script>
 
-  <!-- Voide Client Runtime -->
+  <!-- Voide Core (minimal shared functionality) -->
   <script>
-    document.write('<scr' + 'ipt src="/js/voide-runtime.js"></scr' + 'ipt>');
+    document.write('<scr' + 'ipt src="/js/voide-core.js"></scr' + 'ipt>');
   </script>
 
 </body>

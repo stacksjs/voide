@@ -206,10 +206,111 @@
       return;
     }
 
+    const { settingsStore, settingsActions, uiStore, uiActions, chatActions } = stores;
+
     console.log('[VoideModals] Initialized');
 
+    // =========================================================================
+    // Helper Functions
+    // =========================================================================
+
+    function addMessage(type, content, header) {
+      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? 'AI' : type === 'system' ? 'System' : 'Error');
+      chatActions.addMessage(type, content, headerText);
+    }
+
+    // =========================================================================
+    // Modal Open/Close
+    // =========================================================================
+
+    function openGithubModal() {
+      uiActions.openModal('github');
+    }
+
+    function closeGithubModal() {
+      uiActions.closeModal('github');
+    }
+
+    function openSettingsModal() {
+      uiActions.openModal('settings');
+    }
+
+    function closeSettingsModal() {
+      uiActions.closeModal('settings');
+    }
+
+    // =========================================================================
+    // API Settings
+    // =========================================================================
+
+    function saveApiSettings() {
+      const anthropicInput = document.getElementById('anthropicApiKey');
+      const openaiInput = document.getElementById('openaiApiKey');
+      const claudeHostInput = document.getElementById('claudeCliHost');
+
+      settingsActions.setAllApiKeys({
+        anthropic: anthropicInput ? anthropicInput.value.trim() || null : null,
+        openai: openaiInput ? openaiInput.value.trim() || null : null,
+        claudeCliHost: claudeHostInput ? claudeHostInput.value.trim() || null : null
+      });
+
+      closeSettingsModal();
+      addMessage('system', 'API settings saved.');
+    }
+
+    // =========================================================================
+    // GitHub Connection
+    // =========================================================================
+
+    function connectGithub() {
+      const tokenInput = document.getElementById('githubToken');
+      const nameInput = document.getElementById('gitName');
+      const emailInput = document.getElementById('gitEmail');
+
+      const token = tokenInput ? tokenInput.value.trim() : '';
+      if (!token) {
+        addMessage('error', 'Please enter a GitHub personal access token.');
+        return;
+      }
+
+      fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': 'token ' + token,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      })
+      .then((res) => {
+        if (!res.ok) throw new Error('Invalid token');
+        return res.json();
+      })
+      .then(function(user) {
+        settingsActions.connectGithub({
+          token: token,
+          username: user.login,
+          name: nameInput ? nameInput.value.trim() || user.name : user.name,
+          email: emailInput ? emailInput.value.trim() || user.email : user.email,
+          avatarUrl: user.avatar_url
+        });
+        addMessage('system', 'Connected to GitHub as @' + user.login);
+        closeGithubModal();
+      })
+      .catch((error) => {
+        addMessage('error', 'GitHub connection failed: ' + error.message);
+      });
+    }
+
+    function disconnectGithub() {
+      settingsActions.disconnectGithub();
+      addMessage('system', 'Disconnected from GitHub.');
+      closeGithubModal();
+    }
+
+    // =========================================================================
+    // State Subscriptions
+    // =========================================================================
+
     // Update modal visibility based on UI state
-    stores.uiStore.subscribe((state) => {
+    uiStore.subscribe((state) => {
       const githubModal = document.getElementById('githubModal');
       const settingsModal = document.getElementById('settingsModal');
 
@@ -222,29 +323,97 @@
     });
 
     // Pre-fill settings form with current values
-    stores.settingsStore.subscribe((state) => {
+    settingsStore.subscribe((state) => {
       const anthropicInput = document.getElementById('anthropicApiKey');
       const openaiInput = document.getElementById('openaiApiKey');
       const claudeHostInput = document.getElementById('claudeCliHost');
-      const githubTokenInput = document.getElementById('githubToken');
       const gitNameInput = document.getElementById('gitName');
       const gitEmailInput = document.getElementById('gitEmail');
 
-      if (anthropicInput && state.apiKeys.anthropic) {
+      // Update connected info
+      const connectedAvatar = document.getElementById('connectedAvatar');
+      const connectedName = document.getElementById('connectedName');
+      const connectedUsername = document.getElementById('connectedUsername');
+      const connectForm = document.getElementById('githubConnectForm');
+      const connectedInfo = document.getElementById('githubConnectedInfo');
+      const connectBtn = document.getElementById('githubConnectBtn');
+      const disconnectBtn = document.getElementById('githubDisconnectBtn');
+
+      if (anthropicInput && state.apiKeys.anthropic && !anthropicInput.value) {
         anthropicInput.value = state.apiKeys.anthropic;
       }
-      if (openaiInput && state.apiKeys.openai) {
+      if (openaiInput && state.apiKeys.openai && !openaiInput.value) {
         openaiInput.value = state.apiKeys.openai;
       }
-      if (claudeHostInput && state.apiKeys.claudeCliHost) {
+      if (claudeHostInput && state.apiKeys.claudeCliHost && !claudeHostInput.value) {
         claudeHostInput.value = state.apiKeys.claudeCliHost;
       }
-      if (gitNameInput && state.github.name) {
+      if (gitNameInput && state.github.name && !gitNameInput.value) {
         gitNameInput.value = state.github.name;
       }
-      if (gitEmailInput && state.github.email) {
+      if (gitEmailInput && state.github.email && !gitEmailInput.value) {
         gitEmailInput.value = state.github.email;
       }
+
+      // Update GitHub connected state UI
+      if (state.github.connected) {
+        if (connectedAvatar) connectedAvatar.src = state.github.avatarUrl || '';
+        if (connectedName) connectedName.textContent = state.github.name || state.github.username;
+        if (connectedUsername) connectedUsername.textContent = '@' + state.github.username;
+        if (connectForm) connectForm.style.display = 'none';
+        if (connectedInfo) connectedInfo.style.display = 'block';
+        if (connectBtn) connectBtn.style.display = 'none';
+        if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
+      } else {
+        if (connectForm) connectForm.style.display = 'block';
+        if (connectedInfo) connectedInfo.style.display = 'none';
+        if (connectBtn) connectBtn.style.display = 'inline-flex';
+        if (disconnectBtn) disconnectBtn.style.display = 'none';
+      }
+
+      // Update API status indicators
+      const anthropicStatus = document.getElementById('anthropicStatus');
+      const openaiStatus = document.getElementById('openaiStatus');
+      const anthropicStatusText = document.getElementById('anthropicStatusText');
+      const openaiStatusText = document.getElementById('openaiStatusText');
+
+      if (anthropicStatus) {
+        anthropicStatus.className = 'w-2 h-2 rounded-full ' + (state.apiKeys.anthropic ? 'bg-emerald-500' : 'bg-slate-600');
+      }
+      if (openaiStatus) {
+        openaiStatus.className = 'w-2 h-2 rounded-full ' + (state.apiKeys.openai ? 'bg-emerald-500' : 'bg-slate-600');
+      }
+      if (anthropicStatusText) {
+        anthropicStatusText.textContent = state.apiKeys.anthropic ? 'Configured' : 'Not configured';
+      }
+      if (openaiStatusText) {
+        openaiStatusText.textContent = state.apiKeys.openai ? 'Configured' : 'Not configured';
+      }
+    });
+
+    // =========================================================================
+    // Global Escape Key Handler
+    // =========================================================================
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        uiActions.closeAllModals();
+      }
+    });
+
+    // =========================================================================
+    // Expose to window.voide
+    // =========================================================================
+
+    window.voide = window.voide || {};
+    Object.assign(window.voide, {
+      openGithubModal,
+      closeGithubModal,
+      openSettingsModal,
+      closeSettingsModal,
+      saveApiSettings,
+      connectGithub,
+      disconnectGithub
     });
   }
 

@@ -19,7 +19,7 @@
         <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
           <div class="flex items-center gap-2 mb-4">
             <div class="w-8 h-8 rounded-lg bg-monokai-yellow flex items-center justify-center">
-              <span class="text-sm">❓</span>
+              <span class="text-sm">?</span>
             </div>
             <span class="text-xs font-semibold text-monokai-fg/50 uppercase tracking-wider">Input Required</span>
           </div>
@@ -32,7 +32,7 @@
       <div class="p-4 bg-monokai-purple/10 border border-monokai-purple/25 rounded-xl">
         <div class="flex items-center gap-2 mb-3">
           <div class="w-8 h-8 rounded-lg bg-monokai-purple flex items-center justify-center">
-            <span class="text-sm">✨</span>
+            <span class="text-sm">*</span>
           </div>
           <span class="text-xs font-semibold text-monokai-fg/50 uppercase tracking-wider">Welcome</span>
         </div>
@@ -64,24 +64,24 @@
 
 <script client>
 (() => {
+  const API_BASE_URL = 'http://localhost:3008/voide';
+
   const typeConfig = {
-    user: { bgClass: 'bg-monokai-cyan/10', borderClass: 'border-monokai-cyan/25', iconBg: 'bg-monokai-cyan', icon: '👤' },
-    assistant: { bgClass: 'bg-monokai-green/10', borderClass: 'border-monokai-green/25', iconBg: 'bg-monokai-green', icon: '🤖' },
-    system: { bgClass: 'bg-monokai-yellow/10', borderClass: 'border-monokai-yellow/25', iconBg: 'bg-monokai-yellow', icon: '⚡' },
-    error: { bgClass: 'bg-monokai-pink/10', borderClass: 'border-monokai-pink/25', iconBg: 'bg-monokai-pink', icon: '⚠️' }
+    user: { bgClass: 'bg-monokai-cyan/10', borderClass: 'border-monokai-cyan/25', iconBg: 'bg-monokai-cyan', icon: 'U' },
+    assistant: { bgClass: 'bg-monokai-green/10', borderClass: 'border-monokai-green/25', iconBg: 'bg-monokai-green', icon: 'A' },
+    system: { bgClass: 'bg-monokai-yellow/10', borderClass: 'border-monokai-yellow/25', iconBg: 'bg-monokai-yellow', icon: 'S' },
+    error: { bgClass: 'bg-monokai-pink/10', borderClass: 'border-monokai-pink/25', iconBg: 'bg-monokai-pink', icon: '!' }
   };
 
   let renderedCount = 0;
   const messageElements = new Map();
   const messageUpdates = new Map();
 
-  // Auto-scroll: check if user is near bottom (within 100px)
   function isNearBottom(el) {
     const threshold = 100;
     return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }
 
-  // Smooth scroll to bottom
   function scrollToBottom(el) {
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }
@@ -114,7 +114,7 @@
     if (msg.content === '...') {
       return `<div class="p-4 ${config.bgClass} border ${config.borderClass} rounded-xl">
         <div class="flex items-center gap-2 mb-3">
-          <div class="w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center"><span class="text-sm">${config.icon}</span></div>
+          <div class="w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center"><span class="text-sm text-monokai-bg font-bold">${config.icon}</span></div>
           <span class="text-xs font-semibold text-monokai-fg/50 uppercase tracking-wider">${headerText}</span>
         </div>
         <div class="flex items-center gap-2">
@@ -126,7 +126,7 @@
     }
     return `<div class="p-4 ${config.bgClass} border ${config.borderClass} rounded-xl">
       <div class="flex items-center gap-2 mb-3">
-        <div class="w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center"><span class="text-sm">${config.icon}</span></div>
+        <div class="w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center"><span class="text-sm text-monokai-bg font-bold">${config.icon}</span></div>
         <span class="text-xs font-semibold text-monokai-fg/50 uppercase tracking-wider">${headerText}</span>
       </div>
       <div class="text-sm text-monokai-fg/80 leading-relaxed whitespace-pre-wrap">${renderMarkdown(msg.content)}</div>
@@ -138,23 +138,18 @@
     if (!output) return;
 
     const messageArray = messages || [];
-
-    // Check if user is near bottom BEFORE making changes
     const shouldAutoScroll = isNearBottom(output);
 
-    // Reset if messages were cleared (new chat started)
     if (messageArray.length < renderedCount) {
       renderedCount = 0;
       messageElements.clear();
       messageUpdates.clear();
-      // Clear rendered messages from DOM (keep welcome message)
       const children = Array.from(output.children);
       children.forEach((child, i) => {
         if (i > 0) child.remove();
       });
     }
 
-    // Update existing messages that changed
     for (let i = 0; i < messageArray.length; i++) {
       const msg = messageArray[i];
       if (!msg) continue;
@@ -167,7 +162,6 @@
       }
     }
 
-    // Render new messages
     while (renderedCount < messageArray.length) {
       const idx = renderedCount;
       const msg = messageArray[idx];
@@ -182,13 +176,10 @@
       renderedCount++;
     }
 
-    // Auto-scroll if user was near bottom
     if (shouldAutoScroll) {
       scrollToBottom(output);
     }
   }
-
-  window.VoideTerminal = { renderMessages };
 
   function init() {
     const stores = window.VoideStores;
@@ -196,10 +187,35 @@
       setTimeout(init, 10);
       return;
     }
+
+    const { appStore, chatStore, chatActions } = stores;
+
     console.log('[VoideTerminal] Initialized');
 
+    // Respond to prompt from Claude
+    function respondToPrompt(response) {
+      const chat = chatStore.get();
+      if (!chat.pendingPrompt) return;
+
+      // Add user response as message
+      chatActions.addMessage('user', response, 'You');
+      chatActions.clearPendingPrompt();
+
+      // Send response to backend
+      fetch(API_BASE_URL + '/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          promptId: chat.pendingPrompt.id,
+          response: response
+        })
+      }).catch(error => {
+        chatActions.addMessage('error', 'Failed to send response: ' + error.message, 'Error');
+      });
+    }
+
     // Update terminal title
-    stores.appStore.subscribe((state) => {
+    appStore.subscribe((state) => {
       const el = document.getElementById('terminalTitle');
       if (el && state.terminalTitle) {
         el.textContent = state.terminalTitle.replace('Voide - ', '');
@@ -207,10 +223,10 @@
     });
 
     // Render messages
-    stores.chatStore.subscribe(state => renderMessages(state.messages));
+    chatStore.subscribe(state => renderMessages(state.messages));
 
     // Handle pending prompts
-    stores.chatStore.subscribe(state => {
+    chatStore.subscribe(state => {
       const overlay = document.getElementById('promptOverlay');
       const textEl = document.getElementById('promptText');
       const optionsEl = document.getElementById('promptOptions');
@@ -226,11 +242,7 @@
           const btn = document.createElement('button');
           btn.className = 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors';
           btn.textContent = label;
-          btn.onclick = () => {
-            if (window.voide && window.voide.respondToPrompt) {
-              window.voide.respondToPrompt(option);
-            }
-          };
+          btn.onclick = () => respondToPrompt(option);
           optionsEl.appendChild(btn);
         });
 
@@ -238,6 +250,12 @@
       } else {
         overlay.classList.add('hidden');
       }
+    });
+
+    // Expose to window.voide
+    window.voide = window.voide || {};
+    Object.assign(window.voide, {
+      respondToPrompt
     });
   }
 
