@@ -1,14 +1,7 @@
 <template>
   <aside class="w-56 bg-monokai-bg border-r border-monokai-border flex flex-col h-full overflow-hidden">
-    <!-- Header -->
-    <div class="flex items-center px-4 py-4">
-      <div class="w-6 h-6 rounded-lg bg-monokai-purple flex items-center justify-center">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="#ffffff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="px-3 space-y-1">
+    <!-- New Chat Button -->
+    <div class="p-3">
       <button
         id="newChatBtn"
         class="w-full flex items-center gap-3 px-3 py-2 text-sm text-monokai-fg hover:bg-monokai-bg-dark rounded-lg transition-colors"
@@ -21,7 +14,7 @@
     </div>
 
     <!-- Your chats -->
-    <div class="mt-4 flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto">
       <div class="px-4 py-2">
         <span class="text-xs text-monokai-gray">Your chats</span>
       </div>
