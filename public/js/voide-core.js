@@ -106,11 +106,47 @@
       });
     }
 
-    function clearInvalidRepoPath(path) {
+    function clearInvalidRepoPath(path, showMessage) {
       console.log('[VoideCore] Clearing invalid repo path:', path);
+
+      // Clear from all stores
       appActions.setRepoPath('');
       settingsActions.setLastRepoPath('');
-      chatActions.addMessage('error', 'The previously saved path no longer exists:\n' + path + '\n\nPlease enter a valid repository path.', 'Error');
+
+      // Clear the input field
+      const repoInput = document.getElementById('repoInput');
+      if (repoInput) repoInput.value = '';
+
+      // Also clear directly from localStorage to ensure it's gone
+      try {
+        const appState = localStorage.getItem('voide-app');
+        if (appState) {
+          const parsed = JSON.parse(appState);
+          if (parsed.repoPath === path) {
+            parsed.repoPath = '';
+            localStorage.setItem('voide-app', JSON.stringify(parsed));
+          }
+        }
+        const settingsState = localStorage.getItem('voide-settings');
+        if (settingsState) {
+          const parsed = JSON.parse(settingsState);
+          if (parsed.lastRepoPath === path) {
+            parsed.lastRepoPath = '';
+            localStorage.setItem('voide-settings', JSON.stringify(parsed));
+          }
+        }
+      } catch (e) {
+        console.log('[VoideCore] Error clearing localStorage:', e);
+      }
+
+      // Only show error message once per path (track in sessionStorage)
+      if (showMessage) {
+        const shownKey = 'voide_invalid_path_shown_' + path;
+        if (!sessionStorage.getItem(shownKey)) {
+          sessionStorage.setItem(shownKey, 'true');
+          chatActions.addMessage('error', 'The previously saved path no longer exists:\n' + path + '\n\nPlease enter a valid repository path.', 'Error');
+        }
+      }
     }
 
     function initUrlRouting() {
@@ -131,8 +167,8 @@
           // Validate the stored path exists
           validateRepoPath(pathToValidate).then(valid => {
             if (valid === false) {
-              // Path confirmed invalid
-              clearInvalidRepoPath(pathToValidate);
+              // Path confirmed invalid - clear and show message once
+              clearInvalidRepoPath(pathToValidate, true);
             } else if (valid === true) {
               // Path confirmed valid
               if (!app.repoPath) {
