@@ -90,8 +90,11 @@
   function renderMarkdown(text) {
     if (!text) return '';
 
-    // Filter out "*thinking*" patterns from Claude's response
-    let cleaned = text.replace(/^\*thinking\*\s*/i, '').replace(/\n\*thinking\*\s*/gi, '\n');
+    // Filter out "*thinking*" and "thinking..." patterns from Claude's response
+    let cleaned = text
+      .replace(/\*thinking\*\s*/gi, '')  // Remove *thinking* anywhere
+      .replace(/^thinking\.\.\.\s*/gim, '')  // Remove "thinking..." at start of lines
+      .replace(/\nthinking\.\.\.\s*/gi, '\n');  // Remove "thinking..." after newlines
 
     let html = escapeHtml(cleaned);
 
