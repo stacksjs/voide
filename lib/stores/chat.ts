@@ -20,6 +20,7 @@ export interface PendingPrompt {
 
 export interface Chat {
   id: string
+  title?: string  // AI-generated title from first message
   messages: Message[]
   repoPath: string
   driver: string
@@ -126,16 +127,27 @@ export const chatActions = {
     if (!state.currentChatId) return
 
     const chats = getAllChats()
+    const existingChat = chats[state.currentChatId]
     chats[state.currentChatId] = {
       id: state.currentChatId,
+      title: existingChat?.title,  // Preserve existing title
       messages: state.messages,
       repoPath,
       driver,
       sessionId: state.sessionId || undefined,  // Persist session ID
-      createdAt: chats[state.currentChatId]?.createdAt || Date.now(),
+      createdAt: existingChat?.createdAt || Date.now(),
       updatedAt: Date.now()
     }
     saveAllChats(chats)
+  },
+
+  setChatTitle: (chatId: string, title: string) => {
+    const chats = getAllChats()
+    if (chats[chatId]) {
+      chats[chatId].title = title
+      chats[chatId].updatedAt = Date.now()
+      saveAllChats(chats)
+    }
   },
 
   deleteChat: (chatId: string) => {

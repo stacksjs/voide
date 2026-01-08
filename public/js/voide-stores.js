@@ -334,16 +334,26 @@ window.VoideStores = (function() {
       if (!state.currentChatId)
         return;
       const chats = getAllChats();
+      const existingChat = chats[state.currentChatId];
       chats[state.currentChatId] = {
         id: state.currentChatId,
+        title: existingChat?.title,
         messages: state.messages,
         repoPath,
         driver,
         sessionId: state.sessionId || undefined,
-        createdAt: chats[state.currentChatId]?.createdAt || Date.now(),
+        createdAt: existingChat?.createdAt || Date.now(),
         updatedAt: Date.now()
       };
       saveAllChats(chats);
+    },
+    setChatTitle: (chatId, title) => {
+      const chats = getAllChats();
+      if (chats[chatId]) {
+        chats[chatId].title = title;
+        chats[chatId].updatedAt = Date.now();
+        saveAllChats(chats);
+      }
     },
     deleteChat: (chatId) => {
       const chats = getAllChats();

@@ -263,19 +263,40 @@
       });
     }
 
+    // Generate a smart title for the chat using AI
+    function generateChatTitle(chatId, prompt) {
+      fetch(API_BASE_URL + '/title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.title) {
+          chatActions.setChatTitle(chatId, data.title);
+        }
+      })
+      .catch(err => {
+        console.log('[Voide] Failed to generate title:', err.message);
+      });
+    }
+
     function processCommand(command) {
       if (!command.trim()) return;
 
       const chat = chatStore.get();
       const app = appStore.get();
+      let isNewChat = false;
+      let newChatId = null;
 
       if (!chat.currentChatId) {
-        chatActions.startNewChat(app.repoPath, app.currentDriver, {
+        newChatId = chatActions.startNewChat(app.repoPath, app.currentDriver, {
           type: 'user',
           content: command,
           header: 'You',
           timestamp: Date.now()
         });
+        isNewChat = true;
       } else {
         addMessage('user', command);
       }
@@ -312,6 +333,11 @@
           addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
         }
         appActions.setTerminalTitle('Voide - Ready');
+
+        // Generate a smart title for new chats
+        if (isNewChat && newChatId) {
+          generateChatTitle(newChatId, command);
+        }
       }).catch(error => {
         chatActions.removeLastMessage();
         addMessage('error', 'Failed: ' + error.message);

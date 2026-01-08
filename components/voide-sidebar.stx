@@ -13,6 +13,16 @@
       </button>
     </div>
 
+    <!-- Search -->
+    <div class="px-3 pb-2">
+      <input
+        id="chatSearch"
+        type="text"
+        placeholder="Search chats..."
+        class="w-full bg-monokai-bg-dark border border-monokai-border rounded-lg px-3 py-1.5 text-xs text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
+      />
+    </div>
+
     <!-- Your chats -->
     <div class="flex-1 overflow-y-auto">
       <div class="px-4 py-2">
@@ -39,6 +49,9 @@
     // DOM Elements
     const chatList = document.getElementById('chatList');
     const newChatBtn = document.getElementById('newChatBtn');
+    const chatSearch = document.getElementById('chatSearch');
+
+    let searchQuery = '';
 
     console.log('[VoideSidebar] Initialized');
 
@@ -53,10 +66,29 @@
     }
 
     function getChatTitle(chat) {
+      // Use AI-generated title if available
+      if (chat.title) return chat.title;
+
+      // Fallback to first message
       const firstMessage = getFirstMessage(chat.messages);
       if (!firstMessage) return 'New Chat';
       const clean = firstMessage.replace(/\n/g, ' ').trim();
       return clean.length > 28 ? clean.substring(0, 28) + '...' : clean;
+    }
+
+    function chatMatchesSearch(chat, query) {
+      if (!query) return true;
+      const lowerQuery = query.toLowerCase();
+      const title = getChatTitle(chat).toLowerCase();
+      if (title.includes(lowerQuery)) return true;
+
+      // Also search in message content
+      for (const msg of (chat.messages || [])) {
+        if (msg.content && msg.content.toLowerCase().includes(lowerQuery)) {
+          return true;
+        }
+      }
+      return false;
     }
 
     // =========================================================================
@@ -71,11 +103,19 @@
       if (!chatList) return;
 
       if (chats.length === 0) {
-        chatList.innerHTML = '';
+        chatList.innerHTML = '<div class="px-3 py-4 text-xs text-monokai-gray text-center">No chats yet</div>';
         return;
       }
 
-      const sortedChats = [...chats].sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+      // Filter by search query
+      const filteredChats = chats.filter(chat => chatMatchesSearch(chat, searchQuery));
+
+      if (filteredChats.length === 0) {
+        chatList.innerHTML = '<div class="px-3 py-4 text-xs text-monokai-gray text-center">No matching chats</div>';
+        return;
+      }
+
+      const sortedChats = [...filteredChats].sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
 
       chatList.innerHTML = sortedChats.map(chat => {
         const isActive = chat.id === currentChatId;
@@ -174,9 +214,20 @@
 
     newChatBtn?.addEventListener('click', newChat);
 
+    // Search input handler
+    chatSearch?.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      renderChatList();
+    });
+
     chatStore.subscribe(() => {
       renderChatList();
     });
+
+    // Re-render periodically to pick up title updates
+    setInterval(() => {
+      renderChatList();
+    }, 2000);
 
     renderChatList();
 
