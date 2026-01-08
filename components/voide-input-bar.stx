@@ -1,5 +1,17 @@
 <template>
   <div class="max-w-3xl mx-auto w-full">
+    <!-- Thinking indicator - shown above input when processing -->
+    <div id="thinkingIndicator" class="hidden mb-3 px-4">
+      <div class="flex items-center gap-2 text-monokai-gray/70">
+        <div class="flex gap-1">
+          <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        </div>
+        <span class="text-sm italic">thinking...</span>
+      </div>
+    </div>
+
     <div
       id="inputContainer"
       class="bg-monokai-bg-dark border border-monokai-border rounded-2xl px-4 py-3"
@@ -367,7 +379,18 @@
 
     function handleTextSubmit() {
       const chat = chatStore.get();
-      const text = chat.inputText.trim();
+      let text = chat.inputText.trim();
+
+      // Check if text ends with "send" or "go" (voice command triggers)
+      const sendTriggers = /\s+(send|go)$/i;
+      if (sendTriggers.test(text)) {
+        text = text.replace(sendTriggers, '').trim();
+      }
+      // Also handle standalone "send" or "go" - do nothing if that's all there is
+      if (/^(send|go)$/i.test(text)) {
+        return;
+      }
+
       if (text && !appStore.get().isProcessing) {
         chatActions.clearInput();
         if (textInput) {
@@ -517,9 +540,9 @@
           return;
         }
 
-        // "go" submits the prompt
-        if (trimmed.endsWith(' go') || trimmed === 'go') {
-          const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*go\s*$/i, '').trim());
+        // "go" or "send" submits the prompt
+        if (trimmed.endsWith(' go') || trimmed === 'go' || trimmed.endsWith(' send') || trimmed === 'send') {
+          const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send)\s*$/i, '').trim());
           if (cleanTranscript) {
             appActions.setRecording(false);
             speechRecognition.stop();
@@ -688,7 +711,18 @@
     // State Subscriptions
     // =========================================================================
 
+    const thinkingIndicator = document.getElementById('thinkingIndicator');
+
     appStore.subscribe((state) => {
+      // Show/hide thinking indicator above input
+      if (thinkingIndicator) {
+        if (state.isProcessing) {
+          thinkingIndicator.classList.remove('hidden');
+        } else {
+          thinkingIndicator.classList.add('hidden');
+        }
+      }
+
       // Show/hide stop button based on processing state
       if (stopBtn) {
         if (state.isProcessing) {

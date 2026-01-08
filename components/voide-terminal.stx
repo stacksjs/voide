@@ -157,10 +157,10 @@
       </div>`;
     }
 
-    // User message - right aligned, subtle background
+    // User message - right aligned with cyan accent
     if (isUser) {
       return `<div class="flex justify-end">
-        <div class="max-w-[80%] bg-monokai-bg-dark rounded-2xl rounded-br-sm px-4 py-3">
+        <div class="max-w-[80%] bg-monokai-cyan/10 border-l-2 border-monokai-cyan rounded-2xl rounded-br-sm px-4 py-3">
           <p class="text-sm text-monokai-fg leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.content)}</p>
         </div>
       </div>`;
@@ -253,17 +253,6 @@
       scrollToBottom(chatState);
     }
 
-    // Re-add thinking indicator if processing
-    if (isCurrentlyProcessing) {
-      const assistantContents = container.querySelectorAll('.assistant-content');
-      const lastContent = assistantContents[assistantContents.length - 1];
-      if (lastContent && !lastContent.querySelector('.thinking-indicator')) {
-        const indicator = document.createElement('div');
-        indicator.className = 'thinking-indicator mt-2';
-        indicator.innerHTML = '<span class="text-sm text-monokai-gray/60 italic animate-pulse">thinking...</span>';
-        lastContent.appendChild(indicator);
-      }
-    }
   }
 
   function init() {
@@ -308,26 +297,6 @@
     // Subscribe to processing state
     appStore.subscribe(state => {
       isCurrentlyProcessing = state.isProcessing;
-
-      // Remove all existing thinking indicators
-      const indicators = document.querySelectorAll('.thinking-indicator');
-      indicators.forEach(el => el.remove());
-
-      // Add indicator if processing
-      if (state.isProcessing) {
-        const container = document.getElementById('messagesContainer');
-        if (!container) return;
-
-        const assistantContents = container.querySelectorAll('.assistant-content');
-        const lastContent = assistantContents[assistantContents.length - 1];
-
-        if (lastContent) {
-          const indicator = document.createElement('div');
-          indicator.className = 'thinking-indicator mt-2';
-          indicator.innerHTML = '<span class="text-sm text-monokai-gray/60 italic animate-pulse">thinking...</span>';
-          lastContent.appendChild(indicator);
-        }
-      }
     });
 
     // Handle pending prompts
