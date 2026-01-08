@@ -24,6 +24,11 @@ const config = {
     'animate-bounce',
     'animate-fade-in',
     'animate-blink',
+    // Transform utilities (for collapse icons)
+    'rotate-180',
+    'transition-transform',
+    // Z-index for collapse button
+    'z-10',
   ],
   theme: {
     colors: defaultConfig.theme.colors,
@@ -99,6 +104,7 @@ try {
 .bg-monokai-yellow\\/10 { background-color: rgba(255, 216, 102, 0.1); }
 .bg-monokai-cyan\\/10 { background-color: rgba(120, 220, 232, 0.1); }
 .bg-monokai-purple\\/10 { background-color: rgba(171, 157, 242, 0.1); }
+.bg-monokai-bg-dark\\/80 { background-color: rgba(34, 31, 34, 0.8); }
 
 /* Text colors */
 .text-monokai-bg { color: var(--monokai-bg); }
@@ -117,6 +123,10 @@ try {
 .text-monokai-fg\\/50 { color: rgba(252, 252, 250, 0.5); }
 .text-monokai-fg\\/60 { color: rgba(252, 252, 250, 0.6); }
 .text-monokai-fg\\/80 { color: rgba(252, 252, 250, 0.8); }
+.text-monokai-fg\\/90 { color: rgba(252, 252, 250, 0.9); }
+.text-monokai-gray\\/50 { color: rgba(114, 112, 114, 0.5); }
+.text-monokai-pink\\/60 { color: rgba(255, 97, 136, 0.6); }
+.text-monokai-pink\\/90 { color: rgba(255, 97, 136, 0.9); }
 
 /* Border colors */
 .border-monokai-bg { border-color: var(--monokai-bg); }
@@ -162,6 +172,9 @@ try {
 .hover\\:border-monokai-gray:hover { border-color: var(--monokai-gray); }
 .hover\\:bg-monokai-cyan\\/90:hover { background-color: rgba(120, 220, 232, 0.9); }
 .hover\\:bg-monokai-green\\/90:hover { background-color: rgba(169, 220, 118, 0.9); }
+.hover\\:bg-monokai-bg-dark:hover { background-color: var(--monokai-bg-dark); }
+.hover\\:bg-monokai-border:hover { background-color: var(--monokai-border); }
+.hover\\:text-monokai-fg:hover { color: var(--monokai-fg); }
 `
 
   // Write CSS file with Monokai utilities appended

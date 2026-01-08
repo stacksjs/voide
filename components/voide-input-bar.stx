@@ -381,13 +381,13 @@
       const chat = chatStore.get();
       let text = chat.inputText.trim();
 
-      // Check if text ends with "send" or "go" (voice command triggers)
-      const sendTriggers = /\s+(send|go)$/i;
+      // Check if text ends with "send", "go", or "submit" (voice command triggers)
+      const sendTriggers = /\s+(send|go|submit)$/i;
       if (sendTriggers.test(text)) {
         text = text.replace(sendTriggers, '').trim();
       }
-      // Also handle standalone "send" or "go" - do nothing if that's all there is
-      if (/^(send|go)$/i.test(text)) {
+      // Also handle standalone triggers - do nothing if that's all there is
+      if (/^(send|go|submit)$/i.test(text)) {
         return;
       }
 
@@ -540,9 +540,9 @@
           return;
         }
 
-        // "go" or "send" submits the prompt
-        if (trimmed.endsWith(' go') || trimmed === 'go' || trimmed.endsWith(' send') || trimmed === 'send') {
-          const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send)\s*$/i, '').trim());
+        // "go", "send", or "submit" submits the prompt
+        if (/(^|\s)(go|send|submit)$/i.test(trimmed)) {
+          const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
           if (cleanTranscript) {
             appActions.setRecording(false);
             speechRecognition.stop();

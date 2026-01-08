@@ -142,10 +142,13 @@
   // Message Rendering
   // =========================================================================
 
+  let messageIdCounter = 0;
+
   function createMessageHtml(msg) {
     const isUser = msg.type === 'user';
     const isError = msg.type === 'error';
     const isSystem = msg.type === 'system';
+    const msgId = `msg-${messageIdCounter++}`;
 
     // Loading indicator - show avatar with empty content (thinking will be appended)
     if (msg.content === '...') {
@@ -157,38 +160,54 @@
       </div>`;
     }
 
+    // Get preview text (first line or first 100 chars)
+    const previewText = msg.content.split('\n')[0].substring(0, 100) + (msg.content.length > 100 ? '...' : '');
+
     // User message - right aligned with cyan accent
     if (isUser) {
-      return `<div class="flex justify-end">
+      return `<div class="group flex items-start justify-end gap-2" id="${msgId}">
+        <button class="collapse-btn" data-collapse="${msgId}" title="Collapse" style="width: 28px; height: 28px; background: #ff6188; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; cursor: pointer; flex-shrink: 0;">▼</button>
         <div class="max-w-[80%] bg-monokai-cyan/10 border-l-2 border-monokai-cyan rounded-2xl rounded-br-sm px-4 py-3">
-          <p class="text-sm text-monokai-fg leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.content)}</p>
+          <p class="msg-content text-sm text-monokai-fg leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.content)}</p>
+          <p class="msg-preview hidden text-sm text-monokai-fg/60 leading-relaxed whitespace-pre-wrap">${escapeHtml(previewText)}</p>
         </div>
       </div>`;
     }
 
     // Error message
     if (isError) {
-      return `<div class="flex items-start gap-3">
+      return `<div class="group flex items-start gap-2" id="${msgId}">
         <div class="flex-shrink-0 w-7 h-7 rounded-full bg-monokai-pink/20 flex items-center justify-center">
           <span class="text-monokai-pink text-xs">!</span>
         </div>
-        <div class="flex-1 text-sm text-monokai-pink/90 leading-relaxed">${escapeHtml(msg.content)}</div>
+        <div class="flex-1 bg-monokai-pink/10 border-l-2 border-monokai-pink rounded-2xl rounded-bl-sm px-4 py-3">
+          <p class="msg-content text-sm text-monokai-pink/90 leading-relaxed">${escapeHtml(msg.content)}</p>
+          <p class="msg-preview hidden text-sm text-monokai-pink/60">${escapeHtml(previewText)}</p>
+        </div>
+        <button class="collapse-btn flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer" data-collapse="${msgId}" title="Collapse/Expand" style="background: #727072; color: #fcfcfa;">
+          <svg class="collapse-icon" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
       </div>`;
     }
 
-    // System message - subtle italic
+    // System message - subtle italic (no collapse for system messages)
     if (isSystem) {
       return `<div class="text-center py-2">
         <span class="text-xs text-monokai-gray italic">${escapeHtml(msg.content)}</span>
       </div>`;
     }
 
-    // Assistant message - left aligned, clean
-    return `<div class="flex items-start gap-3">
+    // Assistant message - left aligned with purple accent
+    const renderedContent = renderMarkdown(msg.content);
+    return `<div class="group flex items-start gap-2" id="${msgId}">
       <div class="flex-shrink-0 w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center">
         <span class="text-white text-xs font-medium">V</span>
       </div>
-      <div class="flex-1 text-sm text-monokai-fg/90 leading-relaxed assistant-content">${renderMarkdown(msg.content)}</div>
+      <div class="flex-1 bg-monokai-purple/10 border-l-2 border-monokai-purple rounded-2xl rounded-bl-sm px-4 py-3 assistant-content">
+        <div class="msg-content text-sm text-monokai-fg/90 leading-relaxed">${renderedContent}</div>
+        <p class="msg-preview hidden text-sm text-monokai-fg/60 italic">${escapeHtml(previewText)}</p>
+      </div>
+      <button class="collapse-btn" data-collapse="${msgId}" title="Collapse" style="width: 28px; height: 28px; background: #ff6188; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; cursor: pointer; flex-shrink: 0;">▼</button>
     </div>`;
   }
 
@@ -294,6 +313,16 @@
     // Render messages
     chatStore.subscribe(state => renderMessages(state.messages));
 
+    // Event delegation for collapse buttons
+    const container = document.getElementById('messagesContainer');
+    container?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-collapse]');
+      if (btn) {
+        const msgId = btn.getAttribute('data-collapse');
+        toggleCollapse(msgId);
+      }
+    });
+
     // Subscribe to processing state
     appStore.subscribe(state => {
       isCurrentlyProcessing = state.isProcessing;
@@ -326,10 +355,36 @@
       }
     });
 
+    // Toggle collapse state for a message
+    function toggleCollapse(msgId) {
+      const msgEl = document.getElementById(msgId);
+      if (!msgEl) return;
+
+      const content = msgEl.querySelector('.msg-content');
+      const preview = msgEl.querySelector('.msg-preview');
+      const icon = msgEl.querySelector('.collapse-icon');
+
+      if (content && preview) {
+        const isCollapsed = content.classList.contains('hidden');
+        if (isCollapsed) {
+          // Expand
+          content.classList.remove('hidden');
+          preview.classList.add('hidden');
+          icon?.classList.remove('rotate-180');
+        } else {
+          // Collapse
+          content.classList.add('hidden');
+          preview.classList.remove('hidden');
+          icon?.classList.add('rotate-180');
+        }
+      }
+    }
+
     // Expose to window.voide
     window.voide = window.voide || {};
     Object.assign(window.voide, {
-      respondToPrompt
+      respondToPrompt,
+      toggleCollapse
     });
   }
 
