@@ -193,12 +193,57 @@
     // Command Processing
     // =========================================================================
 
+    // Detect if a command is a question/explanation (simple mode) vs action/task (agentic mode)
+    function detectMode(command) {
+      const lower = command.toLowerCase().trim();
+
+      // Question patterns - use simple mode for true token-by-token streaming
+      const questionPatterns = [
+        /^(what|why|how|when|where|who|which|can you explain|could you explain|please explain|tell me|describe|is it|are there|do you|does|did|will|would|should|could|can|may|might)/i,
+        /\?$/,  // Ends with question mark
+        /^explain\s/i,
+        /^describe\s/i,
+        /^tell me\s/i,
+        /^help me understand/i,
+        /^i('m| am) (curious|wondering|confused)/i,
+      ];
+
+      // Action patterns - use agentic mode with tool access
+      const actionPatterns = [
+        /^(fix|create|add|remove|delete|update|change|modify|refactor|implement|write|build|make|generate|run|execute|install|setup|configure|debug|test)/i,
+        /^please (fix|create|add|remove|delete|update|change|modify|refactor|implement|write|build|make)/i,
+        /\b(in my|in the|this|the) (code|file|project|app|application|repo|repository|codebase)\b/i,
+        /\b(lint|format|compile|build|deploy|push|commit|merge)\b/i,
+      ];
+
+      // Check for action patterns first (higher priority)
+      for (const pattern of actionPatterns) {
+        if (pattern.test(lower)) {
+          return 'agentic';
+        }
+      }
+
+      // Check for question patterns
+      for (const pattern of questionPatterns) {
+        if (pattern.test(lower)) {
+          return 'simple';
+        }
+      }
+
+      // Default to agentic for safety (can use tools if needed)
+      return 'agentic';
+    }
+
     function processWithStreaming(command) {
       return new Promise((resolve, reject) => {
         let fullContent = '';
         let currentEvent = '';
         const app = appStore.get();
         const chat = chatStore.get();
+
+        // Detect mode based on command type
+        const mode = detectMode(command);
+        console.log('[Voide] Detected mode:', mode, 'for command:', command.substring(0, 50) + '...');
 
         // Build conversation history for context (exclude the loading message we just added)
         const history = chat.messages.slice(0, -1).map(m => ({
@@ -216,7 +261,8 @@
             driver: app.currentDriver,
             repository: app.repoPath,
             sessionId: chat.sessionId,
-            history: history
+            history: history,
+            mode: mode
           })
         }).then(response => {
           if (!response.ok) throw new Error('Stream request failed');
