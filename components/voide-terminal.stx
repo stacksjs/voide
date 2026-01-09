@@ -91,7 +91,21 @@
 
   function highlightCode(code, lang) {
     // Simple syntax highlighting for common languages
-    let highlighted = escapeHtml(code);
+    // We use a token-based approach to avoid escaping issues:
+    // 1. Highlight on raw code using placeholders
+    // 2. Then escape everything except our placeholders
+    // 3. Replace placeholders with actual HTML spans
+
+    const tokens = [];
+    let tokenIndex = 0;
+
+    function addToken(text, className) {
+      const placeholder = `\x00${tokenIndex++}\x00`;
+      tokens.push({ placeholder, text, className });
+      return placeholder;
+    }
+
+    let highlighted = code;
 
     // Language-specific keywords
     const keywords = {
@@ -112,19 +126,30 @@
     const langKey = langAliases[(lang || '').toLowerCase()] || (lang || '').toLowerCase();
     const keywordRegex = keywords[langKey] || keywords.js;
 
-    // Apply highlighting
-    // Strings (single and double quotes)
-    highlighted = highlighted.replace(/(&quot;[^&]*&quot;|&#x27;[^&]*&#x27;)/g, '<span class="text-monokai-yellow">$1</span>');
+    // Apply highlighting in order of precedence (strings first to avoid highlighting inside strings)
+    // Strings (double and single quotes) - be careful with escapes
+    highlighted = highlighted.replace(/"([^"\\]|\\.)*"/g, (m) => addToken(m, 'text-monokai-yellow'));
+    highlighted = highlighted.replace(/'([^'\\]|\\.)*'/g, (m) => addToken(m, 'text-monokai-yellow'));
     // Template literals
-    highlighted = highlighted.replace(/(`[^`]*`)/g, '<span class="text-monokai-yellow">$1</span>');
-    // Comments (// and #)
-    highlighted = highlighted.replace(/(\/\/.*|#.*)/g, '<span class="text-monokai-gray">$1</span>');
-    // Numbers
-    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span class="text-monokai-purple">$1</span>');
+    highlighted = highlighted.replace(/`[^`]*`/g, (m) => addToken(m, 'text-monokai-yellow'));
+    // Comments (// and #) - only match to end of line
+    highlighted = highlighted.replace(/\/\/[^\n]*/g, (m) => addToken(m, 'text-monokai-gray'));
+    highlighted = highlighted.replace(/#[^\n]*/g, (m) => addToken(m, 'text-monokai-gray'));
+    // Numbers (not inside tokens)
+    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, (m) => addToken(m, 'text-monokai-purple'));
     // Keywords
-    highlighted = highlighted.replace(keywordRegex, '<span class="text-monokai-pink">$1</span>');
+    highlighted = highlighted.replace(keywordRegex, (m) => addToken(m, 'text-monokai-pink'));
     // Function calls
-    highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, '<span class="text-monokai-green">$1</span>(');
+    highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, (m, name) => addToken(name, 'text-monokai-green') + '(');
+
+    // Now escape HTML in the result (placeholders use \x00 which won't be in normal text)
+    highlighted = escapeHtml(highlighted);
+
+    // Replace placeholders with actual spans
+    for (const { placeholder, text, className } of tokens) {
+      const escapedText = escapeHtml(text);
+      highlighted = highlighted.replace(placeholder, `<span class="${className}">${escapedText}</span>`);
+    }
 
     return highlighted;
   }
