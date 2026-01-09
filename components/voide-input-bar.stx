@@ -108,7 +108,8 @@
 
     let accumulatedTranscript = '';
     let isRestarting = false; // Flag to prevent race conditions during restart
-    let isAwake = false; // Wake word detected - actively capturing prompt
+    // Wake word feature disabled for now
+    // let isAwake = false;
 
     // DOM Elements
     const micButton = document.getElementById('micButton');
@@ -514,32 +515,6 @@
         const rawTranscript = accumulatedTranscript + data.transcript;
         const trimmed = rawTranscript.trim().toLowerCase();
 
-        // Wake word detection: "hey buddy"
-        if (!isAwake) {
-          if (trimmed.includes('hey buddy') || trimmed.includes('a buddy') || trimmed.includes('hey body')) {
-            isAwake = true;
-            isRestarting = true;
-            accumulatedTranscript = '';
-            appActions.setTranscript('');
-            if (textInput) {
-              textInput.value = '';
-              textInput.style.height = 'auto';
-              textInput.placeholder = 'Listening...';
-            }
-            // Restart to clear transcript and start fresh
-            speechRecognition.stop();
-            setTimeout(() => {
-              isRestarting = false;
-              const app = appStore.get();
-              if (app.isRecording) speechRecognition.start();
-            }, 150);
-          }
-          // Not awake yet, ignore everything else
-          return;
-        }
-
-        // === AWAKE: Process commands ===
-
         // "reset" clears the prompt
         if (trimmed.endsWith(' reset') || trimmed === 'reset') {
           isRestarting = true;
@@ -586,31 +561,22 @@
         if (/(^|\s)(go|send|submit)$/i.test(trimmed)) {
           const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
           if (cleanTranscript) {
-            isAwake = false; // Go back to sleep after sending
-            isRestarting = true;
+            appActions.setRecording(false);
+            speechRecognition.stop();
             accumulatedTranscript = '';
             appActions.setTranscript('');
             chatActions.clearInput();
             if (textInput) {
               textInput.value = '';
               textInput.style.height = 'auto';
-              textInput.placeholder = 'Say "Hey Buddy"...';
             }
-            speechRecognition.stop();
-            setTimeout(() => {
-              isRestarting = false;
-              processCommand(cleanTranscript);
-              // Restart mic to listen for next wake word
-              const app = appStore.get();
-              if (app.isRecording) speechRecognition.start();
-            }, 100);
+            setTimeout(() => processCommand(cleanTranscript), 100);
           }
           return;
         }
 
-        // "stop" or "pause" - turn off the mic completely
+        // "stop" or "pause" - turn off the mic
         if (trimmed === 'stop' || trimmed === 'pause' || trimmed.endsWith(' stop') || trimmed.endsWith(' pause')) {
-          isAwake = false;
           accumulatedTranscript = '';
           appActions.setTranscript('');
           appActions.setRecording(false);
@@ -619,26 +585,6 @@
             textInput.value = '';
             textInput.style.height = 'auto';
           }
-          return;
-        }
-
-        // "sleep" or "goodbye" - go back to standby (keep mic on but wait for wake word)
-        if (trimmed === 'sleep' || trimmed === 'goodbye' || trimmed.endsWith(' sleep') || trimmed.endsWith(' goodbye')) {
-          isAwake = false;
-          isRestarting = true;
-          accumulatedTranscript = '';
-          appActions.setTranscript('');
-          if (textInput) {
-            textInput.value = '';
-            textInput.style.height = 'auto';
-            textInput.placeholder = 'Say "Hey Buddy"...';
-          }
-          speechRecognition.stop();
-          setTimeout(() => {
-            isRestarting = false;
-            const app = appStore.get();
-            if (app.isRecording) speechRecognition.start();
-          }, 150);
           return;
         }
 
@@ -876,15 +822,9 @@
           (state.isRecording ? 'border-monokai-cyan' : 'border-monokai-border');
       }
 
-      // Update placeholder and value based on recording/wake state
+      // Update placeholder and value based on recording state
       if (textInput) {
-        if (!state.isRecording) {
-          textInput.placeholder = 'Type / for commands';
-        } else if (!isAwake) {
-          textInput.placeholder = 'Say "Hey Buddy"...';
-        } else {
-          textInput.placeholder = 'Listening...';
-        }
+        textInput.placeholder = state.isRecording ? 'Listening...' : 'Type / for commands';
         if (state.isRecording && state.transcript) {
           textInput.value = state.transcript;
           textInput.style.height = 'auto';
@@ -901,15 +841,6 @@
 
     // Initialize speech recognition
     initSpeechRecognition();
-
-    // Auto-start mic on load for voice-first experience
-    setTimeout(() => {
-      const app = appStore.get();
-      if (app.speechSupported && !app.isRecording) {
-        startRecording();
-        console.log('[Voide] Auto-started mic - say "stop" to pause, "go" to send');
-      }
-    }, 500);
 
     // Expose to window.voide for other components
     window.voide = window.voide || {};
