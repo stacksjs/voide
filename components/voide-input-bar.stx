@@ -99,9 +99,9 @@
 
     const { appStore, appActions, chatStore, chatActions, settingsStore, settingsActions } = stores;
 
-    // Speech recognition setup
+    // Speech recognition setup - continuous: true keeps mic on until user stops it
     const speechRecognition = stores.useSpeechRecognition({
-      continuous: false,
+      continuous: true,
       interimResults: true,
       lang: 'en-US'
     });
@@ -518,15 +518,20 @@
             textInput.value = '';
             textInput.style.height = 'auto';
           }
+          // Restart recognition to clear its internal transcript state
+          speechRecognition.stop();
+          setTimeout(() => {
+            const app = appStore.get();
+            if (app.isRecording) speechRecognition.start();
+          }, 100);
           return;
         }
 
-        // "backspace" deletes last word only (preserves newlines)
-        if (trimmed.endsWith(' backspace') || trimmed === 'backspace') {
-          // Remove "backspace" from the end
-          let text = rawTranscript.replace(/\s*backspace\s*$/i, '');
+        // "oops" deletes last word only (preserves newlines)
+        if (trimmed.endsWith(' oops') || trimmed === 'oops') {
+          // Remove "oops" from the end
+          let text = rawTranscript.replace(/\s*oops\s*$/i, '');
           // Remove only the last word and horizontal whitespace before it (preserve newlines)
-          // [ \t]* = optional spaces/tabs, [^ \t\n]+ = word chars, [ \t]*$ = trailing spaces/tabs
           text = text.replace(/[ \t]*[^ \t\n]+[ \t]*$/, '');
           const newTranscript = convertSpokenPunctuation(text);
           accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
@@ -537,6 +542,12 @@
             textInput.style.height = 'auto';
             textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
           }
+          // Restart recognition to clear its internal transcript state
+          speechRecognition.stop();
+          setTimeout(() => {
+            const app = appStore.get();
+            if (app.isRecording) speechRecognition.start();
+          }, 100);
           return;
         }
 
