@@ -108,6 +108,7 @@
 
     let accumulatedTranscript = '';
     let isRestarting = false; // Flag to prevent race conditions during restart
+    let isSending = false; // Flag to prevent duplicate sends
     // Wake word feature disabled for now
     // let isAwake = false;
 
@@ -537,8 +538,8 @@
       });
 
       speechRecognition.on('result', (data) => {
-        // Skip processing during restart to prevent race conditions
-        if (isRestarting) return;
+        // Skip processing during restart or send to prevent race conditions
+        if (isRestarting || isSending) return;
 
         // Remove overlap to prevent duplication when recognition restarts
         const cleanedTranscript = removeOverlap(accumulatedTranscript, data.transcript);
@@ -589,6 +590,7 @@
 
         // "go", "send", or "submit" submits the prompt
         if (/(^|\s)(go|send|submit)$/i.test(trimmed)) {
+          isSending = true; // Prevent duplicate sends
           const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
           if (cleanTranscript) {
             appActions.setRecording(false);
@@ -600,7 +602,12 @@
               textInput.value = '';
               textInput.style.height = 'auto';
             }
-            setTimeout(() => processCommand(cleanTranscript), 100);
+            setTimeout(() => {
+              processCommand(cleanTranscript);
+              isSending = false; // Reset after processing
+            }, 100);
+          } else {
+            isSending = false; // Reset if no transcript to send
           }
           return;
         }
