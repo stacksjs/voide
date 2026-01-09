@@ -371,6 +371,10 @@
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, 160) + 'px';
       chatActions.setInputText(el.value);
+
+      // Sync keyboard edits with voice transcript so they stay in sync
+      accumulatedTranscript = el.value + (el.value ? ' ' : '');
+      appActions.setTranscript(el.value);
     }
 
     function handleInputKeydown(e) {
@@ -632,6 +636,10 @@
       });
 
       speechRecognition.on('end', () => {
+        // Don't auto-restart during controlled restart (like oops command)
+        // The command handler will restart recognition itself
+        if (isRestarting) return;
+
         const app = appStore.get();
         if (app.isRecording) {
           // Store converted transcript for continuation
@@ -824,7 +832,7 @@
 
       // Update placeholder and value based on recording state
       if (textInput) {
-        textInput.placeholder = state.isRecording ? 'Listening...' : 'Type / for commands';
+        textInput.placeholder = 'Type / for commands';
         if (state.isRecording && state.transcript) {
           textInput.value = state.transcript;
           textInput.style.height = 'auto';
