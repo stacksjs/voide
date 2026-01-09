@@ -12,8 +12,8 @@ const config: StxConfig = {
   cache: process.env.NODE_ENV === 'production',
   cachePath: '.stx/cache',
 
-  // Debug mode
-  debug: process.env.NODE_ENV !== 'production',
+  // Debug mode (disabled to silence verbose template logs)
+  debug: false,
 
   // Accessibility
   a11y: {

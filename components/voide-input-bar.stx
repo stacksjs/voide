@@ -107,6 +107,7 @@
     });
 
     let accumulatedTranscript = '';
+    let isRestarting = false; // Flag to prevent race conditions during restart
 
     // DOM Elements
     const micButton = document.getElementById('micButton');
@@ -506,11 +507,15 @@
       });
 
       speechRecognition.on('result', (data) => {
+        // Skip processing during restart to prevent race conditions
+        if (isRestarting) return;
+
         const rawTranscript = accumulatedTranscript + data.transcript;
         const trimmed = rawTranscript.trim().toLowerCase();
 
         // "reset" clears the prompt
         if (trimmed.endsWith(' reset') || trimmed === 'reset') {
+          isRestarting = true;
           accumulatedTranscript = '';
           appActions.setTranscript('');
           chatActions.setInputText('');
@@ -521,14 +526,16 @@
           // Restart recognition to clear its internal transcript state
           speechRecognition.stop();
           setTimeout(() => {
+            isRestarting = false;
             const app = appStore.get();
             if (app.isRecording) speechRecognition.start();
-          }, 100);
+          }, 150);
           return;
         }
 
         // "oops" deletes last word only (preserves newlines)
         if (trimmed.endsWith(' oops') || trimmed === 'oops') {
+          isRestarting = true;
           // Remove "oops" from the end
           let text = rawTranscript.replace(/\s*oops\s*$/i, '');
           // Remove only the last word and horizontal whitespace before it (preserve newlines)
@@ -545,9 +552,10 @@
           // Restart recognition to clear its internal transcript state
           speechRecognition.stop();
           setTimeout(() => {
+            isRestarting = false;
             const app = appStore.get();
             if (app.isRecording) speechRecognition.start();
-          }, 100);
+          }, 150);
           return;
         }
 
