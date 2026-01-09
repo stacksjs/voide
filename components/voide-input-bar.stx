@@ -111,6 +111,30 @@
     // Wake word feature disabled for now
     // let isAwake = false;
 
+    // Remove overlapping words between accumulated transcript and new recognition
+    // This prevents duplication when speech recognition restarts mid-speech
+    function removeOverlap(accumulated, newTranscript) {
+      if (!accumulated.trim() || !newTranscript.trim()) return newTranscript;
+
+      const accWords = accumulated.trim().split(/\s+/);
+      const newWords = newTranscript.trim().split(/\s+/);
+
+      // Check if new transcript starts with words from end of accumulated (overlap)
+      // Check up to 15 words of overlap
+      const maxOverlap = Math.min(15, accWords.length, newWords.length);
+      for (let overlapLen = maxOverlap; overlapLen > 0; overlapLen--) {
+        const accEnd = accWords.slice(-overlapLen).join(' ').toLowerCase();
+        const newStart = newWords.slice(0, overlapLen).join(' ').toLowerCase();
+        if (accEnd === newStart) {
+          // Found overlap - return only the non-overlapping part
+          const nonOverlapping = newWords.slice(overlapLen).join(' ');
+          return nonOverlapping ? ' ' + nonOverlapping : '';
+        }
+      }
+
+      return newTranscript;
+    }
+
     // DOM Elements
     const micButton = document.getElementById('micButton');
     const micIcon = document.getElementById('micIcon');
@@ -516,7 +540,9 @@
         // Skip processing during restart to prevent race conditions
         if (isRestarting) return;
 
-        const rawTranscript = accumulatedTranscript + data.transcript;
+        // Remove overlap to prevent duplication when recognition restarts
+        const cleanedTranscript = removeOverlap(accumulatedTranscript, data.transcript);
+        const rawTranscript = accumulatedTranscript + cleanedTranscript;
         const trimmed = rawTranscript.trim().toLowerCase();
 
         // "reset" clears the prompt
@@ -534,7 +560,7 @@
             isRestarting = false;
             const app = appStore.get();
             if (app.isRecording) speechRecognition.start();
-          }, 150);
+          }, 300);
           return;
         }
 
@@ -557,7 +583,7 @@
             isRestarting = false;
             const app = appStore.get();
             if (app.isRecording) speechRecognition.start();
-          }, 150);
+          }, 300);
           return;
         }
 
@@ -607,7 +633,7 @@
             isRestarting = false;
             const app = appStore.get();
             if (app.isRecording) speechRecognition.start();
-          }, 150);
+          }, 300);
           return;
         }
 
@@ -626,7 +652,7 @@
             isRestarting = false;
             const app = appStore.get();
             if (app.isRecording) speechRecognition.start();
-          }, 150);
+          }, 300);
           return;
         }
 
