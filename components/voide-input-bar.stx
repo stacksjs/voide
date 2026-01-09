@@ -577,6 +577,57 @@
           return;
         }
 
+        // "stop" or "pause" - turn off the mic
+        if (trimmed === 'stop' || trimmed === 'pause' || trimmed.endsWith(' stop') || trimmed.endsWith(' pause')) {
+          accumulatedTranscript = '';
+          appActions.setTranscript('');
+          appActions.setRecording(false);
+          speechRecognition.stop();
+          if (textInput) {
+            textInput.value = '';
+            textInput.style.height = 'auto';
+          }
+          return;
+        }
+
+        // "clear chat" or "new chat" - clear conversation and restart
+        if (trimmed === 'clear chat' || trimmed === 'new chat' || trimmed.endsWith(' clear chat') || trimmed.endsWith(' new chat')) {
+          isRestarting = true;
+          accumulatedTranscript = '';
+          appActions.setTranscript('');
+          chatActions.clearMessages();
+          if (textInput) {
+            textInput.value = '';
+            textInput.style.height = 'auto';
+          }
+          speechRecognition.stop();
+          setTimeout(() => {
+            isRestarting = false;
+            const app = appStore.get();
+            if (app.isRecording) speechRecognition.start();
+          }, 150);
+          return;
+        }
+
+        // "cancel" - stop Claude mid-response
+        if (trimmed === 'cancel' || trimmed.endsWith(' cancel')) {
+          isRestarting = true;
+          accumulatedTranscript = '';
+          appActions.setTranscript('');
+          cancelProcessing();
+          if (textInput) {
+            textInput.value = '';
+            textInput.style.height = 'auto';
+          }
+          speechRecognition.stop();
+          setTimeout(() => {
+            isRestarting = false;
+            const app = appStore.get();
+            if (app.isRecording) speechRecognition.start();
+          }, 150);
+          return;
+        }
+
         // Convert spoken punctuation to symbols and update display
         const fullTranscript = convertSpokenPunctuation(rawTranscript);
         appActions.setTranscript(fullTranscript);
@@ -792,6 +843,15 @@
 
     // Initialize speech recognition
     initSpeechRecognition();
+
+    // Auto-start mic on load for voice-first experience
+    setTimeout(() => {
+      const app = appStore.get();
+      if (app.speechSupported && !app.isRecording) {
+        startRecording();
+        console.log('[Voide] Auto-started mic - say "stop" to pause, "go" to send');
+      }
+    }, 500);
 
     // Expose to window.voide for other components
     window.voide = window.voide || {};
