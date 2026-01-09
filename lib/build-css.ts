@@ -29,6 +29,8 @@ const config = {
     'transition-transform',
     // Z-index for collapse button
     'z-10',
+    // Code blocks
+    'font-mono',
   ],
   theme: {
     colors: defaultConfig.theme.colors,

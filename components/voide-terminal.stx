@@ -87,6 +87,48 @@
     return div.innerHTML;
   }
 
+  let codeBlockId = 0;
+
+  function highlightCode(code, lang) {
+    // Simple syntax highlighting for common languages
+    let highlighted = escapeHtml(code);
+
+    // Language-specific keywords
+    const keywords = {
+      js: /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|class|extends|import|export|from|default|async|await|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false)\b/g,
+      ts: /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|class|extends|import|export|from|default|async|await|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false|interface|type|enum|implements|private|public|protected|readonly|static|abstract)\b/g,
+      python: /\b(def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|raise|with|lambda|yield|pass|break|continue|and|or|not|in|is|None|True|False|self|async|await)\b/g,
+      rust: /\b(fn|let|mut|const|if|else|for|while|loop|match|return|use|mod|pub|struct|enum|impl|trait|where|self|Self|true|false|Some|None|Ok|Err|async|await|move)\b/g,
+      go: /\b(func|var|const|if|else|for|range|return|import|package|type|struct|interface|map|chan|go|defer|select|case|default|break|continue|nil|true|false|make|new|append|len|cap)\b/g,
+      bash: /\b(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|echo|export|source|alias|cd|ls|rm|cp|mv|mkdir|chmod|chown|grep|sed|awk|cat|head|tail|find|xargs)\b/g,
+    };
+
+    // Normalize language aliases
+    const langAliases = {
+      javascript: 'js', jsx: 'js', tsx: 'ts', typescript: 'ts',
+      py: 'python', sh: 'bash', shell: 'bash', zsh: 'bash',
+      golang: 'go', rs: 'rust'
+    };
+    const langKey = langAliases[(lang || '').toLowerCase()] || (lang || '').toLowerCase();
+    const keywordRegex = keywords[langKey] || keywords.js;
+
+    // Apply highlighting
+    // Strings (single and double quotes)
+    highlighted = highlighted.replace(/(&quot;[^&]*&quot;|&#x27;[^&]*&#x27;)/g, '<span class="text-monokai-yellow">$1</span>');
+    // Template literals
+    highlighted = highlighted.replace(/(`[^`]*`)/g, '<span class="text-monokai-yellow">$1</span>');
+    // Comments (// and #)
+    highlighted = highlighted.replace(/(\/\/.*|#.*)/g, '<span class="text-monokai-gray">$1</span>');
+    // Numbers
+    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span class="text-monokai-purple">$1</span>');
+    // Keywords
+    highlighted = highlighted.replace(keywordRegex, '<span class="text-monokai-pink">$1</span>');
+    // Function calls
+    highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, '<span class="text-monokai-green">$1</span>(');
+
+    return highlighted;
+  }
+
   function renderMarkdown(text) {
     if (!text) return '';
 
@@ -98,11 +140,25 @@
 
     let html = escapeHtml(cleaned);
 
-    // Code blocks (preserve newlines inside)
+    // Code blocks with copy button and syntax highlighting
     const codeBlocks = [];
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
       const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
-      codeBlocks.push(`<pre class="bg-monokai-bg-dark border border-monokai-border/40 rounded-lg p-3 my-3 overflow-x-auto"><code class="text-monokai-green text-xs whitespace-pre-wrap">${code.trim()}</code></pre>`);
+      const blockId = `code-block-${codeBlockId++}`;
+      const highlighted = highlightCode(code.trim(), lang);
+      const langLabel = lang ? `<span class="text-monokai-gray text-xs">${lang}</span>` : '';
+      codeBlocks.push(`
+        <div class="relative group my-3">
+          <div class="flex items-center justify-between bg-monokai-border/40 rounded-t-lg px-3 py-1.5">
+            ${langLabel}
+            <button onclick="window.voide.copyCode('${blockId}')" class="copy-btn text-xs text-monokai-gray hover:text-monokai-fg transition-colors flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              <span class="copy-text">Copy</span>
+            </button>
+          </div>
+          <pre id="${blockId}" class="bg-monokai-bg-dark border border-monokai-border/40 border-t-0 rounded-b-lg p-3 overflow-x-auto"><code class="text-xs font-mono whitespace-pre-wrap">${highlighted}</code></pre>
+        </div>
+      `);
       return placeholder;
     });
 
@@ -380,11 +436,40 @@
       }
     }
 
+    // Copy code block to clipboard
+    function copyCode(blockId) {
+      const block = document.getElementById(blockId);
+      if (!block) return;
+
+      const code = block.querySelector('code');
+      if (!code) return;
+
+      // Get text content (strips HTML tags)
+      const text = code.textContent || code.innerText;
+
+      navigator.clipboard.writeText(text).then(() => {
+        // Find the copy button and update text
+        const btn = block.previousElementSibling?.querySelector('.copy-btn');
+        if (btn) {
+          const textSpan = btn.querySelector('.copy-text');
+          if (textSpan) {
+            textSpan.textContent = 'Copied!';
+            setTimeout(() => {
+              textSpan.textContent = 'Copy';
+            }, 2000);
+          }
+        }
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+
     // Expose to window.voide
     window.voide = window.voide || {};
     Object.assign(window.voide, {
       respondToPrompt,
-      toggleCollapse
+      toggleCollapse,
+      copyCode
     });
   }
 
