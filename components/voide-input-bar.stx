@@ -117,7 +117,7 @@
     });
 
     let accumulatedTranscript = '';
-    let lastProcessedTranscript = ''; // Track last processed to prevent exact duplicates
+    let lastDisplayedText = ''; // Track what's currently shown to prevent duplicates
     let isRestarting = false; // Flag to prevent race conditions during restart
     let isSending = false; // Flag to prevent duplicate sends
     let lastSendTime = 0; // Timestamp to debounce sends
@@ -186,29 +186,6 @@
         setTimeout(() => playTone(880, 0.15, 'sine', 0.25), 160);
       }
     };
-
-    // Remove overlapping words between accumulated transcript and new recognition
-    // This prevents duplication when speech recognition restarts mid-speech
-    function removeOverlap(accumulated, newTranscript) {
-      if (!accumulated.trim() || !newTranscript.trim()) return newTranscript;
-
-      const accWords = accumulated.trim().split(/\s+/);
-      const newWords = newTranscript.trim().split(/\s+/);
-
-      // Check if new transcript starts with words from end of accumulated (overlap)
-      const maxOverlap = Math.min(15, accWords.length, newWords.length);
-      for (let overlapLen = maxOverlap; overlapLen > 0; overlapLen--) {
-        const accEnd = accWords.slice(-overlapLen).join(' ').toLowerCase();
-        const newStart = newWords.slice(0, overlapLen).join(' ').toLowerCase();
-        if (accEnd === newStart) {
-          // Found overlap - return only the non-overlapping part
-          const nonOverlapping = newWords.slice(overlapLen).join(' ');
-          return nonOverlapping ? ' ' + nonOverlapping : '';
-        }
-      }
-
-      return newTranscript;
-    }
 
     // DOM Elements
     const micButton = document.getElementById('micButton');
@@ -580,6 +557,7 @@
 
       // Sync keyboard edits with voice transcript so they stay in sync
       accumulatedTranscript = el.value + (el.value ? ' ' : '');
+      lastDisplayedText = el.value;
       appActions.setTranscript(el.value);
     }
 
@@ -730,25 +708,53 @@
         const currentTranscript = data.transcript?.trim() || '';
         if (!currentTranscript) return;
 
-        // Skip exact duplicate transcripts (browser sometimes fires same result multiple times)
-        if (currentTranscript === lastProcessedTranscript) {
-          return;
-        }
-        lastProcessedTranscript = currentTranscript;
+        // The browser sends the FULL transcript for the current session
+        // We only prepend accumulated if this is truly new content
+        const accTrimmed = accumulatedTranscript.trim();
+        const currLower = currentTranscript.toLowerCase();
+        const accLower = accTrimmed.toLowerCase();
 
-        // Remove overlap to prevent duplication when recognition restarts
-        const cleanedTranscript = removeOverlap(accumulatedTranscript, data.transcript);
-        const rawTranscript = accumulatedTranscript + cleanedTranscript;
-        const trimmed = rawTranscript.trim().toLowerCase();
+        // Build the full transcript - be very careful about prepending
+        let fullTranscript;
+        if (accTrimmed) {
+          // DON'T prepend if current contains/overlaps with accumulated
+          const hasOverlap = currLower.includes(accLower.substring(0, Math.min(20, accLower.length))) ||
+                             accLower.includes(currLower.substring(0, Math.min(20, currLower.length)));
+          if (hasOverlap) {
+            // Use whichever is longer
+            fullTranscript = currLower.length >= accLower.length ? currentTranscript : accTrimmed;
+          } else {
+            // Truly new content - prepend accumulated
+            fullTranscript = accTrimmed + ' ' + currentTranscript;
+          }
+        } else {
+          fullTranscript = currentTranscript;
+        }
+
+        // CRITICAL: Skip if result is same as or shorter than what we're showing
+        const fullLower = fullTranscript.toLowerCase();
+        const displayedLower = lastDisplayedText.trim().toLowerCase();
+
+        if (displayedLower) {
+          // Only accept if it's strictly longer
+          if (fullLower.length <= displayedLower.length) {
+            return;
+          }
+          // Only accept if it starts with what we have (continuation) or is completely new
+          if (!fullLower.startsWith(displayedLower) && displayedLower.includes(currLower.substring(0, 20))) {
+            return;
+          }
+        }
+
+        const trimmed = fullTranscript.toLowerCase();
 
         // Wake word detection for driving mode
-        // Wake words: "hey buddy", "hey void", "okay buddy", "ok buddy"
+        // Wake words: "hey", "okay", "yo" (simple and reliable)
         const wakeWordPatterns = [
-          /^hey buddy/i,
-          /^hey void/i,
-          /^okay buddy/i,
-          /^ok buddy/i,
-          /^yo buddy/i,
+          /^hey\b/i,
+          /^okay\b/i,
+          /^ok\b/i,
+          /^yo\b/i,
         ];
 
         if (isDrivingMode && !isAwake) {
@@ -761,6 +767,7 @@
               // Clear the wake word from transcript
               const afterWake = trimmed.replace(pattern, '').trim();
               accumulatedTranscript = afterWake ? afterWake + ' ' : '';
+              lastDisplayedText = afterWake;
               appActions.setTranscript(afterWake);
               chatActions.setInputText(afterWake);
               if (textInput) {
@@ -780,6 +787,7 @@
             trimmed.endsWith(' repeat') || trimmed.endsWith(' say again')) {
           isRestarting = true;
           accumulatedTranscript = '';
+          lastDisplayedText = '';
           appActions.setTranscript('');
           if (textInput) {
             textInput.value = '';
@@ -809,6 +817,7 @@
             trimmed.endsWith(' quiet') || trimmed.endsWith(' shut up')) {
           isRestarting = true;
           accumulatedTranscript = '';
+          lastDisplayedText = '';
           appActions.setTranscript('');
           if (textInput) {
             textInput.value = '';
@@ -834,7 +843,7 @@
         if (trimmed.endsWith(' reset') || trimmed === 'reset') {
           isRestarting = true;
           accumulatedTranscript = '';
-          lastProcessedTranscript = '';
+          lastDisplayedText = '';
           appActions.setTranscript('');
           chatActions.setInputText('');
           if (textInput) {
@@ -853,10 +862,11 @@
         // "oops" deletes last word only (preserves newlines)
         if (trimmed.endsWith(' oops') || trimmed === 'oops') {
           isRestarting = true;
-          let text = rawTranscript.replace(/\s*oops\s*$/i, '');
+          let text = fullTranscript.replace(/\s*oops\s*$/i, '');
           text = text.replace(/[ \t]*[^ \t\n]+[ \t]*$/, '');
           const newTranscript = convertSpokenPunctuation(text);
           accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
+          lastDisplayedText = newTranscript;
           appActions.setTranscript(newTranscript);
           chatActions.setInputText(newTranscript);
           if (textInput) {
@@ -883,12 +893,12 @@
           isSending = true;
           lastSendTime = now;
 
-          const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
+          const cleanTranscript = convertSpokenPunctuation(fullTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
           if (cleanTranscript) {
             // Keep mic on - just clear transcript and restart recognition
             isRestarting = true;
             accumulatedTranscript = '';
-            lastProcessedTranscript = '';
+            lastDisplayedText = '';
             appActions.setTranscript('');
             chatActions.clearInput();
             if (textInput) {
@@ -917,7 +927,7 @@
         // "stop" or "pause" - turn off the mic
         if (trimmed === 'stop' || trimmed === 'pause' || trimmed.endsWith(' stop') || trimmed.endsWith(' pause')) {
           accumulatedTranscript = '';
-          lastProcessedTranscript = '';
+          lastDisplayedText = '';
           appActions.setTranscript('');
           appActions.setRecording(false);
           speechRecognition.stop();
@@ -932,6 +942,7 @@
         if (trimmed === 'clear chat' || trimmed === 'new chat' || trimmed.endsWith(' clear chat') || trimmed.endsWith(' new chat')) {
           isRestarting = true;
           accumulatedTranscript = '';
+          lastDisplayedText = '';
           appActions.setTranscript('');
           chatActions.clearMessages();
           if (textInput) {
@@ -951,6 +962,7 @@
         if (trimmed === 'cancel' || trimmed.endsWith(' cancel')) {
           isRestarting = true;
           accumulatedTranscript = '';
+          lastDisplayedText = '';
           appActions.setTranscript('');
           cancelProcessing();
           if (textInput) {
@@ -967,8 +979,9 @@
         }
 
         // Convert spoken punctuation to symbols and update display
-        const fullTranscript = convertSpokenPunctuation(rawTranscript);
-        appActions.setTranscript(fullTranscript);
+        const displayText = convertSpokenPunctuation(fullTranscript);
+        lastDisplayedText = displayText;
+        appActions.setTranscript(displayText);
       });
 
       speechRecognition.on('end', () => {
@@ -979,10 +992,13 @@
         const app = appStore.get();
         if (app.isRecording) {
           // Store converted transcript for continuation
-          accumulatedTranscript = (app.transcript || '') + ' ';
+          const currentText = app.transcript || '';
+          accumulatedTranscript = currentText + ' ';
+          lastDisplayedText = currentText; // Keep in sync to prevent duplicates
           speechRecognition.start();
         } else {
           accumulatedTranscript = '';
+          lastDisplayedText = '';
         }
       });
 
@@ -1002,7 +1018,7 @@
       if (!app.speechSupported || app.isRecording) return;
       appActions.setTranscript('');
       accumulatedTranscript = '';
-      lastProcessedTranscript = '';
+      lastDisplayedText = '';
       speechRecognition.start();
     }
 
