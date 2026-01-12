@@ -117,6 +117,7 @@
     });
 
     let accumulatedTranscript = '';
+    let lastProcessedTranscript = ''; // Track last processed to prevent exact duplicates
     let isRestarting = false; // Flag to prevent race conditions during restart
     let isSending = false; // Flag to prevent duplicate sends
     let lastSendTime = 0; // Timestamp to debounce sends
@@ -186,17 +187,26 @@
       }
     };
 
-    // Remove overlapping words between accumulated transcript and new recognition
-    // This prevents duplication when speech recognition restarts mid-speech
+    // Remove overlapping/duplicate content between accumulated transcript and new recognition
+    // This prevents duplication when speech recognition restarts or fires multiple results
     function removeOverlap(accumulated, newTranscript) {
       if (!accumulated.trim() || !newTranscript.trim()) return newTranscript;
 
-      const accWords = accumulated.trim().split(/\s+/);
+      const accLower = accumulated.trim().toLowerCase();
+      const newLower = newTranscript.trim().toLowerCase();
+
+      // Case 1: New transcript is entirely contained in accumulated - skip it completely
+      if (accLower.includes(newLower)) {
+        return '';
+      }
+
+      // Case 2: New transcript starts with content already in accumulated
+      // Find if any prefix of new transcript exists at the end of accumulated
       const newWords = newTranscript.trim().split(/\s+/);
+      const accWords = accumulated.trim().split(/\s+/);
 
       // Check if new transcript starts with words from end of accumulated (overlap)
-      // Check up to 15 words of overlap
-      const maxOverlap = Math.min(15, accWords.length, newWords.length);
+      const maxOverlap = Math.min(20, accWords.length, newWords.length);
       for (let overlapLen = maxOverlap; overlapLen > 0; overlapLen--) {
         const accEnd = accWords.slice(-overlapLen).join(' ').toLowerCase();
         const newStart = newWords.slice(0, overlapLen).join(' ').toLowerCase();
@@ -204,6 +214,21 @@
           // Found overlap - return only the non-overlapping part
           const nonOverlapping = newWords.slice(overlapLen).join(' ');
           return nonOverlapping ? ' ' + nonOverlapping : '';
+        }
+      }
+
+      // Case 3: Check if new transcript contains a repeated phrase from accumulated
+      // This catches "X X X" patterns where X is repeated
+      for (let phraseLen = Math.min(10, accWords.length); phraseLen >= 3; phraseLen--) {
+        const phraseEnd = accWords.slice(-phraseLen).join(' ').toLowerCase();
+        // Check if this phrase appears multiple times in new transcript
+        const phraseRegex = new RegExp(phraseEnd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        const matches = newLower.match(phraseRegex);
+        if (matches && matches.length > 1) {
+          // Phrase is repeated in new - only keep content after last occurrence
+          const lastIndex = newLower.lastIndexOf(phraseEnd);
+          const afterLast = newTranscript.trim().substring(lastIndex + phraseEnd.length).trim();
+          return afterLast ? ' ' + afterLast : '';
         }
       }
 
@@ -726,6 +751,13 @@
         // Skip processing during restart or send to prevent race conditions
         if (isRestarting || isSending) return;
 
+        // Skip exact duplicate transcripts (browser sometimes fires same result multiple times)
+        const currentTranscript = data.transcript?.trim() || '';
+        if (currentTranscript === lastProcessedTranscript) {
+          return;
+        }
+        lastProcessedTranscript = currentTranscript;
+
         // Remove overlap to prevent duplication when recognition restarts
         const cleanedTranscript = removeOverlap(accumulatedTranscript, data.transcript);
         const rawTranscript = accumulatedTranscript + cleanedTranscript;
@@ -824,6 +856,7 @@
         if (trimmed.endsWith(' reset') || trimmed === 'reset') {
           isRestarting = true;
           accumulatedTranscript = '';
+          lastProcessedTranscript = '';
           appActions.setTranscript('');
           chatActions.setInputText('');
           if (textInput) {
@@ -877,6 +910,7 @@
             // Keep mic on - just clear transcript and restart recognition
             isRestarting = true;
             accumulatedTranscript = '';
+            lastProcessedTranscript = '';
             appActions.setTranscript('');
             chatActions.clearInput();
             if (textInput) {
@@ -905,6 +939,7 @@
         // "stop" or "pause" - turn off the mic
         if (trimmed === 'stop' || trimmed === 'pause' || trimmed.endsWith(' stop') || trimmed.endsWith(' pause')) {
           accumulatedTranscript = '';
+          lastProcessedTranscript = '';
           appActions.setTranscript('');
           appActions.setRecording(false);
           speechRecognition.stop();
@@ -989,6 +1024,7 @@
       if (!app.speechSupported || app.isRecording) return;
       appActions.setTranscript('');
       accumulatedTranscript = '';
+      lastProcessedTranscript = '';
       speechRecognition.start();
     }
 
