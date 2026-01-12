@@ -9,6 +9,7 @@
           <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 300ms"></span>
         </div>
         <span class="text-sm italic">thinking...</span>
+        <span id="thinkingTimer" class="opacity-40 font-mono" style="font-size: 10px">0.0s</span>
       </div>
     </div>
 
@@ -109,6 +110,7 @@
     let accumulatedTranscript = '';
     let isRestarting = false; // Flag to prevent race conditions during restart
     let isSending = false; // Flag to prevent duplicate sends
+    let lastSendTime = 0; // Timestamp to debounce sends
     // Wake word feature disabled for now
     // let isAwake = false;
 
@@ -636,7 +638,14 @@
 
         // "go", "send", or "submit" submits the prompt
         if (/(^|\s)(go|send|submit)$/i.test(trimmed)) {
-          isSending = true; // Prevent duplicate sends
+          // Double protection: flag + timestamp debounce (500ms)
+          const now = Date.now();
+          if (isSending || (now - lastSendTime) < 500) {
+            return; // Already sending or sent recently
+          }
+          isSending = true;
+          lastSendTime = now;
+
           const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
           if (cleanTranscript) {
             appActions.setRecording(false);
@@ -650,10 +659,10 @@
             }
             setTimeout(() => {
               processCommand(cleanTranscript);
-              isSending = false; // Reset after processing
+              isSending = false; // Reset flag but timestamp still protects for 500ms
             }, 100);
           } else {
-            isSending = false; // Reset if no transcript to send
+            isSending = false;
           }
           return;
         }
@@ -867,14 +876,38 @@
     // =========================================================================
 
     const thinkingIndicator = document.getElementById('thinkingIndicator');
+    const thinkingTimer = document.getElementById('thinkingTimer');
+    let timerInterval = null;
+    let timerStart = null;
+
+    function startTimer() {
+      timerStart = Date.now();
+      if (thinkingTimer) thinkingTimer.textContent = '0.0s';
+      timerInterval = setInterval(() => {
+        if (thinkingTimer && timerStart) {
+          const elapsed = ((Date.now() - timerStart) / 1000).toFixed(1);
+          thinkingTimer.textContent = `${elapsed}s`;
+        }
+      }, 100);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerStart = null;
+    }
 
     appStore.subscribe((state) => {
       // Show/hide thinking indicator above input
       if (thinkingIndicator) {
         if (state.isProcessing) {
           thinkingIndicator.classList.remove('hidden');
+          if (!timerInterval) startTimer();
         } else {
           thinkingIndicator.classList.add('hidden');
+          stopTimer();
         }
       }
 

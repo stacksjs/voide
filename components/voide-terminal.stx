@@ -231,14 +231,9 @@
     const isSystem = msg.type === 'system';
     const msgId = `msg-${messageIdCounter++}`;
 
-    // Loading indicator - show avatar with empty content (thinking will be appended)
+    // Loading indicator - hidden until actual content arrives
     if (msg.content === '...') {
-      return `<div class="flex items-start gap-3">
-        <div class="flex-shrink-0 w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center">
-          <span class="text-white text-xs font-medium">V</span>
-        </div>
-        <div class="flex-1 assistant-content"></div>
-      </div>`;
+      return `<div class="hidden"></div>`;
     }
 
     // Get preview text (first line or first 100 chars)
