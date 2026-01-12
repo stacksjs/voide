@@ -121,6 +121,7 @@
     let isRestarting = false; // Flag to prevent race conditions during restart
     let isSending = false; // Flag to prevent duplicate sends
     let lastSendTime = 0; // Timestamp to debounce sends
+    let sessionStartTime = 0; // Track when session started to detect re-sends
 
     // Driving mode state
     let isDrivingMode = false;
@@ -694,6 +695,7 @@
           appActions.setTranscript('');
         }
         appActions.setRecording(true);
+        sessionStartTime = Date.now(); // Track session start
         // Play listening sound in driving mode
         if (isDrivingMode) {
           sounds.listening();
@@ -708,40 +710,26 @@
         const currentTranscript = data.transcript?.trim() || '';
         if (!currentTranscript) return;
 
-        // The browser sends the FULL transcript for the current session
-        // We only prepend accumulated if this is truly new content
-        const accTrimmed = accumulatedTranscript.trim();
-        const currLower = currentTranscript.toLowerCase();
-        const accLower = accTrimmed.toLowerCase();
-
-        // Build the full transcript - be very careful about prepending
-        let fullTranscript;
-        if (accTrimmed) {
-          // DON'T prepend if current contains/overlaps with accumulated
-          const hasOverlap = currLower.includes(accLower.substring(0, Math.min(20, accLower.length))) ||
-                             accLower.includes(currLower.substring(0, Math.min(20, currLower.length)));
-          if (hasOverlap) {
-            // Use whichever is longer
-            fullTranscript = currLower.length >= accLower.length ? currentTranscript : accTrimmed;
-          } else {
-            // Truly new content - prepend accumulated
-            fullTranscript = accTrimmed + ' ' + currentTranscript;
-          }
-        } else {
-          fullTranscript = currentTranscript;
-        }
-
-        // CRITICAL: Skip if result is same as or shorter than what we're showing
+        // Browser sends FULL transcript for current session - use it directly
+        const fullTranscript = currentTranscript;
         const fullLower = fullTranscript.toLowerCase();
         const displayedLower = lastDisplayedText.trim().toLowerCase();
 
+        // Detect if this is a potential re-send after restart
+        const timeSinceStart = Date.now() - sessionStartTime;
+        const isEarlyResult = timeSinceStart < 500; // Results within 500ms of restart
+
         if (displayedLower) {
-          // Only accept if it's strictly longer
-          if (fullLower.length <= displayedLower.length) {
+          // If early result after restart, be strict - only accept if longer
+          if (isEarlyResult && fullLower.length <= displayedLower.length) {
             return;
           }
-          // Only accept if it starts with what we have (continuation) or is completely new
-          if (!fullLower.startsWith(displayedLower) && displayedLower.includes(currLower.substring(0, 20))) {
+          // If early result that overlaps with displayed, skip (re-send)
+          if (isEarlyResult && displayedLower.includes(fullLower.substring(0, 15))) {
+            return;
+          }
+          // After 500ms, accept anything that's different (new content)
+          if (!isEarlyResult && fullLower === displayedLower) {
             return;
           }
         }
@@ -991,10 +979,11 @@
 
         const app = appStore.get();
         if (app.isRecording) {
-          // Store converted transcript for continuation
+          // DON'T accumulate - it causes duplication when browser re-sends content
+          // Just keep lastDisplayedText in sync and restart fresh
           const currentText = app.transcript || '';
-          accumulatedTranscript = currentText + ' ';
-          lastDisplayedText = currentText; // Keep in sync to prevent duplicates
+          accumulatedTranscript = ''; // Start fresh each session
+          lastDisplayedText = currentText;
           speechRecognition.start();
         } else {
           accumulatedTranscript = '';
