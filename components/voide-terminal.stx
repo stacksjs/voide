@@ -87,6 +87,106 @@
     return div.innerHTML;
   }
 
+  // =========================================================================
+  // Text-to-Speech
+  // =========================================================================
+
+  let currentUtterance = null;
+  let isSpeaking = false;
+
+  function speak(text, msgId) {
+    // Stop any current speech
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+
+    // Clean text for speech (remove markdown, code blocks, etc.)
+    let cleanText = text
+      .replace(/```[\s\S]*?```/g, ' code block ')  // Replace code blocks
+      .replace(/`([^`]+)`/g, '$1')  // Remove inline code backticks
+      .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove bold
+      .replace(/\*([^*]+)\*/g, '$1')  // Remove italic
+      .replace(/#{1,6}\s+/g, '')  // Remove headers
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove links, keep text
+      .replace(/[-*+]\s+/g, '')  // Remove list markers
+      .replace(/\n+/g, '. ')  // Convert newlines to pauses
+      .replace(/\s+/g, ' ')  // Normalize whitespace
+      .trim();
+
+    if (!cleanText) return;
+
+    currentUtterance = new SpeechSynthesisUtterance(cleanText);
+    currentUtterance.rate = 1.1;  // Slightly faster
+    currentUtterance.pitch = 1;
+    currentUtterance.volume = 1;
+
+    // Try to get a good voice (prefer natural/enhanced voices)
+    const voices = speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v =>
+      v.name.includes('Samantha') ||  // Mac
+      v.name.includes('Daniel') ||     // Mac
+      v.name.includes('Google') ||     // Chrome
+      v.name.includes('Natural') ||
+      v.name.includes('Enhanced')
+    ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+
+    if (preferredVoice) {
+      currentUtterance.voice = preferredVoice;
+    }
+
+    currentUtterance.onstart = () => {
+      isSpeaking = true;
+      updateSpeakButton(msgId, true);
+    };
+
+    currentUtterance.onend = () => {
+      isSpeaking = false;
+      currentUtterance = null;
+      updateSpeakButton(msgId, false);
+    };
+
+    currentUtterance.onerror = () => {
+      isSpeaking = false;
+      currentUtterance = null;
+      updateSpeakButton(msgId, false);
+    };
+
+    speechSynthesis.speak(currentUtterance);
+  }
+
+  function stopSpeaking() {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+    currentUtterance = null;
+    // Reset all speak buttons
+    document.querySelectorAll('.speak-btn').forEach(btn => {
+      btn.innerHTML = getSpeakIcon();
+      btn.title = 'Read aloud';
+    });
+  }
+
+  function updateSpeakButton(msgId, speaking) {
+    const btn = document.querySelector(`#${msgId} .speak-btn`);
+    if (btn) {
+      btn.innerHTML = speaking ? getStopIcon() : getSpeakIcon();
+      btn.title = speaking ? 'Stop reading' : 'Read aloud';
+    }
+  }
+
+  function getSpeakIcon() {
+    return `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`;
+  }
+
+  function getStopIcon() {
+    return `<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>`;
+  }
+
+  // Load voices (needed for some browsers)
+  if (typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+  }
+
   let codeBlockId = 0;
 
   function highlightCode(code, lang) {
@@ -163,15 +263,13 @@
       .replace(/^thinking\.\.\.\s*/gim, '')  // Remove "thinking..." at start of lines
       .replace(/\nthinking\.\.\.\s*/gi, '\n');  // Remove "thinking..." after newlines
 
-    let html = escapeHtml(cleaned);
-
-    // Code blocks with copy button and syntax highlighting
+    // Extract code blocks BEFORE escaping (to avoid double-escaping < and >)
     const codeBlocks = [];
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
+    let html = cleaned.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
       const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
       const blockId = `code-block-${codeBlockId++}`;
       const highlighted = highlightCode(code.trim(), lang);
-      const langLabel = lang ? `<span class="text-monokai-gray text-xs">${lang}</span>` : '';
+      const langLabel = lang ? `<span class="text-monokai-gray text-xs">${escapeHtml(lang)}</span>` : '';
       codeBlocks.push(`
         <div class="relative group my-3">
           <div class="flex items-center justify-between bg-monokai-border/40 rounded-t-lg px-3 py-1.5">
@@ -186,6 +284,9 @@
       `);
       return placeholder;
     });
+
+    // Now escape the rest of the HTML (code blocks are already processed)
+    html = escapeHtml(html);
 
     // Inline code
     html = html.replace(/`([^`]+)`/g, '<code class="bg-monokai-bg-dark text-monokai-cyan px-1.5 py-0.5 rounded text-xs">$1</code>');
@@ -275,7 +376,9 @@
 
     // Assistant message - left aligned with purple accent
     const renderedContent = renderMarkdown(msg.content);
-    return `<div class="group flex items-start gap-2" id="${msgId}">
+    // Store raw content for TTS (base64 encode to safely embed in HTML attribute)
+    const rawContentForTTS = btoa(encodeURIComponent(msg.content));
+    return `<div class="group flex items-start gap-2" id="${msgId}" data-content="${rawContentForTTS}">
       <div class="flex-shrink-0 w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center">
         <span class="text-white text-xs font-medium">V</span>
       </div>
@@ -283,7 +386,9 @@
         <div class="msg-content text-sm text-monokai-fg/90 leading-relaxed">${renderedContent}</div>
         <p class="msg-preview hidden text-sm text-monokai-fg/60 italic">${escapeHtml(previewText)}</p>
       </div>
-      <button class="collapse-btn" data-collapse="${msgId}" title="Collapse" style="width: 28px; height: 28px; background: #ff6188; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; cursor: pointer; flex-shrink: 0;">▼</button>
+      <div class="flex flex-col gap-1">
+        <button class="speak-btn" data-speak="${msgId}" title="Read aloud" style="width: 24px; height: 24px; background: #727072; color: #fcfcfa; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">${getSpeakIcon()}</button>
+      </div>
     </div>`;
   }
 
@@ -389,15 +494,48 @@
     // Render messages
     chatStore.subscribe(state => renderMessages(state.messages));
 
-    // Event delegation for collapse buttons
+    // Event delegation for collapse and speak buttons
     const container = document.getElementById('messagesContainer');
     container?.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-collapse]');
-      if (btn) {
-        const msgId = btn.getAttribute('data-collapse');
+      // Handle collapse button
+      const collapseBtn = e.target.closest('[data-collapse]');
+      if (collapseBtn) {
+        const msgId = collapseBtn.getAttribute('data-collapse');
         toggleCollapse(msgId);
+        return;
+      }
+
+      // Handle speak button
+      const speakBtn = e.target.closest('[data-speak]');
+      if (speakBtn) {
+        const msgId = speakBtn.getAttribute('data-speak');
+        handleSpeak(msgId);
+        return;
       }
     });
+
+    // Handle TTS speak/stop
+    function handleSpeak(msgId) {
+      // If already speaking this message, stop
+      if (isSpeaking) {
+        stopSpeaking();
+        return;
+      }
+
+      // Get the raw content from data attribute
+      const msgEl = document.getElementById(msgId);
+      if (!msgEl) return;
+
+      const encodedContent = msgEl.getAttribute('data-content');
+      if (!encodedContent) return;
+
+      try {
+        const content = decodeURIComponent(atob(encodedContent));
+        speak(content, msgId);
+      } catch (e) {
+        console.error('Failed to decode content for TTS:', e);
+      }
+    }
 
     // Subscribe to processing state
     appStore.subscribe(state => {
@@ -489,7 +627,9 @@
     Object.assign(window.voide, {
       respondToPrompt,
       toggleCollapse,
-      copyCode
+      copyCode,
+      speak,
+      stopSpeaking
     });
   }
 

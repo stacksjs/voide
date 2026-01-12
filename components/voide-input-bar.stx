@@ -47,6 +47,15 @@
             <svg id="micIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
           </button>
 
+          <!-- Driving Mode toggle -->
+          <button
+            id="drivingModeBtn"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
+            title="Driving Mode (hands-free)"
+          >
+            <svg id="drivingIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"></path></svg>
+          </button>
+
           <!-- Stop button (shown when processing) -->
           <button
             id="stopBtn"
@@ -111,8 +120,71 @@
     let isRestarting = false; // Flag to prevent race conditions during restart
     let isSending = false; // Flag to prevent duplicate sends
     let lastSendTime = 0; // Timestamp to debounce sends
-    // Wake word feature disabled for now
-    // let isAwake = false;
+
+    // Driving mode state
+    let isDrivingMode = false;
+    let isAwake = false; // Wake word state for driving mode
+    let audioContext = null;
+
+    // =========================================================================
+    // Audio Cues (Web Audio API)
+    // =========================================================================
+
+    function getAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioContext;
+    }
+
+    function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+      try {
+        const ctx = getAudioContext();
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+
+        gain.gain.setValueAtTime(volume, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+        oscillator.start();
+        oscillator.stop(ctx.currentTime + duration);
+      } catch (e) {
+        console.log('[Audio] Could not play tone:', e);
+      }
+    }
+
+    // Sound effects for driving mode
+    const sounds = {
+      // Quick high ping - listening activated
+      listening: () => playTone(880, 0.12, 'sine', 0.25),
+
+      // Soft processing indicator
+      processing: () => playTone(440, 0.2, 'sine', 0.15),
+
+      // Pleasant two-note chime - done
+      done: () => {
+        playTone(660, 0.15, 'sine', 0.2);
+        setTimeout(() => playTone(880, 0.25, 'sine', 0.25), 150);
+      },
+
+      // Descending tone - error
+      error: () => {
+        playTone(440, 0.15, 'sine', 0.2);
+        setTimeout(() => playTone(280, 0.25, 'sine', 0.2), 120);
+      },
+
+      // Wake word detected
+      wake: () => {
+        playTone(520, 0.1, 'sine', 0.2);
+        setTimeout(() => playTone(660, 0.1, 'sine', 0.2), 80);
+        setTimeout(() => playTone(880, 0.15, 'sine', 0.25), 160);
+      }
+    };
 
     // Remove overlapping words between accumulated transcript and new recognition
     // This prevents duplication when speech recognition restarts mid-speech
@@ -147,8 +219,48 @@
     const stopBtn = document.getElementById('stopBtn');
     const driverSelect = document.getElementById('driverSelect');
     const recordingIndicator = document.getElementById('recordingIndicator');
+    const drivingModeBtn = document.getElementById('drivingModeBtn');
+    const drivingIcon = document.getElementById('drivingIcon');
 
     console.log('[VoideInputBar] Initialized');
+
+    // =========================================================================
+    // Driving Mode
+    // =========================================================================
+
+    function toggleDrivingMode() {
+      isDrivingMode = !isDrivingMode;
+      updateDrivingModeUI();
+
+      if (isDrivingMode) {
+        // Play activation sound
+        sounds.wake();
+        // Auto-start listening in driving mode
+        if (!appStore.get().isRecording) {
+          startRecording();
+        }
+        console.log('[Voide] Driving mode activated - hands-free experience enabled');
+      } else {
+        // Play deactivation sound (softer)
+        playTone(440, 0.15, 'sine', 0.15);
+        isAwake = false;
+        console.log('[Voide] Driving mode deactivated');
+      }
+    }
+
+    function updateDrivingModeUI() {
+      if (drivingModeBtn) {
+        drivingModeBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors ' +
+          (isDrivingMode ? 'text-monokai-green bg-monokai-green/20' : 'text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg');
+        drivingModeBtn.title = isDrivingMode ? 'Driving Mode ON (click to disable)' : 'Driving Mode (hands-free)';
+      }
+      if (drivingIcon) {
+        drivingIcon.setAttribute('stroke', isDrivingMode ? '#a9dc76' : 'currentColor');
+      }
+    }
+
+    // Bind driving mode toggle
+    drivingModeBtn?.addEventListener('click', toggleDrivingMode);
 
     // Initialize driver selector from store
     const initialDriver = appStore.get().currentDriver || 'claude-sdk';
@@ -400,6 +512,11 @@
       appActions.setProcessing(true);
       addMessage('assistant', '...');
 
+      // Play processing sound in driving mode
+      if (isDrivingMode) {
+        sounds.processing();
+      }
+
       checkBackendAPI().then(hasBackend => {
         if (hasBackend) {
           return processWithStreaming(command);
@@ -426,10 +543,26 @@
         if (isNewChat && newChatId) {
           generateChatTitle(newChatId, command);
         }
+
+        // Driving mode: play done sound and auto-TTS response
+        if (isDrivingMode) {
+          sounds.done();
+          // Auto-speak the response after a brief delay
+          setTimeout(() => {
+            if (response.message && window.voide?.speak) {
+              window.voide.speak(response.message, 'auto-tts');
+            }
+          }, 400);
+        }
       }).catch(error => {
         chatActions.removeLastMessage();
         addMessage('error', 'Failed: ' + error.message);
         appActions.setTerminalTitle('Voide - Error');
+
+        // Play error sound in driving mode
+        if (isDrivingMode) {
+          sounds.error();
+        }
       }).finally(() => {
         appActions.setProcessing(false);
       });
@@ -583,6 +716,10 @@
           appActions.setTranscript('');
         }
         appActions.setRecording(true);
+        // Play listening sound in driving mode
+        if (isDrivingMode) {
+          sounds.listening();
+        }
       });
 
       speechRecognition.on('result', (data) => {
@@ -593,6 +730,95 @@
         const cleanedTranscript = removeOverlap(accumulatedTranscript, data.transcript);
         const rawTranscript = accumulatedTranscript + cleanedTranscript;
         const trimmed = rawTranscript.trim().toLowerCase();
+
+        // Wake word detection for driving mode
+        // Wake words: "hey buddy", "hey void", "okay buddy", "ok buddy"
+        const wakeWordPatterns = [
+          /^hey buddy/i,
+          /^hey void/i,
+          /^okay buddy/i,
+          /^ok buddy/i,
+          /^yo buddy/i,
+        ];
+
+        if (isDrivingMode && !isAwake) {
+          // In driving mode, wait for wake word
+          for (const pattern of wakeWordPatterns) {
+            if (pattern.test(trimmed)) {
+              // Wake word detected - activate listening
+              isAwake = true;
+              sounds.wake();
+              // Clear the wake word from transcript
+              const afterWake = trimmed.replace(pattern, '').trim();
+              accumulatedTranscript = afterWake ? afterWake + ' ' : '';
+              appActions.setTranscript(afterWake);
+              chatActions.setInputText(afterWake);
+              if (textInput) {
+                textInput.value = afterWake;
+              }
+              console.log('[Voide] Wake word detected - listening for command');
+              return;
+            }
+          }
+          // No wake word - ignore input in driving mode when not awake
+          return;
+        }
+
+        // Voice commands for TTS control (work anytime, not just in driving mode)
+        // "repeat" or "say again" - repeat the last assistant response
+        if (trimmed === 'repeat' || trimmed === 'say again' || trimmed === 'repeat that' ||
+            trimmed.endsWith(' repeat') || trimmed.endsWith(' say again')) {
+          isRestarting = true;
+          accumulatedTranscript = '';
+          appActions.setTranscript('');
+          if (textInput) {
+            textInput.value = '';
+            textInput.style.height = 'auto';
+          }
+
+          // Find and speak the last assistant message
+          const messages = chatStore.get().messages;
+          const lastAssistant = [...messages].reverse().find(m => m.type === 'assistant' && m.content !== '...');
+          if (lastAssistant && window.voide?.speak) {
+            sounds.listening(); // Acknowledge
+            window.voide.speak(lastAssistant.content, 'repeat-tts');
+          }
+
+          speechRecognition.stop();
+          setTimeout(() => {
+            isRestarting = false;
+            const app = appStore.get();
+            if (app.isRecording) speechRecognition.start();
+          }, 300);
+          return;
+        }
+
+        // "quiet", "shut up", "be quiet", "silence" - stop TTS
+        if (trimmed === 'quiet' || trimmed === 'shut up' || trimmed === 'be quiet' ||
+            trimmed === 'silence' || trimmed === 'stop talking' ||
+            trimmed.endsWith(' quiet') || trimmed.endsWith(' shut up')) {
+          isRestarting = true;
+          accumulatedTranscript = '';
+          appActions.setTranscript('');
+          if (textInput) {
+            textInput.value = '';
+            textInput.style.height = 'auto';
+          }
+
+          // Stop any current TTS
+          if (window.voide?.stopSpeaking) {
+            window.voide.stopSpeaking();
+            sounds.listening(); // Soft acknowledgment
+          }
+
+          speechRecognition.stop();
+          setTimeout(() => {
+            isRestarting = false;
+            const app = appStore.get();
+            if (app.isRecording) speechRecognition.start();
+          }, 300);
+          return;
+        }
 
         // "reset" clears the prompt
         if (trimmed.endsWith(' reset') || trimmed === 'reset') {
@@ -648,8 +874,8 @@
 
           const cleanTranscript = convertSpokenPunctuation(rawTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
           if (cleanTranscript) {
-            appActions.setRecording(false);
-            speechRecognition.stop();
+            // Keep mic on - just clear transcript and restart recognition
+            isRestarting = true;
             accumulatedTranscript = '';
             appActions.setTranscript('');
             chatActions.clearInput();
@@ -657,9 +883,18 @@
               textInput.value = '';
               textInput.style.height = 'auto';
             }
+            // Reset awake state in driving mode - user needs to say wake word again
+            if (isDrivingMode) {
+              isAwake = false;
+            }
+            speechRecognition.stop();
             setTimeout(() => {
               processCommand(cleanTranscript);
-              isSending = false; // Reset flag but timestamp still protects for 500ms
+              isSending = false;
+              isRestarting = false;
+              // Restart mic if it was on
+              const app = appStore.get();
+              if (app.isRecording) speechRecognition.start();
             }, 100);
           } else {
             isSending = false;
@@ -974,7 +1209,11 @@
       handleTextSubmit,
       cancelProcessing,
       processCommand,
-      addMessage
+      addMessage,
+      // Driving mode
+      toggleDrivingMode,
+      isDrivingMode: () => isDrivingMode,
+      sounds
     });
   }
 
