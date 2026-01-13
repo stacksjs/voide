@@ -160,17 +160,12 @@
 </template>
 
 <script client>
+import { appStore, chatStore, settingsStore } from '@stores'
+
 (() => {
   const API_BASE_URL = 'http://localhost:3008/voide';
 
   function init() {
-    const stores = window.VoideStores;
-    if (!stores) {
-      setTimeout(init, 10);
-      return;
-    }
-
-    const { appStore, appActions, chatStore, chatActions } = stores;
 
     // =========================================================================
     // Refs - bound to DOM elements via @ref attributes
@@ -576,24 +571,24 @@
     }
 
     function saveChat() {
-      const app = appStore.get();
-      chatActions.saveCurrentChat(app.repoPath, app.currentDriver);
+      const app = appStore.$state;
+      chatStore.saveCurrentChat(app.repoPath, app.currentDriver);
     }
 
     let saveChatDebounceTimer = null;
     function updateLastMessage(type, content) {
-      chatActions.updateLastMessage(type, content);
+      chatStore.updateLastMessage(type, content);
       clearTimeout(saveChatDebounceTimer);
       saveChatDebounceTimer = setTimeout(saveChat, 500);
     }
 
     function addMessage(type, content, header) {
-      const app = appStore.get();
+      const app = appStore.$state;
       const driverName = app.currentDriver === 'claude-sdk' ? 'Claude SDK' :
                          app.currentDriver === 'openai' ? 'OpenAI' :
                          app.currentDriver === 'ollama' ? 'Ollama' : 'AI';
       const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
-      chatActions.addMessage(type, content, headerText);
+      chatStore.addMessage(type, content, headerText);
       saveChat();
     }
 
@@ -626,8 +621,8 @@
       return new Promise((resolve, reject) => {
         let fullContent = '';
         let currentEvent = '';
-        const app = appStore.get();
-        const chat = chatStore.get();
+        const app = appStore.$state;
+        const chat = chatStore.$state;
         const mode = detectMode(command);
 
         const history = chat.messages.slice(0, -1).map(m => ({
@@ -678,7 +673,7 @@
                     const data = JSON.parse(trimmed.substring(6));
 
                     if (currentEvent === 'session' && data.sessionId) {
-                      chatActions.setSessionId(data.sessionId);
+                      chatStore.setSessionId(data.sessionId);
                       saveChat();
                     } else if (currentEvent === 'chunk' && data.text) {
                       fullContent += data.text;
@@ -724,7 +719,7 @@
       })
       .then(res => res.json())
       .then(data => {
-        if (data.title) chatActions.setChatTitle(chatId, data.title);
+        if (data.title) chatStore.setChatTitle(chatId, data.title);
       })
       .catch(() => {});
     }
@@ -732,8 +727,8 @@
     function processCommand(command, audioId = null) {
       if (!command.trim()) return;
 
-      const chat = chatStore.get();
-      const app = appStore.get();
+      const chat = chatStore.$state;
+      const app = appStore.$state;
       let isNewChat = false;
       let newChatId = null;
       const wasVoiceMessage = !!audioId;
@@ -741,7 +736,7 @@
       const messageContent = audioId ? `[Voice message: ${command}]` : command;
 
       if (!chat.currentChatId) {
-        newChatId = chatActions.startNewChat(app.repoPath, app.currentDriver, {
+        newChatId = chatStore.startNewChat(app.repoPath, app.currentDriver, {
           type: 'user',
           content: messageContent,
           header: audioId ? 'You (voice)' : 'You',
@@ -753,15 +748,15 @@
         addMessage('user', messageContent, audioId ? 'You (voice)' : 'You');
       }
 
-      appActions.setTerminalTitle('Processing...');
+      appStore.setTerminalTitle('Processing...');
 
       if (!app.repoPath) {
         addMessage('error', 'Please enter a repository URL or path first.');
-        appActions.setTerminalTitle('Voide - Ready');
+        appStore.setTerminalTitle('Voide - Ready');
         return;
       }
 
-      appActions.setProcessing(true);
+      appStore.setProcessing(true);
       addMessage('assistant', '...');
 
       checkBackendAPI().then(hasBackend => {
@@ -778,10 +773,10 @@
         }
       }).then(response => {
         if (response.hasChanges) {
-          appActions.setHasChanges(true);
+          appStore.setHasChanges(true);
           addMessage('system', 'Changes staged.');
         }
-        appActions.setTerminalTitle('Voide - Ready');
+        appStore.setTerminalTitle('Voide - Ready');
 
         if (isNewChat && newChatId) {
           generateChatTitle(newChatId, command);
@@ -805,16 +800,16 @@
           }, 400);
         }
       }).catch(error => {
-        chatActions.removeLastMessage();
+        chatStore.removeLastMessage();
         addMessage('error', 'Failed: ' + error.message);
-        appActions.setTerminalTitle('Voide - Error');
+        appStore.setTerminalTitle('Voide - Error');
 
         // Restart recording even on error (hands-free mode)
         if (wasVoiceMessage && handsFreeModeActive) {
           setTimeout(() => startRecording(), 1000);
         }
       }).finally(() => {
-        appActions.setProcessing(false);
+        appStore.setProcessing(false);
       });
     }
 
@@ -825,7 +820,7 @@
       const el = e.target;
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-      chatActions.setInputText(el.value);
+      chatStore.setInputText(el.value);
     }
 
     function handleInputKeydown(e) {
@@ -853,7 +848,7 @@
               state.audioBlob,
               state.duration,
               transcript,
-              chatStore.get().currentChatId
+              chatStore.$state.currentChatId
             );
           } catch (e) {
             console.log('[Voide] Failed to save audio:', e);
@@ -866,11 +861,11 @@
         return;
       }
 
-      const chat = chatStore.get();
+      const chat = chatStore.$state;
       const text = chat.inputText.trim();
 
-      if (text && !appStore.get().isProcessing) {
-        chatActions.clearInput();
+      if (text && !appStore.$state.isProcessing) {
+        chatStore.clearInput();
         const textInputEl = $('textInput');
         if (textInputEl) {
           textInputEl.value = '';
@@ -886,8 +881,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
       }).then(() => {
-        appActions.setProcessing(false);
-        const messages = chatStore.get().messages;
+        appStore.setProcessing(false);
+        const messages = chatStore.$state.messages;
         if (messages.length > 0) {
           const lastMsg = messages[messages.length - 1];
           if (lastMsg?.type === 'assistant') {
@@ -895,7 +890,7 @@
           }
         }
       }).catch(() => {
-        appActions.setProcessing(false);
+        appStore.setProcessing(false);
       });
     }
 
@@ -912,10 +907,10 @@
 
     // Driver selector
     const driverSelectEl = $('driverSelect');
-    const initialDriver = appStore.get().currentDriver || 'claude-sdk';
+    const initialDriver = appStore.$state.currentDriver || 'claude-sdk';
     if (driverSelectEl) driverSelectEl.value = initialDriver;
     driverSelectEl?.addEventListener('change', (e) => {
-      appActions.setDriver(e.target.value);
+      appStore.setDriver(e.target.value);
     });
 
     // Global keyboard shortcuts
@@ -1023,7 +1018,7 @@
       indicator.classList.remove('hidden');
     }
 
-    appStore.subscribe((state) => {
+    appStore.$subscribe((state) => {
       const indicator = $('thinkingIndicator');
       if (indicator) {
         if (state.isProcessing) {

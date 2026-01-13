@@ -1,6 +1,18 @@
 /**
  * Voide Stores - Browser Bundle
  * Auto-generated, do not edit
+ *
+ * Usage in components:
+ *   import { appStore, chatStore } from '@stores'
+ *
+ *   // Access state directly
+ *   console.log(appStore.isProcessing)
+ *
+ *   // Call actions
+ *   chatStore.addMessage('user', 'Hello')
+ *
+ *   // Subscribe to changes
+ *   appStore.$subscribe((state) => console.log(state))
  */
 window.VoideStores = (function() {
   var __defProp = Object.defineProperty;
@@ -82,7 +94,6 @@ window.VoideStores = (function() {
     useAudioCues: () => useAudioCues,
     useAsyncData: () => useAsyncData,
     uiStore: () => uiStore,
-    uiActions: () => uiActions,
     toggleFullscreen: () => toggleFullscreen,
     subscribePageMeta: () => subscribePageMeta,
     subscribeLayout: () => subscribeLayout,
@@ -93,7 +104,6 @@ window.VoideStores = (function() {
     shareCurrentPage: () => shareCurrentPage,
     share: () => share,
     settingsStore: () => settingsStore,
-    settingsActions: () => settingsActions,
     setTitle: () => setTitle,
     setMeta: () => setMeta,
     setDefaultLayout: () => setDefaultLayout,
@@ -105,6 +115,7 @@ window.VoideStores = (function() {
     requiresAuth: () => requiresAuth,
     required: () => required,
     removeCookie: () => removeCookie,
+    registerStoresClient: () => registerStoresClient,
     registerMiddleware: () => registerMiddleware,
     playTone: () => playTone,
     playAudioCue: () => playAudioCue,
@@ -127,6 +138,8 @@ window.VoideStores = (function() {
     getMiddleware: () => getMiddleware,
     getHeadConfig: () => getHeadConfig,
     getExposed: () => getExposed,
+    getDefinedStoreNames: () => getDefinedStoreNames,
+    getDefinedStore: () => getDefinedStore,
     getCurrentPosition: () => getCurrentPosition,
     getCurrentLayout: () => getCurrentLayout,
     getCurrentElement: () => getCurrentElement,
@@ -137,6 +150,7 @@ window.VoideStores = (function() {
     formatDuration: () => formatDuration,
     executeMiddleware: () => executeMiddleware,
     detectVoiceCommand: () => detectVoiceCommand,
+    defineStore: () => defineStore,
     definePropsWithValidation: () => definePropsWithValidation,
     defineProps: () => defineProps,
     definePageMeta: () => definePageMeta,
@@ -149,12 +163,10 @@ window.VoideStores = (function() {
     clearStorage: () => clearStorage,
     clearCookies: () => clearCookies,
     chatStore: () => chatStore,
-    chatActions: () => chatActions,
     canNotify: () => canNotify,
     arrayOf: () => arrayOf,
     applyHead: () => applyHead,
-    appStore: () => appStore,
-    appActions: () => appActions
+    appStore: () => appStore
   });
 
   // lib/store.ts
@@ -236,6 +248,111 @@ window.VoideStores = (function() {
     };
     return store;
   }
+  var storeRegistry = new Map;
+  function defineStore(id, options) {
+    const {
+      state: initialState,
+      getters = {},
+      actions = {},
+      persist
+    } = options;
+    const resolvedInitialState = typeof initialState === "function" ? initialState() : initialState;
+    const persistOptions = persist === true ? { storage: "local", key: `voide:${id}` } : persist || undefined;
+    const store = createStore(resolvedInitialState, {
+      name: id,
+      persist: persistOptions
+    });
+    const storeProxy = new Proxy({}, {
+      get(_target, prop) {
+        const propStr = String(prop);
+        if (propStr === "$state")
+          return store.get();
+        if (propStr === "$subscribe")
+          return store.subscribe;
+        if (propStr === "$reset")
+          return store.reset;
+        if (propStr === "$patch") {
+          return (partial) => {
+            if (typeof partial === "function") {
+              const currentState = store.get();
+              const draft = { ...currentState };
+              partial(draft);
+              store.set(draft);
+            } else {
+              store.update(partial);
+            }
+          };
+        }
+        if (propStr === "_store")
+          return store;
+        if (propStr === "$id")
+          return id;
+        if (propStr in getters) {
+          return getters[propStr](store.get());
+        }
+        if (propStr in actions) {
+          return (...args) => {
+            return actions[propStr].apply(storeProxy, args);
+          };
+        }
+        const state = store.get();
+        if (state && typeof state === "object" && propStr in state) {
+          return state[propStr];
+        }
+        return;
+      },
+      set(_target, prop, value) {
+        const propStr = String(prop);
+        if (propStr.startsWith("$") || propStr === "_store") {
+          return false;
+        }
+        const state = store.get();
+        if (state && typeof state === "object") {
+          store.set({ ...state, [propStr]: value });
+          return true;
+        }
+        return false;
+      },
+      has(_target, prop) {
+        const propStr = String(prop);
+        const state = store.get();
+        return propStr.startsWith("$") || propStr === "_store" || propStr in getters || propStr in actions || state && typeof state === "object" && propStr in state;
+      },
+      ownKeys() {
+        const state = store.get();
+        const stateKeys = state && typeof state === "object" ? Object.keys(state) : [];
+        return [
+          ...stateKeys,
+          ...Object.keys(getters),
+          ...Object.keys(actions),
+          "$state",
+          "$subscribe",
+          "$reset",
+          "$patch",
+          "$id"
+        ];
+      }
+    });
+    storeRegistry.set(id, storeProxy);
+    return storeProxy;
+  }
+  function getDefinedStore(name) {
+    return storeRegistry.get(name);
+  }
+  function getDefinedStoreNames() {
+    return Array.from(storeRegistry.keys());
+  }
+  function registerStoresClient(stores) {
+    if (typeof window === "undefined")
+      return;
+    const w = window;
+    w.__STX_STORES__ = w.__STX_STORES__ || {};
+    for (const [name, store] of Object.entries(stores)) {
+      w.__STX_STORES__[name] = store;
+      storeRegistry.set(name, store);
+    }
+    window.dispatchEvent(new CustomEvent("stx:stores-ready", { detail: Object.keys(stores) }));
+  }
   function computed(stores, compute) {
     const getValues = () => stores.map((s) => s.get());
     let currentValue = compute(...getValues());
@@ -262,65 +379,55 @@ window.VoideStores = (function() {
   }
 
   // lib/stores/app.ts
-  var appStore = createStore({
-    isRecording: false,
-    isProcessing: false,
-    transcript: "",
-    repoPath: "",
-    hasChanges: false,
-    speechSupported: false,
-    currentDriver: "claude-sdk",
-    isNativeApp: false,
-    terminalTitle: "Voide - Ready"
-  }, {
-    name: "app",
+  var appStore = defineStore("app", {
+    state: {
+      isRecording: false,
+      isProcessing: false,
+      transcript: "",
+      repoPath: "",
+      hasChanges: false,
+      speechSupported: false,
+      currentDriver: "claude-sdk",
+      isNativeApp: false,
+      terminalTitle: "Voide - Ready"
+    },
+    actions: {
+      setRecording(isRecording) {
+        this.isRecording = isRecording;
+      },
+      setProcessing(isProcessing) {
+        this.isProcessing = isProcessing;
+      },
+      setTranscript(transcript) {
+        this.transcript = transcript;
+      },
+      setRepoPath(repoPath) {
+        this.repoPath = repoPath;
+      },
+      setHasChanges(hasChanges) {
+        this.hasChanges = hasChanges;
+      },
+      setTerminalTitle(terminalTitle) {
+        this.terminalTitle = terminalTitle;
+      },
+      setDriver(currentDriver) {
+        this.currentDriver = currentDriver;
+      },
+      setNativeApp(isNativeApp) {
+        this.isNativeApp = isNativeApp;
+      },
+      setSpeechSupported(speechSupported) {
+        this.speechSupported = speechSupported;
+      }
+    },
     persist: {
-      key: "voide:app",
-      storage: "local"
+      storage: "local",
+      key: "voide:app"
     }
   });
-  var appActions = {
-    setRecording: (isRecording) => {
-      appStore.update({ isRecording });
-    },
-    setProcessing: (isProcessing) => {
-      appStore.update({ isProcessing });
-    },
-    setTranscript: (transcript) => {
-      appStore.update({ transcript });
-    },
-    setRepoPath: (repoPath) => {
-      appStore.update({ repoPath });
-    },
-    setHasChanges: (hasChanges) => {
-      appStore.update({ hasChanges });
-    },
-    setTerminalTitle: (terminalTitle) => {
-      appStore.update({ terminalTitle });
-    },
-    setDriver: (currentDriver) => {
-      appStore.update({ currentDriver });
-    },
-    setNativeApp: (isNativeApp) => {
-      appStore.update({ isNativeApp });
-    },
-    setSpeechSupported: (speechSupported) => {
-      appStore.update({ speechSupported });
-    }
-  };
   // lib/stores/chat.ts
   var STORAGE_KEY_CHATS = "voide:chats";
   var STORAGE_KEY_CHAT_COUNTER = "voide:chat_counter";
-  var chatStore = createStore({
-    currentChatId: null,
-    messages: [],
-    inputText: "",
-    charCount: 0,
-    pendingPrompt: null,
-    sessionId: null
-  }, {
-    name: "chat"
-  });
   function getAllChats() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY_CHATS) || "{}");
@@ -331,279 +438,244 @@ window.VoideStores = (function() {
   function saveAllChats(chats) {
     localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chats));
   }
-  var chatActions = {
-    generateChatId: () => {
-      const counter = parseInt(localStorage.getItem(STORAGE_KEY_CHAT_COUNTER) || "0", 10) + 1;
-      localStorage.setItem(STORAGE_KEY_CHAT_COUNTER, counter.toString());
-      return counter.toString();
+  var chatStore = defineStore("chat", {
+    state: {
+      currentChatId: null,
+      messages: [],
+      inputText: "",
+      charCount: 0,
+      pendingPrompt: null,
+      sessionId: null
     },
-    getChatIdFromUrl: () => {
-      const match = window.location.pathname.match(/^\/chat\/(\d+)$/);
-      return match ? match[1] : null;
-    },
-    getAllChats,
-    startNewChat: (repoPath = "", driver = "claude-cli-local", initialMessage) => {
-      const chatId = chatActions.generateChatId();
-      const messages = initialMessage ? [initialMessage] : [];
-      chatStore.update({
-        currentChatId: chatId,
-        messages
-      });
-      const chats = getAllChats();
-      chats[chatId] = {
-        id: chatId,
-        messages,
-        repoPath,
-        driver,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      saveAllChats(chats);
-      history.pushState({ chatId }, "", `/chat/${chatId}`);
-      return chatId;
-    },
-    loadChat: (chatId) => {
-      const chats = getAllChats();
-      const chat = chats[chatId];
-      if (chat) {
-        chatStore.update({
-          currentChatId: chatId,
-          messages: chat.messages || [],
-          sessionId: chat.sessionId || null
-        });
-        return true;
-      }
-      return false;
-    },
-    saveCurrentChat: (repoPath, driver) => {
-      const state = chatStore.get();
-      if (!state.currentChatId)
-        return;
-      const chats = getAllChats();
-      const existingChat = chats[state.currentChatId];
-      chats[state.currentChatId] = {
-        id: state.currentChatId,
-        title: existingChat?.title,
-        messages: state.messages,
-        repoPath,
-        driver,
-        sessionId: state.sessionId || undefined,
-        createdAt: existingChat?.createdAt || Date.now(),
-        updatedAt: Date.now()
-      };
-      saveAllChats(chats);
-    },
-    setChatTitle: (chatId, title) => {
-      const chats = getAllChats();
-      if (chats[chatId]) {
-        chats[chatId].title = title;
-        chats[chatId].updatedAt = Date.now();
-        saveAllChats(chats);
-      }
-    },
-    deleteChat: (chatId) => {
-      const chats = getAllChats();
-      delete chats[chatId];
-      saveAllChats(chats);
-    },
-    addMessage: (type, content, header) => {
-      const state = chatStore.get();
-      const driverName = header || (type === "user" ? "You" : type === "assistant" ? "AI" : type === "system" ? "System" : "Error");
-      const newMessage = {
-        type,
-        content,
-        header: driverName,
-        timestamp: Date.now()
-      };
-      chatStore.update({
-        messages: [...state.messages, newMessage]
-      });
-      return newMessage;
-    },
-    updateLastMessage: (type, content) => {
-      const state = chatStore.get();
-      const messages = [...state.messages];
-      if (messages.length > 0 && messages[messages.length - 1].type === type) {
-        messages[messages.length - 1] = {
-          ...messages[messages.length - 1],
-          content,
-          updated: Date.now()
+    actions: {
+      generateChatId() {
+        const counter = parseInt(localStorage.getItem(STORAGE_KEY_CHAT_COUNTER) || "0", 10) + 1;
+        localStorage.setItem(STORAGE_KEY_CHAT_COUNTER, counter.toString());
+        return counter.toString();
+      },
+      getChatIdFromUrl() {
+        const match = window.location.pathname.match(/^\/chat\/(\d+)$/);
+        return match ? match[1] : null;
+      },
+      getAllChats,
+      startNewChat(repoPath = "", driver = "claude-cli-local", initialMessage) {
+        const chatId = this.generateChatId();
+        const messages = initialMessage ? [initialMessage] : [];
+        this.currentChatId = chatId;
+        this.messages = messages;
+        const chats = getAllChats();
+        chats[chatId] = {
+          id: chatId,
+          messages,
+          repoPath,
+          driver,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
         };
-        chatStore.update({ messages });
+        saveAllChats(chats);
+        history.pushState({ chatId }, "", `/chat/${chatId}`);
+        return chatId;
+      },
+      loadChat(chatId) {
+        const chats = getAllChats();
+        const chat = chats[chatId];
+        if (chat) {
+          this.currentChatId = chatId;
+          this.messages = chat.messages || [];
+          this.sessionId = chat.sessionId || null;
+          return true;
+        }
+        return false;
+      },
+      saveCurrentChat(repoPath, driver) {
+        if (!this.currentChatId)
+          return;
+        const chats = getAllChats();
+        const existingChat = chats[this.currentChatId];
+        chats[this.currentChatId] = {
+          id: this.currentChatId,
+          title: existingChat?.title,
+          messages: this.messages,
+          repoPath,
+          driver,
+          sessionId: this.sessionId || undefined,
+          createdAt: existingChat?.createdAt || Date.now(),
+          updatedAt: Date.now()
+        };
+        saveAllChats(chats);
+      },
+      setChatTitle(chatId, title) {
+        const chats = getAllChats();
+        if (chats[chatId]) {
+          chats[chatId].title = title;
+          chats[chatId].updatedAt = Date.now();
+          saveAllChats(chats);
+        }
+      },
+      deleteChat(chatId) {
+        const chats = getAllChats();
+        delete chats[chatId];
+        saveAllChats(chats);
+      },
+      addMessage(type, content, header) {
+        const driverName = header || (type === "user" ? "You" : type === "assistant" ? "AI" : type === "system" ? "System" : "Error");
+        const newMessage = {
+          type,
+          content,
+          header: driverName,
+          timestamp: Date.now()
+        };
+        this.messages = [...this.messages, newMessage];
+        return newMessage;
+      },
+      updateLastMessage(type, content) {
+        const messages = [...this.messages];
+        if (messages.length > 0 && messages[messages.length - 1].type === type) {
+          messages[messages.length - 1] = {
+            ...messages[messages.length - 1],
+            content,
+            updated: Date.now()
+          };
+          this.messages = messages;
+        }
+      },
+      removeLastMessage() {
+        if (this.messages.length > 0) {
+          this.messages = this.messages.slice(0, -1);
+        }
+      },
+      clearMessages() {
+        this.messages = [];
+      },
+      setInputText(inputText) {
+        this.inputText = inputText;
+        this.charCount = inputText.length;
+      },
+      clearInput() {
+        this.inputText = "";
+        this.charCount = 0;
+      },
+      newChat() {
+        this.currentChatId = null;
+        this.messages = [];
+        this.pendingPrompt = null;
+        this.sessionId = null;
+        history.pushState({}, "", "/");
+      },
+      setPendingPrompt(prompt) {
+        this.pendingPrompt = prompt;
+      },
+      clearPendingPrompt() {
+        this.pendingPrompt = null;
+      },
+      setSessionId(sessionId) {
+        this.sessionId = sessionId;
       }
-    },
-    removeLastMessage: () => {
-      const state = chatStore.get();
-      if (state.messages.length > 0) {
-        chatStore.update({
-          messages: state.messages.slice(0, -1)
-        });
-      }
-    },
-    clearMessages: () => {
-      chatStore.update({ messages: [] });
-    },
-    setInputText: (inputText) => {
-      chatStore.update({
-        inputText,
-        charCount: inputText.length
-      });
-    },
-    clearInput: () => {
-      chatStore.update({
-        inputText: "",
-        charCount: 0
-      });
-    },
-    newChat: () => {
-      chatStore.update({
-        currentChatId: null,
-        messages: [],
-        pendingPrompt: null,
-        sessionId: null
-      });
-      history.pushState({}, "", "/");
-    },
-    setPendingPrompt: (prompt) => {
-      chatStore.update({ pendingPrompt: prompt });
-    },
-    clearPendingPrompt: () => {
-      chatStore.update({ pendingPrompt: null });
-    },
-    setSessionId: (sessionId) => {
-      chatStore.update({ sessionId });
-    }
-  };
-  // lib/stores/settings.ts
-  var settingsStore = createStore({
-    apiKeys: {
-      anthropic: null,
-      openai: null,
-      claudeCliHost: null
-    },
-    github: {
-      connected: false,
-      token: null,
-      username: null,
-      name: null,
-      email: null,
-      avatarUrl: null
-    },
-    lastRepoPath: null
-  }, {
-    name: "settings",
-    persist: {
-      key: "voide:settings",
-      storage: "local"
     }
   });
-  var settingsActions = {
-    setApiKey: (provider, key) => {
-      const state = settingsStore.get();
-      settingsStore.update({
-        apiKeys: {
-          ...state.apiKeys,
+  // lib/stores/settings.ts
+  var settingsStore = defineStore("settings", {
+    state: {
+      apiKeys: {
+        anthropic: null,
+        openai: null,
+        claudeCliHost: null
+      },
+      github: {
+        connected: false,
+        token: null,
+        username: null,
+        name: null,
+        email: null,
+        avatarUrl: null
+      },
+      lastRepoPath: null
+    },
+    actions: {
+      setApiKey(provider, key) {
+        this.apiKeys = {
+          ...this.apiKeys,
           [provider]: key
-        }
-      });
-    },
-    setAllApiKeys: (keys) => {
-      settingsStore.update({ apiKeys: keys });
-    },
-    setGithub: (github) => {
-      const state = settingsStore.get();
-      settingsStore.update({
-        github: { ...state.github, ...github }
-      });
-    },
-    connectGithub: (data) => {
-      settingsStore.update({
-        github: {
+        };
+      },
+      setAllApiKeys(keys) {
+        this.apiKeys = keys;
+      },
+      setGithub(github) {
+        this.github = { ...this.github, ...github };
+      },
+      connectGithub(data) {
+        this.github = {
           connected: true,
           token: data.token,
           username: data.username,
           name: data.name || null,
           email: data.email || null,
           avatarUrl: data.avatarUrl || null
-        }
-      });
-    },
-    disconnectGithub: () => {
-      settingsStore.update({
-        github: {
+        };
+      },
+      disconnectGithub() {
+        this.github = {
           connected: false,
           token: null,
           username: null,
           name: null,
           email: null,
           avatarUrl: null
-        }
-      });
+        };
+      },
+      setLastRepoPath(path) {
+        this.lastRepoPath = path;
+      }
     },
-    setLastRepoPath: (path) => {
-      settingsStore.update({ lastRepoPath: path });
+    persist: {
+      storage: "local",
+      key: "voide:settings"
     }
-  };
-  // lib/stores/ui.ts
-  var uiStore = createStore({
-    modals: {
-      github: false,
-      settings: false
-    },
-    notifications: []
-  }, {
-    name: "ui"
   });
-  var uiActions = {
-    openModal: (modal) => {
-      const state = uiStore.get();
-      uiStore.update({
-        modals: { ...state.modals, [modal]: true }
-      });
+  // lib/stores/ui.ts
+  var uiStore = defineStore("ui", {
+    state: {
+      modals: {
+        github: false,
+        settings: false
+      },
+      notifications: []
     },
-    closeModal: (modal) => {
-      const state = uiStore.get();
-      uiStore.update({
-        modals: { ...state.modals, [modal]: false }
-      });
-    },
-    closeAllModals: () => {
-      uiStore.update({
-        modals: {
+    actions: {
+      openModal(modal) {
+        this.modals = { ...this.modals, [modal]: true };
+      },
+      closeModal(modal) {
+        this.modals = { ...this.modals, [modal]: false };
+      },
+      closeAllModals() {
+        this.modals = {
           github: false,
           settings: false
+        };
+      },
+      toggleModal(modal) {
+        this.modals = { ...this.modals, [modal]: !this.modals[modal] };
+      },
+      notify(type, message, duration = 3000) {
+        const id = `notification-${Date.now()}`;
+        this.notifications = [...this.notifications, { id, type, message, duration }];
+        if (duration > 0) {
+          setTimeout(() => {
+            this.dismissNotification(id);
+          }, duration);
         }
-      });
-    },
-    toggleModal: (modal) => {
-      const state = uiStore.get();
-      uiStore.update({
-        modals: { ...state.modals, [modal]: !state.modals[modal] }
-      });
-    },
-    notify: (type, message, duration = 3000) => {
-      const state = uiStore.get();
-      const id = `notification-${Date.now()}`;
-      uiStore.update({
-        notifications: [...state.notifications, { id, type, message, duration }]
-      });
-      if (duration > 0) {
-        setTimeout(() => {
-          uiActions.dismissNotification(id);
-        }, duration);
+        return id;
+      },
+      dismissNotification(id) {
+        this.notifications = this.notifications.filter((n) => n.id !== id);
+      },
+      clearNotifications() {
+        this.notifications = [];
       }
-      return id;
-    },
-    dismissNotification: (id) => {
-      const state = uiStore.get();
-      uiStore.update({
-        notifications: state.notifications.filter((n) => n.id !== id)
-      });
-    },
-    clearNotifications: () => {
-      uiStore.update({ notifications: [] });
     }
-  };
+  });
   // lib/composables/use-storage.ts
   function useStorage(key, defaultValue, options = {}) {
     const {
@@ -3532,5 +3604,48 @@ window.VoideStores = (function() {
       return;
     return window.__STX_CURRENT_ELEMENT__;
   }
+  // lib/stores/index.ts
+  if (typeof window !== "undefined") {
+    registerStoresClient({
+      appStore,
+      chatStore,
+      settingsStore,
+      uiStore
+    });
+  }
+
+  // Setup stx runtime for @stores imports
+  var stx = window.stx || {};
+
+  // Store registry is populated by registerStoresClient
+  stx.stores = window.__STX_STORES__ || {};
+
+  // useStore - get a store by name
+  stx.useStore = function(name) {
+    return stx.stores[name] || window.__STX_STORES__?.[name];
+  };
+
+  // waitForStore - wait for a store to be available
+  stx.waitForStore = function(name, timeout) {
+    timeout = timeout || 5000;
+    var start = Date.now();
+    return new Promise(function(resolve, reject) {
+      function check() {
+        var store = stx.useStore(name);
+        if (store) {
+          resolve(store);
+        } else if (Date.now() - start > timeout) {
+          reject(new Error('Timeout waiting for store: ' + name));
+        } else {
+          requestAnimationFrame(check);
+        }
+      }
+      check();
+    });
+  };
+
+  window.stx = stx;
+
+  // Return exports for backwards compatibility
   return exports_stores;
 })();

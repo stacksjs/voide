@@ -1,7 +1,7 @@
 /**
  * App Store - Core application state
  */
-import { createStore } from '../store'
+import { defineStore } from '../store'
 
 export interface AppState {
   isRecording: boolean
@@ -15,59 +15,59 @@ export interface AppState {
   terminalTitle: string
 }
 
-export const appStore = createStore<AppState>({
-  isRecording: false,
-  isProcessing: false,
-  transcript: '',
-  repoPath: '',
-  hasChanges: false,
-  speechSupported: false,
-  currentDriver: 'claude-sdk',
-  isNativeApp: false,
-  terminalTitle: 'Voide - Ready'
-}, {
-  name: 'app',
+export const appStore = defineStore<AppState>('app', {
+  state: {
+    isRecording: false,
+    isProcessing: false,
+    transcript: '',
+    repoPath: '',
+    hasChanges: false,
+    speechSupported: false,
+    currentDriver: 'claude-sdk',
+    isNativeApp: false,
+    terminalTitle: 'Voide - Ready'
+  },
+
+  actions: {
+    setRecording(isRecording: boolean) {
+      this.isRecording = isRecording
+    },
+
+    setProcessing(isProcessing: boolean) {
+      this.isProcessing = isProcessing
+    },
+
+    setTranscript(transcript: string) {
+      this.transcript = transcript
+    },
+
+    setRepoPath(repoPath: string) {
+      this.repoPath = repoPath
+    },
+
+    setHasChanges(hasChanges: boolean) {
+      this.hasChanges = hasChanges
+    },
+
+    setTerminalTitle(terminalTitle: string) {
+      this.terminalTitle = terminalTitle
+    },
+
+    setDriver(currentDriver: string) {
+      this.currentDriver = currentDriver
+    },
+
+    setNativeApp(isNativeApp: boolean) {
+      this.isNativeApp = isNativeApp
+    },
+
+    setSpeechSupported(speechSupported: boolean) {
+      this.speechSupported = speechSupported
+    }
+  },
+
   persist: {
-    key: 'voide:app',
-    storage: 'local'
+    storage: 'local',
+    key: 'voide:app'
   }
 })
-
-// Actions
-export const appActions = {
-  setRecording: (isRecording: boolean) => {
-    appStore.update({ isRecording })
-  },
-
-  setProcessing: (isProcessing: boolean) => {
-    appStore.update({ isProcessing })
-  },
-
-  setTranscript: (transcript: string) => {
-    appStore.update({ transcript })
-  },
-
-  setRepoPath: (repoPath: string) => {
-    appStore.update({ repoPath })
-  },
-
-  setHasChanges: (hasChanges: boolean) => {
-    appStore.update({ hasChanges })
-  },
-
-  setTerminalTitle: (terminalTitle: string) => {
-    appStore.update({ terminalTitle })
-  },
-
-  setDriver: (currentDriver: string) => {
-    appStore.update({ currentDriver })
-  },
-
-  setNativeApp: (isNativeApp: boolean) => {
-    appStore.update({ isNativeApp })
-  },
-
-  setSpeechSupported: (speechSupported: boolean) => {
-    appStore.update({ speechSupported })
-  }
-}

@@ -34,86 +34,73 @@
 
 <script client>
 (() => {
-  function init() {
-    const stores = window.VoideStores;
-    if (!stores) {
-      setTimeout(init, 10);
-      return;
-    }
+  const { appStore, settingsStore, uiStore } = window.__STX_STORES__;
+  // DOM Elements
+  const repoBtn = document.getElementById('repoBtn');
+  const repoName = document.getElementById('repoName');
+  const settingsBtn = document.getElementById('settingsBtn');
 
-    const { appStore, appActions, settingsStore, settingsActions, uiActions } = stores;
+  console.log('[VoideHeader] Initialized');
 
-    // DOM Elements
-    const repoBtn = document.getElementById('repoBtn');
-    const repoName = document.getElementById('repoName');
-    const settingsBtn = document.getElementById('settingsBtn');
+  // =========================================================================
+  // Helper Functions
+  // =========================================================================
 
-    console.log('[VoideHeader] Initialized');
-
-    // =========================================================================
-    // Helper Functions
-    // =========================================================================
-
-    function getProjectName(path) {
-      if (!path) return 'No project selected';
-      return path.split('/').pop() || path;
-    }
-
-    function updateRepoDisplay(path) {
-      if (repoName) {
-        repoName.textContent = getProjectName(path);
-      }
-    }
-
-    // =========================================================================
-    // Modal Openers
-    // =========================================================================
-
-    function openSettingsModal() {
-      uiActions.openModal('settings');
-    }
-
-    function openProjectPicker() {
-      // Open settings modal to the project/repo section
-      uiActions.openModal('settings');
-    }
-
-    // =========================================================================
-    // Event Bindings
-    // =========================================================================
-
-    repoBtn?.addEventListener('click', openProjectPicker);
-    settingsBtn?.addEventListener('click', openSettingsModal);
-
-    // =========================================================================
-    // State Subscriptions
-    // =========================================================================
-
-    // Update repo name display
-    appStore.subscribe((state) => {
-      updateRepoDisplay(state.repoPath);
-    });
-
-    // Initial display
-    const app = appStore.get();
-    updateRepoDisplay(app.repoPath);
-
-    // Restore repo path from settings on init
-    if (!app.repoPath) {
-      const settings = settingsStore.get();
-      if (settings.lastRepoPath) {
-        appActions.setRepoPath(settings.lastRepoPath);
-      }
-    }
-
-    // Expose to window.voide
-    window.voide = window.voide || {};
-    Object.assign(window.voide, {
-      openSettingsModal,
-      openProjectPicker
-    });
+  function getProjectName(path) {
+    if (!path) return 'No project selected';
+    return path.split('/').pop() || path;
   }
 
-  init();
+  function updateRepoDisplay(path) {
+    if (repoName) {
+      repoName.textContent = getProjectName(path);
+    }
+  }
+
+  // =========================================================================
+  // Modal Openers
+  // =========================================================================
+
+  function openSettingsModal() {
+    uiStore.openModal('settings');
+  }
+
+  function openProjectPicker() {
+    // Open settings modal to the project/repo section
+    uiStore.openModal('settings');
+  }
+
+  // =========================================================================
+  // Event Bindings
+  // =========================================================================
+
+  repoBtn?.addEventListener('click', openProjectPicker);
+  settingsBtn?.addEventListener('click', openSettingsModal);
+
+  // =========================================================================
+  // State Subscriptions
+  // =========================================================================
+
+  // Update repo name display
+  appStore.$subscribe((state) => {
+    updateRepoDisplay(state.repoPath);
+  });
+
+  // Initial display
+  updateRepoDisplay(appStore.repoPath);
+
+  // Restore repo path from settings on init
+  if (!appStore.repoPath) {
+    if (settingsStore.lastRepoPath) {
+      appStore.setRepoPath(settingsStore.lastRepoPath);
+    }
+  }
+
+  // Expose to window.voide (for onclick handlers in templates)
+  window.voide = window.voide || {};
+  Object.assign(window.voide, {
+    openSettingsModal,
+    openProjectPicker
+  });
 })();
 </script>

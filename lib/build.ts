@@ -21,29 +21,75 @@ if (!result.success) {
   process.exit(1)
 }
 
-// Wrap in global export
+// Wrap in global export with stx runtime
 const bundlePath = './public/js/voide-stores.js'
 let bundle = readFileSync(bundlePath, 'utf-8')
 
 // The build creates an IIFE like (() => { ... exports_stores ... })();
-// We need to capture exports_stores and expose it globally
-// Replace the outer IIFE wrapper to assign to window
+// We need to capture exports and expose them properly
 
-// Find and replace the IIFE pattern
+// Replace the outer IIFE wrapper
 bundle = bundle.replace(
   /^\(\(\) => \{/,
-  'window.VoideStores = (function() {'
+  '(function() {'
 )
 bundle = bundle.replace(
   /\}\)\(\);?\s*$/,
-  '  return exports_stores;\n})();'
+  `
+  // Setup stx runtime for @stores imports
+  var stx = window.stx || {};
+
+  // Store registry is populated by registerStoresClient
+  stx.stores = window.__STX_STORES__ || {};
+
+  // useStore - get a store by name
+  stx.useStore = function(name) {
+    return stx.stores[name] || window.__STX_STORES__?.[name];
+  };
+
+  // waitForStore - wait for a store to be available
+  stx.waitForStore = function(name, timeout) {
+    timeout = timeout || 5000;
+    var start = Date.now();
+    return new Promise(function(resolve, reject) {
+      function check() {
+        var store = stx.useStore(name);
+        if (store) {
+          resolve(store);
+        } else if (Date.now() - start > timeout) {
+          reject(new Error('Timeout waiting for store: ' + name));
+        } else {
+          requestAnimationFrame(check);
+        }
+      }
+      check();
+    });
+  };
+
+  window.stx = stx;
+
+  // Return exports for backwards compatibility
+  return exports_stores;
+})();`
 )
 
 const wrapped = `/**
  * Voide Stores - Browser Bundle
  * Auto-generated, do not edit
+ *
+ * Usage in components:
+ *   import { appStore, chatStore } from '@stores'
+ *
+ *   // Access state directly
+ *   console.log(appStore.isProcessing)
+ *
+ *   // Call actions
+ *   chatStore.addMessage('user', 'Hello')
+ *
+ *   // Subscribe to changes
+ *   appStore.$subscribe((state) => console.log(state))
  */
-${bundle}
+window.VoideStores = ${bundle}
 `
 
 writeFileSync(bundlePath, wrapped)

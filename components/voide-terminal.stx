@@ -30,6 +30,8 @@
 </template>
 
 <script client>
+import { appStore, chatStore } from '@stores'
+
 (() => {
   const API_BASE_URL = 'http://localhost:3008/voide';
 
@@ -461,14 +463,6 @@
   }
 
   function init() {
-    const stores = window.VoideStores;
-    if (!stores) {
-      setTimeout(init, 10);
-      return;
-    }
-
-    const { appStore, chatStore, chatActions } = stores;
-
     console.log('[VoideTerminal] Initialized');
 
     // Set up greeting
@@ -476,28 +470,27 @@
 
     // Respond to prompt from Claude
     function respondToPrompt(response) {
-      const chat = chatStore.get();
-      if (!chat.pendingPrompt) return;
+      if (!chatStore.pendingPrompt) return;
 
       // Add user response as message
-      chatActions.addMessage('user', response, 'You');
-      chatActions.clearPendingPrompt();
+      chatStore.addMessage('user', response, 'You');
+      chatStore.clearPendingPrompt();
 
       // Send response to backend
       fetch(API_BASE_URL + '/respond', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          promptId: chat.pendingPrompt.id,
+          promptId: chatStore.pendingPrompt?.id,
           response: response
         })
       }).catch(error => {
-        chatActions.addMessage('error', 'Failed to send response: ' + error.message, 'Error');
+        chatStore.addMessage('error', 'Failed to send response: ' + error.message, 'Error');
       });
     }
 
     // Render messages
-    chatStore.subscribe(state => renderMessages(state.messages));
+    chatStore.$subscribe(state => renderMessages(state.messages));
 
     // Event delegation for collapse and speak buttons
     const container = document.getElementById('messagesContainer');
@@ -543,12 +536,12 @@
     }
 
     // Subscribe to processing state
-    appStore.subscribe(state => {
+    appStore.$subscribe(state => {
       isCurrentlyProcessing = state.isProcessing;
     });
 
     // Handle pending prompts
-    chatStore.subscribe(state => {
+    chatStore.$subscribe(state => {
       const overlay = document.getElementById('promptOverlay');
       const textEl = document.getElementById('promptText');
       const optionsEl = document.getElementById('promptOptions');

@@ -1,7 +1,7 @@
 /**
  * Settings Store - API keys and configuration (persisted)
  */
-import { createStore } from '../store'
+import { defineStore } from '../store'
 
 export interface SettingsState {
   apiKeys: {
@@ -20,61 +20,48 @@ export interface SettingsState {
   lastRepoPath: string | null
 }
 
-export const settingsStore = createStore<SettingsState>({
-  apiKeys: {
-    anthropic: null,
-    openai: null,
-    claudeCliHost: null
+export const settingsStore = defineStore<SettingsState>('settings', {
+  state: {
+    apiKeys: {
+      anthropic: null,
+      openai: null,
+      claudeCliHost: null
+    },
+    github: {
+      connected: false,
+      token: null,
+      username: null,
+      name: null,
+      email: null,
+      avatarUrl: null
+    },
+    lastRepoPath: null
   },
-  github: {
-    connected: false,
-    token: null,
-    username: null,
-    name: null,
-    email: null,
-    avatarUrl: null
-  },
-  lastRepoPath: null
-}, {
-  name: 'settings',
-  persist: {
-    key: 'voide:settings',
-    storage: 'local'
-  }
-})
 
-// Actions
-export const settingsActions = {
-  setApiKey: (provider: 'anthropic' | 'openai' | 'claudeCliHost', key: string | null) => {
-    const state = settingsStore.get()
-    settingsStore.update({
-      apiKeys: {
-        ...state.apiKeys,
+  actions: {
+    setApiKey(provider: 'anthropic' | 'openai' | 'claudeCliHost', key: string | null) {
+      this.apiKeys = {
+        ...this.apiKeys,
         [provider]: key
       }
-    })
-  },
+    },
 
-  setAllApiKeys: (keys: SettingsState['apiKeys']) => {
-    settingsStore.update({ apiKeys: keys })
-  },
+    setAllApiKeys(keys: SettingsState['apiKeys']) {
+      this.apiKeys = keys
+    },
 
-  setGithub: (github: Partial<SettingsState['github']>) => {
-    const state = settingsStore.get()
-    settingsStore.update({
-      github: { ...state.github, ...github }
-    })
-  },
+    setGithub(github: Partial<SettingsState['github']>) {
+      this.github = { ...this.github, ...github }
+    },
 
-  connectGithub: (data: {
-    token: string
-    username: string
-    name?: string
-    email?: string
-    avatarUrl?: string
-  }) => {
-    settingsStore.update({
-      github: {
+    connectGithub(data: {
+      token: string
+      username: string
+      name?: string
+      email?: string
+      avatarUrl?: string
+    }) {
+      this.github = {
         connected: true,
         token: data.token,
         username: data.username,
@@ -82,12 +69,10 @@ export const settingsActions = {
         email: data.email || null,
         avatarUrl: data.avatarUrl || null
       }
-    })
-  },
+    },
 
-  disconnectGithub: () => {
-    settingsStore.update({
-      github: {
+    disconnectGithub() {
+      this.github = {
         connected: false,
         token: null,
         username: null,
@@ -95,10 +80,15 @@ export const settingsActions = {
         email: null,
         avatarUrl: null
       }
-    })
+    },
+
+    setLastRepoPath(path: string | null) {
+      this.lastRepoPath = path
+    }
   },
 
-  setLastRepoPath: (path: string | null) => {
-    settingsStore.update({ lastRepoPath: path })
+  persist: {
+    storage: 'local',
+    key: 'voide:settings'
   }
-}
+})
