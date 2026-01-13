@@ -128,3 +128,32 @@ export {
   type SpeechSynthesisState,
   type SpeechSynthesisOptions,
 } from './use-browser'
+
+// Audio Cues
+export {
+  useAudioCues,
+  playAudioCue,
+  playTone,
+  type ToneType,
+  type AudioCueOptions,
+  type AudioCuesRef,
+} from './use-audio-cues'
+
+// Driving Mode
+export {
+  useDrivingMode,
+  getDrivingMode,
+  type DrivingModeState,
+  type DrivingModeOptions,
+  type DrivingModeRef,
+} from './use-driving-mode'
+
+// Voice Commands
+export {
+  useVoiceCommands,
+  detectVoiceCommand,
+  convertSpokenPunctuation,
+  type VoiceCommandType,
+  type VoiceCommandResult,
+  type VoiceCommandsRef,
+} from './use-voice-commands'

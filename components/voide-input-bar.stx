@@ -109,6 +109,21 @@
 
     const { appStore, appActions, chatStore, chatActions, settingsStore, settingsActions } = stores;
 
+    // =========================================================================
+    // Composables
+    // =========================================================================
+    const sounds = stores.useAudioCues();
+    const voiceCommands = stores.useVoiceCommands();
+    const drivingMode = stores.useDrivingMode({
+      onWake: () => console.log('[Voide] Wake word detected - listening for command'),
+      onToggle: (enabled) => {
+        updateDrivingModeUI();
+        if (enabled && !appStore.get().isRecording) {
+          startRecording();
+        }
+      }
+    });
+
     // Speech recognition setup - continuous: true keeps mic on until user stops it
     const speechRecognition = stores.useSpeechRecognition({
       continuous: true,
@@ -116,77 +131,12 @@
       lang: 'en-US'
     });
 
-    let accumulatedTranscript = '';
-    let lastDisplayedText = ''; // Track what's currently shown to prevent duplicates
-    let isRestarting = false; // Flag to prevent race conditions during restart
-    let isSending = false; // Flag to prevent duplicate sends
-    let lastSendTime = 0; // Timestamp to debounce sends
-    let sessionStartTime = 0; // Track when session started to detect re-sends
-
-    // Driving mode state
-    let isDrivingMode = false;
-    let isAwake = false; // Wake word state for driving mode
-    let audioContext = null;
-
-    // =========================================================================
-    // Audio Cues (Web Audio API)
-    // =========================================================================
-
-    function getAudioContext() {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      return audioContext;
-    }
-
-    function playTone(frequency, duration, type = 'sine', volume = 0.3) {
-      try {
-        const ctx = getAudioContext();
-        const oscillator = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        oscillator.type = type;
-        oscillator.frequency.value = frequency;
-        oscillator.connect(gain);
-        gain.connect(ctx.destination);
-
-        gain.gain.setValueAtTime(volume, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-
-        oscillator.start();
-        oscillator.stop(ctx.currentTime + duration);
-      } catch (e) {
-        console.log('[Audio] Could not play tone:', e);
-      }
-    }
-
-    // Sound effects for driving mode
-    const sounds = {
-      // Quick high ping - listening activated
-      listening: () => playTone(880, 0.12, 'sine', 0.25),
-
-      // Soft processing indicator
-      processing: () => playTone(440, 0.2, 'sine', 0.15),
-
-      // Pleasant two-note chime - done
-      done: () => {
-        playTone(660, 0.15, 'sine', 0.2);
-        setTimeout(() => playTone(880, 0.25, 'sine', 0.25), 150);
-      },
-
-      // Descending tone - error
-      error: () => {
-        playTone(440, 0.15, 'sine', 0.2);
-        setTimeout(() => playTone(280, 0.25, 'sine', 0.2), 120);
-      },
-
-      // Wake word detected
-      wake: () => {
-        playTone(520, 0.1, 'sine', 0.2);
-        setTimeout(() => playTone(660, 0.1, 'sine', 0.2), 80);
-        setTimeout(() => playTone(880, 0.15, 'sine', 0.25), 160);
-      }
-    };
+    // Local state for transcript handling
+    let lastDisplayedText = '';
+    let isRestarting = false;
+    let isSending = false;
+    let lastSendTime = 0;
+    let sessionStartTime = 0;
 
     // DOM Elements
     const micButton = document.getElementById('micButton');
@@ -203,42 +153,23 @@
     console.log('[VoideInputBar] Initialized');
 
     // =========================================================================
-    // Driving Mode
+    // Driving Mode (uses composable)
     // =========================================================================
 
-    function toggleDrivingMode() {
-      isDrivingMode = !isDrivingMode;
-      updateDrivingModeUI();
-
-      if (isDrivingMode) {
-        // Play activation sound
-        sounds.wake();
-        // Auto-start listening in driving mode
-        if (!appStore.get().isRecording) {
-          startRecording();
-        }
-        console.log('[Voide] Driving mode activated - hands-free experience enabled');
-      } else {
-        // Play deactivation sound (softer)
-        playTone(440, 0.15, 'sine', 0.15);
-        isAwake = false;
-        console.log('[Voide] Driving mode deactivated');
-      }
-    }
-
     function updateDrivingModeUI() {
+      const isEnabled = drivingMode.isEnabled();
       if (drivingModeBtn) {
         drivingModeBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors ' +
-          (isDrivingMode ? 'text-monokai-green bg-monokai-green/20' : 'text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg');
-        drivingModeBtn.title = isDrivingMode ? 'Driving Mode ON (click to disable)' : 'Driving Mode (hands-free)';
+          (isEnabled ? 'text-monokai-green bg-monokai-green/20' : 'text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg');
+        drivingModeBtn.title = isEnabled ? 'Driving Mode ON (click to disable)' : 'Driving Mode (hands-free)';
       }
       if (drivingIcon) {
-        drivingIcon.setAttribute('stroke', isDrivingMode ? '#a9dc76' : 'currentColor');
+        drivingIcon.setAttribute('stroke', isEnabled ? '#a9dc76' : 'currentColor');
       }
     }
 
-    // Bind driving mode toggle
-    drivingModeBtn?.addEventListener('click', toggleDrivingMode);
+    // Bind driving mode toggle to composable
+    drivingModeBtn?.addEventListener('click', () => drivingMode.toggle());
 
     // Initialize driver selector from store
     const initialDriver = appStore.get().currentDriver || 'claude-sdk';
@@ -491,7 +422,7 @@
       addMessage('assistant', '...');
 
       // Play processing sound in driving mode
-      if (isDrivingMode) {
+      if (drivingMode.isEnabled()) {
         sounds.processing();
       }
 
@@ -523,7 +454,7 @@
         }
 
         // Driving mode: play done sound and auto-TTS response
-        if (isDrivingMode) {
+        if (drivingMode.isEnabled()) {
           sounds.done();
           // Auto-speak the response after a brief delay
           setTimeout(() => {
@@ -538,7 +469,7 @@
         appActions.setTerminalTitle('Voide - Error');
 
         // Play error sound in driving mode
-        if (isDrivingMode) {
+        if (drivingMode.isEnabled()) {
           sounds.error();
         }
       }).finally(() => {
@@ -601,88 +532,6 @@
     // Speech Recognition
     // =========================================================================
 
-    // Convert spoken punctuation words to actual symbols
-    const punctuationMap = [
-      // Common punctuation
-      [/\bperiod\b/gi, '.'],
-      [/\bfull stop\b/gi, '.'],
-      [/\bcomma\b/gi, ','],
-      [/\bquestion mark\b/gi, '?'],
-      [/\bexclamation mark\b/gi, '!'],
-      [/\bexclamation point\b/gi, '!'],
-      [/\bcolon\b/gi, ':'],
-      [/\bsemicolon\b/gi, ';'],
-      [/\bsemi colon\b/gi, ';'],
-      // Quotes
-      [/\bquote\b/gi, '"'],
-      [/\bend quote\b/gi, '"'],
-      [/\bopen quote\b/gi, '"'],
-      [/\bclose quote\b/gi, '"'],
-      [/\bsingle quote\b/gi, "'"],
-      [/\bapostrophe\b/gi, "'"],
-      // Brackets
-      [/\bopen paren\b/gi, '('],
-      [/\bclose paren\b/gi, ')'],
-      [/\bopen parenthesis\b/gi, '('],
-      [/\bclose parenthesis\b/gi, ')'],
-      [/\bleft paren\b/gi, '('],
-      [/\bright paren\b/gi, ')'],
-      [/\bopen bracket\b/gi, '['],
-      [/\bclose bracket\b/gi, ']'],
-      [/\bleft bracket\b/gi, '['],
-      [/\bright bracket\b/gi, ']'],
-      [/\bopen brace\b/gi, '{'],
-      [/\bclose brace\b/gi, '}'],
-      [/\bleft brace\b/gi, '{'],
-      [/\bright brace\b/gi, '}'],
-      [/\bopen curly\b/gi, '{'],
-      [/\bclose curly\b/gi, '}'],
-      // Special characters
-      [/\bhyphen\b/gi, '-'],
-      [/\bdash\b/gi, '-'],
-      [/\bunderscore\b/gi, '_'],
-      [/\bslash\b/gi, '/'],
-      [/\bforward slash\b/gi, '/'],
-      [/\bbackslash\b/gi, '\\'],
-      [/\bback slash\b/gi, '\\'],
-      [/\bpipe\b/gi, '|'],
-      [/\bampersand\b/gi, '&'],
-      [/\bat sign\b/gi, '@'],
-      [/\bhash\b/gi, '#'],
-      [/\bhashtag\b/gi, '#'],
-      [/\bpound sign\b/gi, '#'],
-      [/\basterisk\b/gi, '*'],
-      [/\bstar\b/gi, '*'],
-      [/\bpercent\b/gi, '%'],
-      [/\bpercent sign\b/gi, '%'],
-      [/\bcaret\b/gi, '^'],
-      [/\btilde\b/gi, '~'],
-      [/\bbacktick\b/gi, '`'],
-      [/\bgrave\b/gi, '`'],
-      [/\bellipsis\b/gi, '...'],
-      [/\bdot dot dot\b/gi, '...'],
-      // Comparison operators
-      [/\bequals\b/gi, '='],
-      [/\bequal sign\b/gi, '='],
-      [/\bless than\b/gi, '<'],
-      [/\bgreater than\b/gi, '>'],
-      // New line
-      [/\bnew line\b/gi, '\n'],
-      [/\bnewline\b/gi, '\n'],
-    ];
-
-    function convertSpokenPunctuation(text) {
-      let result = text;
-      for (const [pattern, replacement] of punctuationMap) {
-        result = result.replace(pattern, replacement);
-      }
-      // Clean up extra spaces around punctuation
-      result = result.replace(/\s+([.,!?;:])/g, '$1');
-      result = result.replace(/([(\[{])\s+/g, '$1');
-      result = result.replace(/\s+([)\]}])/g, '$1');
-      return result;
-    }
-
     function initSpeechRecognition() {
       if (!speechRecognition.isSupported) {
         appActions.setSpeechSupported(false);
@@ -697,7 +546,7 @@
         appActions.setRecording(true);
         sessionStartTime = Date.now(); // Track session start
         // Play listening sound in driving mode
-        if (isDrivingMode) {
+        if (drivingMode.isEnabled()) {
           sounds.listening();
         }
       });
@@ -736,34 +585,23 @@
 
         const trimmed = fullTranscript.toLowerCase();
 
-        // Wake word detection for driving mode
-        // Wake words: "hey", "okay", "yo" (simple and reliable)
-        const wakeWordPatterns = [
-          /^hey\b/i,
-          /^okay\b/i,
-          /^ok\b/i,
-          /^yo\b/i,
-        ];
-
-        if (isDrivingMode && !isAwake) {
-          // In driving mode, wait for wake word
-          for (const pattern of wakeWordPatterns) {
-            if (pattern.test(trimmed)) {
-              // Wake word detected - activate listening
-              isAwake = true;
-              sounds.wake();
-              // Clear the wake word from transcript
-              const afterWake = trimmed.replace(pattern, '').trim();
-              accumulatedTranscript = afterWake ? afterWake + ' ' : '';
-              lastDisplayedText = afterWake;
-              appActions.setTranscript(afterWake);
-              chatActions.setInputText(afterWake);
-              if (textInput) {
-                textInput.value = afterWake;
-              }
-              console.log('[Voide] Wake word detected - listening for command');
-              return;
+        // Wake word detection for driving mode (using composable)
+        if (drivingMode.isEnabled() && !drivingMode.isAwake()) {
+          if (drivingMode.checkWakeWord(trimmed)) {
+            // Clear the wake word from transcript
+            const wakeWordPatterns = [/^hey\b/i, /^okay\b/i, /^ok\b/i, /^yo\b/i];
+            let afterWake = trimmed;
+            for (const pattern of wakeWordPatterns) {
+              afterWake = afterWake.replace(pattern, '').trim();
             }
+            accumulatedTranscript = afterWake ? afterWake + ' ' : '';
+            lastDisplayedText = afterWake;
+            appActions.setTranscript(afterWake);
+            chatActions.setInputText(afterWake);
+            if (textInput) {
+              textInput.value = afterWake;
+            }
+            return;
           }
           // No wake word - ignore input in driving mode when not awake
           return;
@@ -852,7 +690,7 @@
           isRestarting = true;
           let text = fullTranscript.replace(/\s*oops\s*$/i, '');
           text = text.replace(/[ \t]*[^ \t\n]+[ \t]*$/, '');
-          const newTranscript = convertSpokenPunctuation(text);
+          const newTranscript = voiceCommands.convertPunctuation(text);
           accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
           lastDisplayedText = newTranscript;
           appActions.setTranscript(newTranscript);
@@ -881,7 +719,7 @@
           isSending = true;
           lastSendTime = now;
 
-          const cleanTranscript = convertSpokenPunctuation(fullTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
+          const cleanTranscript = voiceCommands.convertPunctuation(fullTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
           if (cleanTranscript) {
             // Keep mic on - just clear transcript and restart recognition
             isRestarting = true;
@@ -894,8 +732,8 @@
               textInput.style.height = 'auto';
             }
             // Reset awake state in driving mode - user needs to say wake word again
-            if (isDrivingMode) {
-              isAwake = false;
+            if (drivingMode.isEnabled()) {
+              drivingMode.sleep();
             }
             speechRecognition.stop();
             setTimeout(() => {
@@ -967,7 +805,7 @@
         }
 
         // Convert spoken punctuation to symbols and update display
-        const displayText = convertSpokenPunctuation(fullTranscript);
+        const displayText = voiceCommands.convertPunctuation(fullTranscript);
         lastDisplayedText = displayText;
         appActions.setTranscript(displayText);
       });
@@ -1230,8 +1068,8 @@
       processCommand,
       addMessage,
       // Driving mode
-      toggleDrivingMode,
-      isDrivingMode: () => isDrivingMode,
+      toggleDrivingMode: () => drivingMode.toggle(),
+      isDrivingMode: () => drivingMode.isEnabled(),
       sounds
     });
   }

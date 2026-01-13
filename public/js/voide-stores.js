@@ -35,6 +35,7 @@ window.VoideStores = (function() {
   var exports_stores = {};
   __export(exports_stores, {
     useWindowSize: () => useWindowSize,
+    useVoiceCommands: () => useVoiceCommands,
     useVisibility: () => useVisibility,
     useTitle: () => useTitle,
     useStorage: () => useStorage,
@@ -69,9 +70,11 @@ window.VoideStores = (function() {
     useFavicon: () => useFavicon,
     useElementVisibility: () => useElementVisibility,
     useElementSize: () => useElementSize,
+    useDrivingMode: () => useDrivingMode,
     useCookie: () => useCookie,
     useClipboard: () => useClipboard,
     useBattery: () => useBattery,
+    useAudioCues: () => useAudioCues,
     useAsyncData: () => useAsyncData,
     uiStore: () => uiStore,
     uiActions: () => uiActions,
@@ -86,6 +89,8 @@ window.VoideStores = (function() {
     setCookie: () => setCookie,
     sendNotification: () => sendNotification,
     removeCookie: () => removeCookie,
+    playTone: () => playTone,
+    playAudioCue: () => playAudioCue,
     parseCookies: () => parseCookies,
     isSpeechSynthesisSupported: () => isSpeechSynthesisSupported,
     isSpeechRecognitionSupported: () => isSpeechRecognitionSupported,
@@ -96,11 +101,14 @@ window.VoideStores = (function() {
     hasBattery: () => hasBattery,
     getVoices: () => getVoices,
     getStorageKeys: () => getStorageKeys,
+    getDrivingMode: () => getDrivingMode,
     getCurrentPosition: () => getCurrentPosition,
     getCookie: () => getCookie,
     getBatteryLevel: () => getBatteryLevel,
+    detectVoiceCommand: () => detectVoiceCommand,
     createStore: () => createStore,
     copyToClipboard: () => copyToClipboard,
+    convertSpokenPunctuation: () => convertSpokenPunctuation,
     computed: () => computed,
     clearStorage: () => clearStorage,
     clearCookies: () => clearCookies,
@@ -2251,6 +2259,295 @@ window.VoideStores = (function() {
     if (!isSpeechSynthesisSupported())
       return [];
     return window.speechSynthesis.getVoices();
+  }
+  // lib/composables/use-audio-cues.ts
+  var audioContext = null;
+  function getAudioContext() {
+    if (typeof window === "undefined")
+      return null;
+    if (!audioContext) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioContext = new AudioContextClass;
+      }
+    }
+    return audioContext;
+  }
+  function playTone(frequency, duration, type = "sine", volume = 0.3) {
+    try {
+      const ctx = getAudioContext();
+      if (!ctx)
+        return;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + duration);
+    } catch (e) {
+      console.log("[useAudioCues] Could not play tone:", e);
+    }
+  }
+  var defaultSounds = {
+    listening: () => playTone(880, 0.12, "sine", 0.25),
+    processing: () => playTone(440, 0.2, "sine", 0.15),
+    done: () => {
+      playTone(660, 0.15, "sine", 0.2);
+      setTimeout(() => playTone(880, 0.25, "sine", 0.25), 150);
+    },
+    error: () => {
+      playTone(440, 0.15, "sine", 0.2);
+      setTimeout(() => playTone(280, 0.25, "sine", 0.2), 120);
+    },
+    wake: () => {
+      playTone(520, 0.1, "sine", 0.2);
+      setTimeout(() => playTone(660, 0.1, "sine", 0.2), 80);
+      setTimeout(() => playTone(880, 0.15, "sine", 0.25), 160);
+    }
+  };
+  function useAudioCues(options = {}) {
+    const isSupported = typeof window !== "undefined" && (!!window.AudioContext || !!window.webkitAudioContext);
+    return {
+      isSupported,
+      play: (name) => defaultSounds[name]?.(),
+      playTone,
+      listening: defaultSounds.listening,
+      processing: defaultSounds.processing,
+      done: defaultSounds.done,
+      error: defaultSounds.error,
+      wake: defaultSounds.wake
+    };
+  }
+  function playAudioCue(name) {
+    defaultSounds[name]?.();
+  }
+  // lib/composables/use-driving-mode.ts
+  var defaultWakeWords = [
+    /^hey\b/i,
+    /^okay\b/i,
+    /^ok\b/i,
+    /^yo\b/i
+  ];
+  function useDrivingMode(options = {}) {
+    const {
+      wakeWords = defaultWakeWords,
+      onWake,
+      onSleep,
+      onToggle
+    } = options;
+    const sounds = useAudioCues();
+    const subscribers = new Set;
+    let state = {
+      isEnabled: false,
+      isAwake: false
+    };
+    const notify = () => {
+      for (const fn of subscribers) {
+        try {
+          fn(state);
+        } catch (e) {
+          console.error("[useDrivingMode]", e);
+        }
+      }
+    };
+    const enable = () => {
+      if (state.isEnabled)
+        return;
+      state = { ...state, isEnabled: true };
+      sounds.wake();
+      onToggle?.(true);
+      notify();
+    };
+    const disable = () => {
+      if (!state.isEnabled)
+        return;
+      state = { isEnabled: false, isAwake: false };
+      sounds.playTone(440, 0.15, "sine", 0.15);
+      onToggle?.(false);
+      notify();
+    };
+    const toggle = () => {
+      if (state.isEnabled) {
+        disable();
+      } else {
+        enable();
+      }
+    };
+    const wake = () => {
+      if (!state.isEnabled || state.isAwake)
+        return;
+      state = { ...state, isAwake: true };
+      sounds.wake();
+      onWake?.();
+      notify();
+    };
+    const sleep = () => {
+      if (!state.isAwake)
+        return;
+      state = { ...state, isAwake: false };
+      onSleep?.();
+      notify();
+    };
+    const checkWakeWord = (transcript) => {
+      if (!state.isEnabled || state.isAwake)
+        return false;
+      const trimmed = transcript.trim().toLowerCase();
+      for (const pattern of wakeWords) {
+        if (pattern.test(trimmed)) {
+          wake();
+          return true;
+        }
+      }
+      return false;
+    };
+    const getTextAfterWakeWord = (transcript) => {
+      const trimmed = transcript.trim();
+      for (const pattern of wakeWords) {
+        if (pattern.test(trimmed.toLowerCase())) {
+          return trimmed.replace(pattern, "").trim();
+        }
+      }
+      return trimmed;
+    };
+    return {
+      get: () => state,
+      isEnabled: () => state.isEnabled,
+      isAwake: () => state.isAwake,
+      toggle,
+      enable,
+      disable,
+      wake,
+      sleep,
+      checkWakeWord,
+      subscribe: (fn) => {
+        subscribers.add(fn);
+        fn(state);
+        return () => subscribers.delete(fn);
+      }
+    };
+  }
+  var drivingModeInstance = null;
+  function getDrivingMode(options) {
+    if (!drivingModeInstance) {
+      drivingModeInstance = useDrivingMode(options);
+    }
+    return drivingModeInstance;
+  }
+  // lib/composables/use-voice-commands.ts
+  var punctuationMap = [
+    { pattern: /\bperiod\b/gi, replacement: "." },
+    { pattern: /\bfull stop\b/gi, replacement: "." },
+    { pattern: /\bcomma\b/gi, replacement: "," },
+    { pattern: /\bquestion mark\b/gi, replacement: "?" },
+    { pattern: /\bexclamation mark\b/gi, replacement: "!" },
+    { pattern: /\bexclamation point\b/gi, replacement: "!" },
+    { pattern: /\bcolon\b/gi, replacement: ":" },
+    { pattern: /\bsemicolon\b/gi, replacement: ";" },
+    { pattern: /\bsemi colon\b/gi, replacement: ";" },
+    { pattern: /\bquote\b/gi, replacement: '"' },
+    { pattern: /\bend quote\b/gi, replacement: '"' },
+    { pattern: /\bopen quote\b/gi, replacement: '"' },
+    { pattern: /\bclose quote\b/gi, replacement: '"' },
+    { pattern: /\bsingle quote\b/gi, replacement: "'" },
+    { pattern: /\bapostrophe\b/gi, replacement: "'" },
+    { pattern: /\bopen paren\b/gi, replacement: "(" },
+    { pattern: /\bclose paren\b/gi, replacement: ")" },
+    { pattern: /\bopen parenthesis\b/gi, replacement: "(" },
+    { pattern: /\bclose parenthesis\b/gi, replacement: ")" },
+    { pattern: /\bleft paren\b/gi, replacement: "(" },
+    { pattern: /\bright paren\b/gi, replacement: ")" },
+    { pattern: /\bopen bracket\b/gi, replacement: "[" },
+    { pattern: /\bclose bracket\b/gi, replacement: "]" },
+    { pattern: /\bleft bracket\b/gi, replacement: "[" },
+    { pattern: /\bright bracket\b/gi, replacement: "]" },
+    { pattern: /\bopen brace\b/gi, replacement: "{" },
+    { pattern: /\bclose brace\b/gi, replacement: "}" },
+    { pattern: /\bleft brace\b/gi, replacement: "{" },
+    { pattern: /\bright brace\b/gi, replacement: "}" },
+    { pattern: /\bopen curly\b/gi, replacement: "{" },
+    { pattern: /\bclose curly\b/gi, replacement: "}" },
+    { pattern: /\bhyphen\b/gi, replacement: "-" },
+    { pattern: /\bdash\b/gi, replacement: "-" },
+    { pattern: /\bunderscore\b/gi, replacement: "_" },
+    { pattern: /\bslash\b/gi, replacement: "/" },
+    { pattern: /\bforward slash\b/gi, replacement: "/" },
+    { pattern: /\bbackslash\b/gi, replacement: "\\" },
+    { pattern: /\bback slash\b/gi, replacement: "\\" },
+    { pattern: /\bpipe\b/gi, replacement: "|" },
+    { pattern: /\bampersand\b/gi, replacement: "&" },
+    { pattern: /\bat sign\b/gi, replacement: "@" },
+    { pattern: /\bhash\b/gi, replacement: "#" },
+    { pattern: /\bhashtag\b/gi, replacement: "#" },
+    { pattern: /\bpound sign\b/gi, replacement: "#" },
+    { pattern: /\basterisk\b/gi, replacement: "*" },
+    { pattern: /\bstar\b/gi, replacement: "*" },
+    { pattern: /\bpercent\b/gi, replacement: "%" },
+    { pattern: /\bpercent sign\b/gi, replacement: "%" },
+    { pattern: /\bcaret\b/gi, replacement: "^" },
+    { pattern: /\btilde\b/gi, replacement: "~" },
+    { pattern: /\bbacktick\b/gi, replacement: "`" },
+    { pattern: /\bgrave\b/gi, replacement: "`" },
+    { pattern: /\bellipsis\b/gi, replacement: "..." },
+    { pattern: /\bdot dot dot\b/gi, replacement: "..." },
+    { pattern: /\bequals\b/gi, replacement: "=" },
+    { pattern: /\bequal sign\b/gi, replacement: "=" },
+    { pattern: /\bless than\b/gi, replacement: "<" },
+    { pattern: /\bgreater than\b/gi, replacement: ">" },
+    { pattern: /\bnew line\b/gi, replacement: `
+` },
+    { pattern: /\bnewline\b/gi, replacement: `
+` }
+  ];
+  function convertSpokenPunctuation(text) {
+    let result = text;
+    for (const { pattern, replacement } of punctuationMap) {
+      result = result.replace(pattern, replacement);
+    }
+    result = result.replace(/\s+([.,!?;:])/g, "$1");
+    result = result.replace(/([(\[{])\s+/g, "$1");
+    result = result.replace(/\s+([)\]}])/g, "$1");
+    return result;
+  }
+  function detectVoiceCommand(transcript) {
+    const trimmed = transcript.trim().toLowerCase();
+    if (trimmed.endsWith(" reset") || trimmed === "reset") {
+      return { type: "reset", transcript: "" };
+    }
+    if (trimmed.endsWith(" oops") || trimmed === "oops") {
+      let text = transcript.replace(/\s*oops\s*$/i, "");
+      text = text.replace(/[ \t]*[^ \t\n]+[ \t]*$/, "");
+      return { type: "oops", transcript: convertSpokenPunctuation(text) };
+    }
+    if (/(^|\s)(go|send|submit)$/i.test(trimmed)) {
+      const text = transcript.replace(/\s*(go|send|submit)\s*$/i, "").trim();
+      return { type: "send", transcript: convertSpokenPunctuation(text) };
+    }
+    if (trimmed === "stop" || trimmed === "pause" || trimmed.endsWith(" stop") || trimmed.endsWith(" pause")) {
+      return { type: "stop", transcript: "" };
+    }
+    if (trimmed === "cancel" || trimmed.endsWith(" cancel")) {
+      return { type: "cancel", transcript: "" };
+    }
+    if (trimmed === "repeat" || trimmed === "say again" || trimmed === "repeat that" || trimmed.endsWith(" repeat") || trimmed.endsWith(" say again")) {
+      return { type: "repeat", transcript: "" };
+    }
+    if (trimmed === "quiet" || trimmed === "shut up" || trimmed === "be quiet" || trimmed === "silence" || trimmed === "stop talking" || trimmed.endsWith(" quiet") || trimmed.endsWith(" shut up")) {
+      return { type: "quiet", transcript: "" };
+    }
+    if (trimmed === "clear chat" || trimmed === "new chat" || trimmed.endsWith(" clear chat") || trimmed.endsWith(" new chat")) {
+      return { type: "clear_chat", transcript: "" };
+    }
+    return { type: "none", transcript: convertSpokenPunctuation(transcript) };
+  }
+  function useVoiceCommands() {
+    return {
+      detect: detectVoiceCommand,
+      convertPunctuation: convertSpokenPunctuation
+    };
   }
   return exports_stores;
 })();
