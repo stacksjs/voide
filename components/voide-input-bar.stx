@@ -416,79 +416,97 @@
     }
 
     // =========================================================================
-    // Background Transcription
+    // Background Transcription & Silence Detection
     // =========================================================================
+    let lastTranscriptTime = 0;
+    let lastTranscriptLength = 0;
+    let silenceCheckInterval = null;
+    let transcriptResultHandler = null;
+    let transcriptEndHandler = null;
+
     function startBackgroundTranscription() {
       if (!speechRecognition.isSupported) return;
 
       currentTranscript = '';
+      lastTranscriptTime = Date.now();
+      lastTranscriptLength = 0;
 
-      let speechEndTimeout = null;
-      let hasSpeechStarted = false;
+      // Remove old handlers if they exist
+      if (transcriptResultHandler) {
+        // Can't remove, but we'll check isRecording
+      }
 
-      speechRecognition.on('result', (data) => {
-        if (data.transcript) {
+      transcriptResultHandler = (data) => {
+        if (!isRecording) return;
+        if (data.transcript && data.transcript.length > lastTranscriptLength) {
           currentTranscript = voiceCommands.convertPunctuation(data.transcript);
+          lastTranscriptLength = data.transcript.length;
+          lastTranscriptTime = Date.now();
+
           const transcriptTextEl = $('transcriptText');
           if (transcriptTextEl) {
             transcriptTextEl.textContent = currentTranscript;
           }
           updateTranscriptStatus();
-
-          // Clear any pending auto-stop since we got new speech
-          if (speechEndTimeout) {
-            clearTimeout(speechEndTimeout);
-            speechEndTimeout = null;
-          }
+          console.log('[Voide] Got words:', currentTranscript.split(' ').length);
         }
-      });
+      };
 
-      speechRecognition.on('speechstart', () => {
-        hasSpeechStarted = true;
-        // Clear any pending auto-stop
-        if (speechEndTimeout) {
-          clearTimeout(speechEndTimeout);
-          speechEndTimeout = null;
-        }
-      });
-
-      speechRecognition.on('speechend', () => {
-        // Only auto-stop if we have a transcript and speech actually started
-        if (isRecording && hasSpeechStarted && currentTranscript.trim()) {
-          // Wait 5 seconds of silence before auto-stopping
-          speechEndTimeout = setTimeout(() => {
-            if (isRecording && currentTranscript.trim()) {
-              console.log('[Voide] 5s silence detected, auto-stopping recording');
-              stopRecording();
-
-              // Show preview for 1.5 seconds, then auto-send
-              setTimeout(() => {
-                if (hasRecording && currentTranscript.trim()) {
-                  console.log('[Voide] Auto-sending voice message');
-                  handleSend();
-                }
-              }, 1500);
-            }
-          }, 5000); // 5 second delay after speech ends
-        }
-      });
-
-      speechRecognition.on('nospeech', () => {
-        // No speech was detected - could show a hint to the user
-        console.log('[Voide] No speech detected');
-      });
-
-      speechRecognition.on('end', () => {
+      transcriptEndHandler = () => {
         if (isRecording) {
-          speechRecognition.start();
+          // Restart recognition to keep listening
+          setTimeout(() => {
+            if (isRecording) {
+              try { speechRecognition.start(); } catch (e) {}
+            }
+          }, 100);
         }
-      });
+      };
+
+      speechRecognition.on('result', transcriptResultHandler);
+      speechRecognition.on('end', transcriptEndHandler);
+
+      // Start silence detection polling
+      startSilenceDetection();
 
       speechRecognition.start();
     }
 
     function stopBackgroundTranscription() {
       speechRecognition.stop();
+      stopSilenceDetection();
+    }
+
+    function startSilenceDetection() {
+      stopSilenceDetection(); // Clear any existing
+
+      silenceCheckInterval = setInterval(() => {
+        if (!isRecording || !handsFreeModeActive) return;
+
+        const silenceDuration = Date.now() - lastTranscriptTime;
+        const hasContent = currentTranscript.trim().length > 0;
+
+        // If we have content and 5 seconds of silence, auto-stop
+        if (hasContent && silenceDuration >= 5000) {
+          console.log('[Voide] 5s silence detected, auto-stopping recording');
+          stopRecording();
+
+          // Show preview for 1.5 seconds, then auto-send
+          setTimeout(() => {
+            if (hasRecording && currentTranscript.trim()) {
+              console.log('[Voide] Auto-sending voice message');
+              handleSend();
+            }
+          }, 1500);
+        }
+      }, 500); // Check every 500ms
+    }
+
+    function stopSilenceDetection() {
+      if (silenceCheckInterval) {
+        clearInterval(silenceCheckInterval);
+        silenceCheckInterval = null;
+      }
     }
 
     function updateTranscriptStatus() {
