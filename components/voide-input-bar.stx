@@ -1,8 +1,9 @@
 <template>
   <div class="max-w-3xl mx-auto w-full">
-    <!-- Thinking indicator - shown above input when processing -->
+    <!-- Thinking/Done indicator - shown above input when processing or just completed -->
     <div @ref="thinkingIndicator" class="hidden mb-3 px-4">
-      <div class="flex items-center gap-2 text-monokai-gray/70">
+      <!-- Thinking state -->
+      <div @ref="thinkingState" class="flex items-center gap-2 text-monokai-gray/70">
         <div class="flex gap-1">
           <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 0ms"></span>
           <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 150ms"></span>
@@ -10,6 +11,14 @@
         </div>
         <span class="text-sm italic">thinking...</span>
         <span @ref="thinkingTimer" class="opacity-40 font-mono" style="font-size: 10px">0.0s</span>
+      </div>
+      <!-- Done state -->
+      <div @ref="doneState" class="hidden flex items-center gap-2 text-monokai-green/80">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span class="text-sm">Crunched for</span>
+        <span @ref="doneTimer" class="font-mono" style="font-size: 11px">0s</span>
       </div>
     </div>
 
@@ -53,11 +62,10 @@
 
           <!-- Transcription text (collapsible) -->
           <div @ref="transcriptContent" class="hidden mt-2">
-            <textarea
+            <div
               @ref="transcriptText"
-              class="w-full bg-monokai-bg text-sm text-monokai-fg border border-monokai-border/50 rounded-lg p-2 resize-none min-h-[60px] max-h-[120px] outline-none focus:border-monokai-cyan"
-              placeholder="Transcription will appear here..."
-            ></textarea>
+              class="w-full bg-monokai-bg text-sm text-monokai-fg border border-monokai-border/50 rounded-lg p-3 min-h-[60px] max-h-[120px] overflow-y-auto whitespace-pre-wrap"
+            ></div>
           </div>
         </div>
       </div>
@@ -179,7 +187,10 @@
     const refs = {
       // Thinking indicator
       thinkingIndicator: { value: null },
+      thinkingState: { value: null },
       thinkingTimer: { value: null },
+      doneState: { value: null },
+      doneTimer: { value: null },
       // Audio preview
       audioPreview: { value: null },
       audioPlayer: { value: null },
@@ -366,10 +377,19 @@
 
         $('audioPreview')?.classList.remove('hidden');
 
+        // Show transcript immediately
         const transcriptTextEl = $('transcriptText');
         if (transcriptTextEl) {
-          transcriptTextEl.value = currentTranscript || '';
+          transcriptTextEl.textContent = currentTranscript || '';
         }
+
+        // Auto-expand transcript section if we have content
+        if (currentTranscript) {
+          $('transcriptContent')?.classList.remove('hidden');
+          $('transcriptChevron')?.classList.add('rotate-90');
+          isTranscriptVisible = true;
+        }
+
         updateTranscriptStatus();
         sounds.done();
       }
@@ -419,8 +439,8 @@
         if (data.transcript) {
           currentTranscript = voiceCommands.convertPunctuation(data.transcript);
           const transcriptTextEl = $('transcriptText');
-          if (transcriptTextEl && isTranscriptVisible) {
-            transcriptTextEl.value = currentTranscript;
+          if (transcriptTextEl) {
+            transcriptTextEl.textContent = currentTranscript;
           }
           updateTranscriptStatus();
         }
@@ -468,7 +488,12 @@
 
       $('audioPreview')?.classList.add('hidden');
       const transcriptTextEl = $('transcriptText');
-      if (transcriptTextEl) transcriptTextEl.value = '';
+      if (transcriptTextEl) transcriptTextEl.textContent = '';
+
+      // Reset transcript visibility
+      $('transcriptContent')?.classList.add('hidden');
+      $('transcriptChevron')?.classList.remove('rotate-90');
+      isTranscriptVisible = false;
 
       audioRecorder.reset();
     }
@@ -672,6 +697,7 @@
       const app = appStore.get();
       let isNewChat = false;
       let newChatId = null;
+      const wasVoiceMessage = !!audioId;
 
       const messageContent = audioId ? `[Voice message: ${command}]` : command;
 
@@ -726,8 +752,11 @@
           generateChatTitle(newChatId, command);
         }
 
-        if (drivingMode.isEnabled()) {
-          sounds.done();
+        // Auto-play response if voice message was sent or driving mode is enabled
+        if (wasVoiceMessage || drivingMode.isEnabled()) {
+          if (drivingMode.isEnabled()) {
+            sounds.done();
+          }
           setTimeout(() => {
             if (response.message && window.voide?.speak) {
               window.voide.speak(response.message, 'auto-tts');
@@ -767,7 +796,7 @@
     async function handleSend() {
       if (hasRecording) {
         const transcriptTextEl = $('transcriptText');
-        const transcript = transcriptTextEl?.value?.trim() || currentTranscript;
+        const transcript = transcriptTextEl?.textContent?.trim() || currentTranscript;
 
         if (!transcript) {
           console.log('[Voide] No transcript available yet');
@@ -864,9 +893,22 @@
     // =========================================================================
     let processingTimerInterval = null;
     let processingTimerStart = null;
+    let isThinking = false;
+    let doneHideTimeout = null;
+
+    function formatElapsedTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+      }
+      return `${totalSeconds}s`;
+    }
 
     function startProcessingTimer() {
       processingTimerStart = Date.now();
+      isThinking = true;
       const timer = $('thinkingTimer');
       if (timer) timer.textContent = '0.0s';
       processingTimerInterval = setInterval(() => {
@@ -879,22 +921,82 @@
     }
 
     function stopProcessingTimer() {
+      const elapsedMs = processingTimerStart ? Date.now() - processingTimerStart : 0;
       if (processingTimerInterval) {
         clearInterval(processingTimerInterval);
         processingTimerInterval = null;
       }
-      processingTimerStart = null;
+      isThinking = false;
+      return elapsedMs;
+    }
+
+    function showDoneState(elapsedMs) {
+      const indicator = $('thinkingIndicator');
+      const thinkingState = $('thinkingState');
+      const doneState = $('doneState');
+      const doneTimer = $('doneTimer');
+
+      if (!indicator || !thinkingState || !doneState) return;
+
+      // Show done state, hide thinking state
+      thinkingState.classList.add('hidden');
+      doneState.classList.remove('hidden');
+      indicator.classList.remove('hidden');
+
+      // Set the elapsed time
+      if (doneTimer) {
+        doneTimer.textContent = formatElapsedTime(elapsedMs);
+      }
+
+      // Clear any existing timeout
+      if (doneHideTimeout) {
+        clearTimeout(doneHideTimeout);
+      }
+
+      // Hide after 3 seconds
+      doneHideTimeout = setTimeout(() => {
+        indicator.classList.add('hidden');
+        doneState.classList.add('hidden');
+        thinkingState.classList.remove('hidden');
+        processingTimerStart = null;
+      }, 3000);
+    }
+
+    function showThinkingState() {
+      const indicator = $('thinkingIndicator');
+      const thinkingState = $('thinkingState');
+      const doneState = $('doneState');
+
+      if (!indicator || !thinkingState || !doneState) return;
+
+      // Clear any done timeout
+      if (doneHideTimeout) {
+        clearTimeout(doneHideTimeout);
+        doneHideTimeout = null;
+      }
+
+      // Show thinking state, hide done state
+      thinkingState.classList.remove('hidden');
+      doneState.classList.add('hidden');
+      indicator.classList.remove('hidden');
     }
 
     appStore.subscribe((state) => {
       const indicator = $('thinkingIndicator');
       if (indicator) {
         if (state.isProcessing) {
-          indicator.classList.remove('hidden');
+          showThinkingState();
           if (!processingTimerInterval) startProcessingTimer();
-        } else {
-          indicator.classList.add('hidden');
-          stopProcessingTimer();
+        } else if (isThinking || processingTimerStart) {
+          // Was processing, now done - show done state
+          const elapsedMs = stopProcessingTimer();
+          if (elapsedMs > 500) {
+            // Only show done state if processing took more than 0.5s
+            showDoneState(elapsedMs);
+          } else {
+            indicator.classList.add('hidden');
+            processingTimerStart = null;
+          }
         }
       }
 

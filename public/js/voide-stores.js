@@ -34,6 +34,8 @@ window.VoideStores = (function() {
   // lib/stores/index.ts
   var exports_stores = {};
   __export(exports_stores, {
+    withDefaults: () => withDefaults,
+    validated: () => validated,
     useWindowSize: () => useWindowSize,
     useVoiceCommands: () => useVoiceCommands,
     useVisibility: () => useVisibility,
@@ -43,6 +45,7 @@ window.VoideStores = (function() {
     useSpeechRecognition: () => useSpeechRecognition,
     useShare: () => useShare,
     useSessionStorage: () => useSessionStorage,
+    useSeoMeta: () => useSeoMeta,
     useScroll: () => useScroll,
     useResizeObserver: () => useResizeObserver,
     usePreferredReducedMotion: () => usePreferredReducedMotion,
@@ -64,6 +67,7 @@ window.VoideStores = (function() {
     useIntersectionObserver: () => useIntersectionObserver,
     useInfiniteScroll: () => useInfiniteScroll,
     useHotkey: () => useHotkey,
+    useHead: () => useHead,
     useGeolocation: () => useGeolocation,
     useFullscreen: () => useFullscreen,
     useFetch: () => useFetch,
@@ -81,6 +85,9 @@ window.VoideStores = (function() {
     uiStore: () => uiStore,
     uiActions: () => uiActions,
     toggleFullscreen: () => toggleFullscreen,
+    subscribePageMeta: () => subscribePageMeta,
+    subscribeLayout: () => subscribeLayout,
+    subscribeHead: () => subscribeHead,
     stopSpeaking: () => stopSpeaking,
     speak: () => speak,
     shareURL: () => shareURL,
@@ -88,15 +95,27 @@ window.VoideStores = (function() {
     share: () => share,
     settingsStore: () => settingsStore,
     settingsActions: () => settingsActions,
+    setTitle: () => setTitle,
+    setMeta: () => setMeta,
+    setDefaultLayout: () => setDefaultLayout,
     setCookie: () => setCookie,
+    setComponentContext: () => setComponentContext,
     sendNotification: () => sendNotification,
+    resetPageMeta: () => resetPageMeta,
+    resetHead: () => resetHead,
+    requiresAuth: () => requiresAuth,
+    required: () => required,
     removeCookie: () => removeCookie,
+    registerMiddleware: () => registerMiddleware,
     playTone: () => playTone,
     playAudioCue: () => playAudioCue,
     parseCookies: () => parseCookies,
+    optional: () => optional,
+    oneOf: () => oneOf,
     isSpeechSynthesisSupported: () => isSpeechSynthesisSupported,
     isSpeechRecognitionSupported: () => isSpeechRecognitionSupported,
     isPermissionGranted: () => isPermissionGranted,
+    isKeepAliveEnabled: () => isKeepAliveEnabled,
     isInFullscreen: () => isInFullscreen,
     isCharging: () => isCharging,
     hasResizeObserver: () => hasResizeObserver,
@@ -104,13 +123,27 @@ window.VoideStores = (function() {
     getVolumeLevelLabel: () => getVolumeLevelLabel,
     getVoices: () => getVoices,
     getStorageKeys: () => getStorageKeys,
+    getPageTransition: () => getPageTransition,
+    getPageMeta: () => getPageMeta,
+    getMiddleware: () => getMiddleware,
+    getHeadConfig: () => getHeadConfig,
+    getExposed: () => getExposed,
     getDrivingMode: () => getDrivingMode,
     getCurrentPosition: () => getCurrentPosition,
+    getCurrentLayout: () => getCurrentLayout,
+    getCurrentElement: () => getCurrentElement,
+    getCurrentComponentId: () => getCurrentComponentId,
     getCookie: () => getCookie,
     getBatteryLevel: () => getBatteryLevel,
     getAudioStorage: () => getAudioStorage,
     formatDuration: () => formatDuration,
+    executeMiddleware: () => executeMiddleware,
     detectVoiceCommand: () => detectVoiceCommand,
+    definePropsWithValidation: () => definePropsWithValidation,
+    defineProps: () => defineProps,
+    definePageMeta: () => definePageMeta,
+    defineExpose: () => defineExpose,
+    defineEmits: () => defineEmits,
     createStore: () => createStore,
     copyToClipboard: () => copyToClipboard,
     convertSpokenPunctuation: () => convertSpokenPunctuation,
@@ -120,6 +153,8 @@ window.VoideStores = (function() {
     chatStore: () => chatStore,
     chatActions: () => chatActions,
     canNotify: () => canNotify,
+    arrayOf: () => arrayOf,
+    applyHead: () => applyHead,
     appStore: () => appStore,
     appActions: () => appActions
   });
@@ -3044,6 +3079,556 @@ window.VoideStores = (function() {
       audioStorageInstance = useAudioStorage(options);
     }
     return audioStorageInstance;
+  }
+  // lib/composables/use-head.ts
+  var headConfig = {};
+  var headSubscribers = new Set;
+  function useHead(config) {
+    headConfig = {
+      ...headConfig,
+      ...config,
+      meta: [...headConfig.meta || [], ...config.meta || []],
+      link: [...headConfig.link || [], ...config.link || []],
+      script: [...headConfig.script || [], ...config.script || []],
+      style: [...headConfig.style || [], ...config.style || []],
+      htmlAttrs: { ...headConfig.htmlAttrs || {}, ...config.htmlAttrs || {} },
+      bodyAttrs: { ...headConfig.bodyAttrs || {}, ...config.bodyAttrs || {} }
+    };
+    for (const cb of headSubscribers) {
+      try {
+        cb(headConfig);
+      } catch {}
+    }
+    if (typeof window !== "undefined") {
+      applyHead();
+    }
+  }
+  function getHeadConfig() {
+    return { ...headConfig };
+  }
+  function subscribeHead(callback) {
+    headSubscribers.add(callback);
+    return () => headSubscribers.delete(callback);
+  }
+  function resetHead() {
+    headConfig = {};
+    for (const cb of headSubscribers) {
+      try {
+        cb(headConfig);
+      } catch {}
+    }
+  }
+  function useSeoMeta(config) {
+    const meta = [];
+    if (config.description) {
+      meta.push({ name: "description", content: config.description });
+    }
+    if (config.author) {
+      meta.push({ name: "author", content: config.author });
+    }
+    if (config.keywords) {
+      const keywords = Array.isArray(config.keywords) ? config.keywords.join(", ") : config.keywords;
+      meta.push({ name: "keywords", content: keywords });
+    }
+    if (config.robots) {
+      meta.push({ name: "robots", content: config.robots });
+    }
+    const ogTitle = config.ogTitle || config.title;
+    const ogDescription = config.ogDescription || config.description;
+    const ogImage = config.ogImage;
+    const ogUrl = config.ogUrl || config.canonical;
+    if (ogTitle) {
+      meta.push({ property: "og:title", content: ogTitle });
+    }
+    if (ogDescription) {
+      meta.push({ property: "og:description", content: ogDescription });
+    }
+    if (ogImage) {
+      meta.push({ property: "og:image", content: ogImage });
+    }
+    if (ogUrl) {
+      meta.push({ property: "og:url", content: ogUrl });
+    }
+    if (config.ogType) {
+      meta.push({ property: "og:type", content: config.ogType });
+    }
+    if (config.ogSiteName) {
+      meta.push({ property: "og:site_name", content: config.ogSiteName });
+    }
+    if (config.ogLocale) {
+      meta.push({ property: "og:locale", content: config.ogLocale });
+    }
+    const twitterTitle = config.twitterTitle || ogTitle;
+    const twitterDescription = config.twitterDescription || ogDescription;
+    const twitterImage = config.twitterImage || ogImage;
+    if (config.twitterCard) {
+      meta.push({ name: "twitter:card", content: config.twitterCard });
+    }
+    if (config.twitterSite) {
+      meta.push({ name: "twitter:site", content: config.twitterSite });
+    }
+    if (config.twitterCreator) {
+      meta.push({ name: "twitter:creator", content: config.twitterCreator });
+    }
+    if (twitterTitle) {
+      meta.push({ name: "twitter:title", content: twitterTitle });
+    }
+    if (twitterDescription) {
+      meta.push({ name: "twitter:description", content: twitterDescription });
+    }
+    if (twitterImage) {
+      meta.push({ name: "twitter:image", content: twitterImage });
+    }
+    if (config.articleAuthor) {
+      meta.push({ property: "article:author", content: config.articleAuthor });
+    }
+    if (config.articlePublishedTime) {
+      meta.push({ property: "article:published_time", content: config.articlePublishedTime });
+    }
+    if (config.articleModifiedTime) {
+      meta.push({ property: "article:modified_time", content: config.articleModifiedTime });
+    }
+    if (config.articleSection) {
+      meta.push({ property: "article:section", content: config.articleSection });
+    }
+    if (config.articleTags) {
+      for (const tag of config.articleTags) {
+        meta.push({ property: "article:tag", content: tag });
+      }
+    }
+    const link = [];
+    if (config.canonical) {
+      link.push({ rel: "canonical", href: config.canonical });
+    }
+    useHead({
+      title: config.title,
+      meta,
+      link
+    });
+  }
+  function applyHead() {
+    if (typeof document === "undefined")
+      return;
+    const config = headConfig;
+    if (config.title) {
+      let title = config.title;
+      if (config.titleTemplate) {
+        title = typeof config.titleTemplate === "function" ? config.titleTemplate(config.title) : config.titleTemplate.replace("%s", config.title);
+      }
+      document.title = title;
+    }
+    if (config.meta) {
+      for (const meta of config.meta) {
+        const selector = meta.name ? `meta[name="${meta.name}"]` : meta.property ? `meta[property="${meta.property}"]` : null;
+        if (!selector)
+          continue;
+        let element = document.head.querySelector(selector);
+        if (!element) {
+          element = document.createElement("meta");
+          if (meta.name)
+            element.setAttribute("name", meta.name);
+          if (meta.property)
+            element.setAttribute("property", meta.property);
+          document.head.appendChild(element);
+        }
+        element.setAttribute("content", meta.content);
+      }
+    }
+    if (config.link) {
+      for (const link of config.link) {
+        const selector = `link[rel="${link.rel}"][href="${link.href}"]`;
+        let element = document.head.querySelector(selector);
+        if (!element) {
+          element = document.createElement("link");
+          element.setAttribute("rel", link.rel);
+          element.setAttribute("href", link.href);
+          if (link.type)
+            element.setAttribute("type", link.type);
+          if (link.as)
+            element.setAttribute("as", link.as);
+          if (link.crossorigin)
+            element.setAttribute("crossorigin", link.crossorigin);
+          document.head.appendChild(element);
+        }
+      }
+    }
+    if (config.script) {
+      for (const script of config.script) {
+        if (script.src) {
+          const selector = `script[src="${script.src}"]`;
+          if (document.querySelector(selector))
+            continue;
+          const element = document.createElement("script");
+          element.src = script.src;
+          if (script.async)
+            element.async = true;
+          if (script.defer)
+            element.defer = true;
+          if (script.type)
+            element.type = script.type;
+          document.head.appendChild(element);
+        } else if (script.content) {
+          const element = document.createElement("script");
+          element.textContent = script.content;
+          if (script.type)
+            element.type = script.type;
+          document.head.appendChild(element);
+        }
+      }
+    }
+    if (config.style) {
+      for (const style of config.style) {
+        const element = document.createElement("style");
+        element.textContent = style.content;
+        if (style.type)
+          element.type = style.type;
+        document.head.appendChild(element);
+      }
+    }
+    if (config.htmlAttrs) {
+      for (const [key, value] of Object.entries(config.htmlAttrs)) {
+        document.documentElement.setAttribute(key, value);
+      }
+    }
+    if (config.bodyAttrs) {
+      for (const [key, value] of Object.entries(config.bodyAttrs)) {
+        document.body.setAttribute(key, value);
+      }
+    }
+  }
+  function setTitle(title, template) {
+    useHead({ title, titleTemplate: template });
+  }
+  function setMeta(nameOrProperty, content) {
+    const isProperty = nameOrProperty.startsWith("og:") || nameOrProperty.startsWith("article:") || nameOrProperty.startsWith("fb:");
+    const meta = isProperty ? { property: nameOrProperty, content } : { name: nameOrProperty, content };
+    useHead({ meta: [meta] });
+  }
+  // lib/composables/use-page-meta.ts
+  var currentPageMeta = {};
+  var pageMetaSubscribers = new Set;
+  function definePageMeta(meta) {
+    currentPageMeta = { ...meta };
+    if (meta.title || meta.description) {
+      useSeoMeta({
+        title: meta.title,
+        description: meta.description
+      });
+    }
+    for (const cb of pageMetaSubscribers) {
+      try {
+        cb(currentPageMeta);
+      } catch {}
+    }
+  }
+  function getPageMeta() {
+    return { ...currentPageMeta };
+  }
+  function subscribePageMeta(callback) {
+    pageMetaSubscribers.add(callback);
+    return () => pageMetaSubscribers.delete(callback);
+  }
+  function resetPageMeta() {
+    currentPageMeta = {};
+    for (const cb of pageMetaSubscribers) {
+      try {
+        cb(currentPageMeta);
+      } catch {}
+    }
+  }
+  var middlewareRegistry = new Map;
+  function registerMiddleware(name, fn) {
+    middlewareRegistry.set(name, fn);
+  }
+  function getMiddleware(name) {
+    return middlewareRegistry.get(name);
+  }
+  async function executeMiddleware(context) {
+    const meta = currentPageMeta;
+    if (!meta.middleware)
+      return {};
+    const middlewareNames = Array.isArray(meta.middleware) ? meta.middleware : [meta.middleware];
+    for (const name of middlewareNames) {
+      const fn = middlewareRegistry.get(name);
+      if (!fn) {
+        console.warn(`Middleware "${name}" not found`);
+        continue;
+      }
+      try {
+        const result = await fn(context);
+        if (result === false) {
+          return { blocked: true };
+        }
+        if (typeof result === "string") {
+          return { redirect: result };
+        }
+        if (result && typeof result === "object" && "redirect" in result) {
+          return { redirect: result.redirect };
+        }
+      } catch (err) {
+        console.error(`Middleware "${name}" error:`, err);
+        return { blocked: true };
+      }
+    }
+    return {};
+  }
+  var currentLayout = "default";
+  var layoutSubscribers = new Set;
+  function getCurrentLayout() {
+    return currentPageMeta.layout ?? currentLayout;
+  }
+  function setDefaultLayout(layout) {
+    currentLayout = layout;
+  }
+  function subscribeLayout(callback) {
+    layoutSubscribers.add(callback);
+    return () => layoutSubscribers.delete(callback);
+  }
+  function requiresAuth() {
+    const meta = currentPageMeta;
+    if (meta.auth === undefined)
+      return false;
+    if (meta.auth === true)
+      return true;
+    if (meta.auth === "guest")
+      return "guest";
+    return meta.auth;
+  }
+  function isKeepAliveEnabled() {
+    const meta = currentPageMeta;
+    if (!meta.keepAlive)
+      return false;
+    if (meta.keepAlive === true)
+      return true;
+    return meta.keepAlive;
+  }
+  function getPageTransition() {
+    const meta = currentPageMeta;
+    if (!meta.pageTransition)
+      return null;
+    if (meta.pageTransition === true) {
+      return { name: "page", mode: "default", duration: 300 };
+    }
+    if (typeof meta.pageTransition === "string") {
+      return { name: meta.pageTransition, mode: "default", duration: 300 };
+    }
+    return {
+      name: meta.pageTransition.name || "page",
+      mode: meta.pageTransition.mode || "default",
+      duration: meta.pageTransition.duration || 300
+    };
+  }
+  // lib/composables/use-component-api.ts
+  function defineProps(definitions, rawProps) {
+    const props = rawProps || (typeof window !== "undefined" ? window.__STX_PROPS__ : {}) || {};
+    const result = {};
+    if (!definitions) {
+      return props;
+    }
+    for (const [key, definition] of Object.entries(definitions)) {
+      const def = normalizeDefinition(definition);
+      const value = props[key];
+      if (def.required && value === undefined) {
+        console.warn(`[Props] Missing required prop: "${key}"`);
+      }
+      if (value === undefined && def.default !== undefined) {
+        result[key] = typeof def.default === "function" && !isConstructor(def.default) ? def.default() : def.default;
+      } else {
+        result[key] = value;
+      }
+      if (def.validator && result[key] !== undefined) {
+        if (!def.validator(result[key])) {
+          console.warn(`[Props] Validation failed for prop: "${key}"`);
+        }
+      }
+    }
+    for (const key of Object.keys(props)) {
+      if (!(key in result)) {
+        result[key] = props[key];
+      }
+    }
+    return result;
+  }
+  function definePropsWithValidation(definitions, options = {}, rawProps) {
+    const { componentName = "Component", throwOnError = false, logWarnings = true } = options;
+    const props = rawProps || (typeof window !== "undefined" ? window.__STX_PROPS__ : {}) || {};
+    const result = {};
+    const errors = [];
+    const warnings = [];
+    for (const [key, definition] of Object.entries(definitions)) {
+      const def = normalizeDefinition(definition);
+      const value = props[key];
+      if (def.required && value === undefined) {
+        const msg = `Missing required prop: "${key}"`;
+        errors.push({ prop: key, message: msg });
+        if (logWarnings)
+          console.warn(`[${componentName}] ${msg}`);
+        if (throwOnError)
+          throw new Error(`[${componentName}] ${msg}`);
+      }
+      if (def.type && value !== undefined) {
+        const types = Array.isArray(def.type) ? def.type : [def.type];
+        const valid = types.some((t) => checkType(value, t));
+        if (!valid) {
+          const typeNames = types.map((t) => t.name).join(" | ");
+          const msg = `Invalid type for prop "${key}". Expected ${typeNames}, got ${typeof value}`;
+          warnings.push({ prop: key, message: msg });
+          if (logWarnings)
+            console.warn(`[${componentName}] ${msg}`);
+        }
+      }
+      if (value === undefined && def.default !== undefined) {
+        result[key] = typeof def.default === "function" && !isConstructor(def.default) ? def.default() : def.default;
+      } else {
+        result[key] = value;
+      }
+      if (def.validator && result[key] !== undefined) {
+        if (!def.validator(result[key])) {
+          const msg = `Validation failed for prop: "${key}"`;
+          errors.push({ prop: key, message: msg });
+          if (logWarnings)
+            console.warn(`[${componentName}] ${msg}`);
+          if (throwOnError)
+            throw new Error(`[${componentName}] ${msg}`);
+        }
+      }
+    }
+    return {
+      props: result,
+      validation: {
+        valid: errors.length === 0,
+        errors,
+        warnings
+      }
+    };
+  }
+  function withDefaults(props, defaults) {
+    const result = { ...props };
+    for (const [key, defaultValue] of Object.entries(defaults)) {
+      if (result[key] === undefined) {
+        result[key] = typeof defaultValue === "function" && !isConstructor(defaultValue) ? defaultValue() : defaultValue;
+      }
+    }
+    return result;
+  }
+  function required(type) {
+    return { type, required: true };
+  }
+  function optional(defaultValue, type) {
+    return { type, default: defaultValue, required: false };
+  }
+  function validated(validator, options = {}) {
+    return { ...options, validator };
+  }
+  function oneOf(values) {
+    return {
+      validator: (v) => values.includes(v)
+    };
+  }
+  function arrayOf(itemType, options = {}) {
+    return {
+      ...options,
+      type: Array,
+      validator: (arr) => {
+        if (!Array.isArray(arr))
+          return false;
+        return arr.every((item) => checkType(item, itemType));
+      }
+    };
+  }
+  function defineEmits() {
+    const emit = (event, payload) => {
+      if (typeof window === "undefined")
+        return;
+      const customEvent = new CustomEvent(String(event), {
+        detail: payload,
+        bubbles: true,
+        cancelable: true
+      });
+      const currentElement = window.__STX_CURRENT_ELEMENT__;
+      if (currentElement) {
+        currentElement.dispatchEvent(customEvent);
+      } else {
+        document.dispatchEvent(customEvent);
+      }
+    };
+    return emit;
+  }
+  function defineExpose(exposed) {
+    if (typeof window === "undefined")
+      return exposed;
+    const currentId = window.__STX_CURRENT_ID__;
+    if (currentId) {
+      const exposedMap = window.__STX_EXPOSED__ ||= {};
+      exposedMap[currentId] = exposed;
+    }
+    return exposed;
+  }
+  function getExposed(componentId) {
+    if (typeof window === "undefined")
+      return;
+    const exposedMap = window.__STX_EXPOSED__;
+    return exposedMap?.[componentId];
+  }
+  function normalizeDefinition(def) {
+    if (!def)
+      return {};
+    if (typeof def === "function")
+      return { type: def };
+    return def;
+  }
+  function isConstructor(fn) {
+    if (typeof fn !== "function")
+      return false;
+    try {
+      return fn === String || fn === Number || fn === Boolean || fn === Array || fn === Object || fn.prototype?.constructor === fn;
+    } catch {
+      return false;
+    }
+  }
+  function checkType(value, type) {
+    if (type === String)
+      return typeof value === "string";
+    if (type === Number)
+      return typeof value === "number";
+    if (type === Boolean)
+      return typeof value === "boolean";
+    if (type === Array)
+      return Array.isArray(value);
+    if (type === Object)
+      return typeof value === "object" && value !== null && !Array.isArray(value);
+    if (type === Function)
+      return typeof value === "function";
+    if (type === Date)
+      return value instanceof Date;
+    if (type === RegExp)
+      return value instanceof RegExp;
+    if (type === Promise)
+      return value instanceof Promise;
+    return value instanceof type;
+  }
+  function setComponentContext(id, element, props) {
+    if (typeof window === "undefined")
+      return () => {};
+    const win = window;
+    win.__STX_CURRENT_ID__ = id;
+    win.__STX_CURRENT_ELEMENT__ = element;
+    win.__STX_PROPS__ = props;
+    return () => {
+      delete win.__STX_CURRENT_ID__;
+      delete win.__STX_CURRENT_ELEMENT__;
+      delete win.__STX_PROPS__;
+    };
+  }
+  function getCurrentComponentId() {
+    if (typeof window === "undefined")
+      return;
+    return window.__STX_CURRENT_ID__;
+  }
+  function getCurrentElement() {
+    if (typeof window === "undefined")
+      return;
+    return window.__STX_CURRENT_ELEMENT__;
   }
   return exports_stores;
 })();

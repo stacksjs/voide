@@ -176,3 +176,64 @@ export {
   type AudioStorageOptions,
   type AudioStorageRef,
 } from './use-audio-storage'
+
+// Head Management
+export {
+  useHead,
+  useSeoMeta,
+  applyHead,
+  getHeadConfig,
+  subscribeHead,
+  resetHead,
+  setTitle,
+  setMeta,
+  type HeadConfig,
+  type HeadMeta,
+  type HeadLink,
+  type HeadScript,
+  type HeadStyle,
+  type SeoMetaConfig,
+} from './use-head'
+
+// Page Meta
+export {
+  definePageMeta,
+  getPageMeta,
+  subscribePageMeta,
+  resetPageMeta,
+  registerMiddleware,
+  getMiddleware,
+  executeMiddleware,
+  getCurrentLayout,
+  setDefaultLayout,
+  subscribeLayout,
+  requiresAuth,
+  isKeepAliveEnabled,
+  getPageTransition,
+  type PageMeta,
+  type PageMetaContext,
+  type MiddlewareFn,
+} from './use-page-meta'
+
+// Component API
+export {
+  defineProps,
+  definePropsWithValidation,
+  withDefaults,
+  required,
+  optional,
+  validated,
+  oneOf,
+  arrayOf,
+  defineEmits,
+  defineExpose,
+  getExposed,
+  setComponentContext,
+  getCurrentComponentId,
+  getCurrentElement,
+  type Constructor,
+  type PropOptions,
+  type PropsDefinition,
+  type PropValidationResult,
+  type DefinePropsOptions,
+} from './use-component-api'
