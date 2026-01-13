@@ -74,6 +74,8 @@ window.VoideStores = (function() {
     useCookie: () => useCookie,
     useClipboard: () => useClipboard,
     useBattery: () => useBattery,
+    useAudioStorage: () => useAudioStorage,
+    useAudioRecorder: () => useAudioRecorder,
     useAudioCues: () => useAudioCues,
     useAsyncData: () => useAsyncData,
     uiStore: () => uiStore,
@@ -99,12 +101,15 @@ window.VoideStores = (function() {
     isCharging: () => isCharging,
     hasResizeObserver: () => hasResizeObserver,
     hasBattery: () => hasBattery,
+    getVolumeLevelLabel: () => getVolumeLevelLabel,
     getVoices: () => getVoices,
     getStorageKeys: () => getStorageKeys,
     getDrivingMode: () => getDrivingMode,
     getCurrentPosition: () => getCurrentPosition,
     getCookie: () => getCookie,
     getBatteryLevel: () => getBatteryLevel,
+    getAudioStorage: () => getAudioStorage,
+    formatDuration: () => formatDuration,
     detectVoiceCommand: () => detectVoiceCommand,
     createStore: () => createStore,
     copyToClipboard: () => copyToClipboard,
@@ -2548,6 +2553,497 @@ window.VoideStores = (function() {
       detect: detectVoiceCommand,
       convertPunctuation: convertSpokenPunctuation
     };
+  }
+  // lib/composables/use-audio-recorder.ts
+  function checkSupport() {
+    if (typeof window === "undefined") {
+      return { mediaRecorder: false, audioContext: false, speechRecognition: false };
+    }
+    return {
+      mediaRecorder: !!window.MediaRecorder,
+      audioContext: !!(window.AudioContext || window.webkitAudioContext),
+      speechRecognition: !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+    };
+  }
+  function useAudioRecorder(options = {}) {
+    const {
+      mimeType = "audio/webm;codecs=opus",
+      sampleRate = 44100,
+      onVolumeChange,
+      onDurationChange,
+      onRecordingStop,
+      onTranscript,
+      lang = "en-US"
+    } = options;
+    const support = checkSupport();
+    const isSupported = support.mediaRecorder && support.audioContext;
+    const subscribers = new Set;
+    let state = {
+      isRecording: false,
+      isPaused: false,
+      duration: 0,
+      volumeLevel: 0,
+      audioBlob: null,
+      audioUrl: null,
+      transcript: null,
+      isTranscribing: false,
+      error: null
+    };
+    let mediaRecorder = null;
+    let audioContext2 = null;
+    let analyser = null;
+    let mediaStream = null;
+    let audioChunks = [];
+    let timerInterval = null;
+    let startTime = 0;
+    let volumeInterval = null;
+    let dataArray = null;
+    const notify = () => {
+      for (const fn of subscribers) {
+        try {
+          fn({ ...state });
+        } catch (e) {
+          console.error("[useAudioRecorder]", e);
+        }
+      }
+    };
+    const setState = (updates) => {
+      state = { ...state, ...updates };
+      notify();
+    };
+    const startTimer = () => {
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setState({ duration: elapsed });
+        onDurationChange?.(elapsed);
+      }, 100);
+    };
+    const stopTimer = () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    };
+    const startVolumeMonitoring = () => {
+      if (!analyser || !dataArray)
+        return;
+      volumeInterval = setInterval(() => {
+        if (!analyser || !dataArray || state.isPaused)
+          return;
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0;i < dataArray.length; i++) {
+          sum += dataArray[i] * dataArray[i];
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+        const level = Math.min(10, Math.round(rms / 128 * 10));
+        if (level !== state.volumeLevel) {
+          setState({ volumeLevel: level });
+          onVolumeChange?.(level);
+        }
+      }, 50);
+    };
+    const stopVolumeMonitoring = () => {
+      if (volumeInterval) {
+        clearInterval(volumeInterval);
+        volumeInterval = null;
+      }
+      setState({ volumeLevel: 0 });
+    };
+    const start = async () => {
+      if (!isSupported) {
+        setState({ error: "Audio recording not supported in this browser" });
+        return false;
+      }
+      if (state.isRecording)
+        return true;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioContext2 = new AudioContextClass;
+        analyser = audioContext2.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        const source = audioContext2.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const supportedMimeType = MediaRecorder.isTypeSupported(mimeType) ? mimeType : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+        mediaRecorder = new MediaRecorder(mediaStream, { mimeType: supportedMimeType });
+        audioChunks = [];
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: supportedMimeType });
+          const url = URL.createObjectURL(blob);
+          setState({
+            audioBlob: blob,
+            audioUrl: url,
+            isRecording: false
+          });
+          onRecordingStop?.(blob, state.duration);
+        };
+        mediaRecorder.onerror = (event) => {
+          setState({ error: event.error?.message || "Recording error" });
+        };
+        mediaRecorder.start(100);
+        setState({
+          isRecording: true,
+          isPaused: false,
+          duration: 0,
+          audioBlob: null,
+          audioUrl: null,
+          transcript: null,
+          error: null
+        });
+        startTimer();
+        startVolumeMonitoring();
+        return true;
+      } catch (err) {
+        const message = err.name === "NotAllowedError" ? "Microphone access denied" : err.message || "Failed to start recording";
+        setState({ error: message });
+        return false;
+      }
+    };
+    const stop = async () => {
+      if (!state.isRecording || !mediaRecorder)
+        return null;
+      stopTimer();
+      stopVolumeMonitoring();
+      return new Promise((resolve) => {
+        if (!mediaRecorder) {
+          resolve(null);
+          return;
+        }
+        mediaRecorder.onstop = () => {
+          const mimeTypeUsed = mediaRecorder?.mimeType || mimeType;
+          const blob = new Blob(audioChunks, { type: mimeTypeUsed });
+          const url = URL.createObjectURL(blob);
+          setState({
+            audioBlob: blob,
+            audioUrl: url,
+            isRecording: false
+          });
+          onRecordingStop?.(blob, state.duration);
+          if (mediaStream) {
+            mediaStream.getTracks().forEach((track) => track.stop());
+            mediaStream = null;
+          }
+          if (audioContext2) {
+            audioContext2.close();
+            audioContext2 = null;
+          }
+          resolve(blob);
+        };
+        mediaRecorder.stop();
+      });
+    };
+    const pause = () => {
+      if (!state.isRecording || state.isPaused || !mediaRecorder)
+        return;
+      mediaRecorder.pause();
+      stopTimer();
+      setState({ isPaused: true });
+    };
+    const resume = () => {
+      if (!state.isRecording || !state.isPaused || !mediaRecorder)
+        return;
+      mediaRecorder.resume();
+      startTimer();
+      setState({ isPaused: false });
+    };
+    const reset = () => {
+      if (state.isRecording) {
+        stop();
+      }
+      if (state.audioUrl) {
+        URL.revokeObjectURL(state.audioUrl);
+      }
+      setState({
+        isRecording: false,
+        isPaused: false,
+        duration: 0,
+        volumeLevel: 0,
+        audioBlob: null,
+        audioUrl: null,
+        transcript: null,
+        isTranscribing: false,
+        error: null
+      });
+    };
+    const transcribe = async () => {
+      if (!state.audioBlob || !support.speechRecognition) {
+        return null;
+      }
+      setState({ isTranscribing: true });
+      return new Promise((resolve) => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition;
+        recognition.lang = lang;
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        let transcript = "";
+        recognition.onresult = (event) => {
+          for (let i = event.resultIndex;i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              transcript += event.results[i][0].transcript + " ";
+            }
+          }
+        };
+        recognition.onend = () => {
+          const finalTranscript = transcript.trim();
+          setState({ transcript: finalTranscript, isTranscribing: false });
+          onTranscript?.(finalTranscript);
+          resolve(finalTranscript);
+        };
+        recognition.onerror = (event) => {
+          setState({ isTranscribing: false, error: event.error });
+          resolve(null);
+        };
+        setState({ isTranscribing: false });
+        resolve(null);
+      });
+    };
+    return {
+      get: () => ({ ...state }),
+      isSupported,
+      start,
+      stop,
+      pause,
+      resume,
+      reset,
+      transcribe,
+      getVolumeLevel: () => state.volumeLevel,
+      getDuration: () => state.duration,
+      subscribe: (fn) => {
+        subscribers.add(fn);
+        fn({ ...state });
+        return () => subscribers.delete(fn);
+      }
+    };
+  }
+  function formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }
+  function getVolumeLevelLabel(level) {
+    if (level === 0)
+      return "Silent";
+    if (level <= 2)
+      return "Quiet";
+    if (level <= 4)
+      return "Low";
+    if (level <= 6)
+      return "Normal";
+    if (level <= 8)
+      return "Loud";
+    return "Very Loud";
+  }
+  // lib/composables/use-audio-storage.ts
+  var DEFAULT_DB_NAME = "voide-audio";
+  var DEFAULT_STORE_NAME = "recordings";
+  var DEFAULT_MAX_RECORDINGS = 100;
+  function generateId() {
+    return `audio_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  }
+  function useAudioStorage(options = {}) {
+    const {
+      dbName = DEFAULT_DB_NAME,
+      storeName = DEFAULT_STORE_NAME,
+      maxRecordings = DEFAULT_MAX_RECORDINGS
+    } = options;
+    const isSupported = typeof window !== "undefined" && !!window.indexedDB;
+    let db = null;
+    let dbPromise = null;
+    const openDB = () => {
+      if (db)
+        return Promise.resolve(db);
+      if (dbPromise)
+        return dbPromise;
+      dbPromise = new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName, 1);
+        request.onerror = () => {
+          reject(new Error("Failed to open IndexedDB"));
+        };
+        request.onsuccess = () => {
+          db = request.result;
+          resolve(db);
+        };
+        request.onupgradeneeded = (event) => {
+          const database = event.target.result;
+          if (!database.objectStoreNames.contains(storeName)) {
+            const store = database.createObjectStore(storeName, { keyPath: "id" });
+            store.createIndex("createdAt", "createdAt", { unique: false });
+            store.createIndex("chatId", "chatId", { unique: false });
+          }
+        };
+      });
+      return dbPromise;
+    };
+    const cleanupOldRecordings = async (database) => {
+      return new Promise((resolve) => {
+        const transaction = database.transaction(storeName, "readwrite");
+        const store = transaction.objectStore(storeName);
+        const index = store.index("createdAt");
+        const countRequest = store.count();
+        countRequest.onsuccess = () => {
+          const count = countRequest.result;
+          if (count <= maxRecordings) {
+            resolve();
+            return;
+          }
+          const deleteCount = count - maxRecordings;
+          let deleted = 0;
+          const cursorRequest = index.openCursor();
+          cursorRequest.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor && deleted < deleteCount) {
+              cursor.delete();
+              deleted++;
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+        };
+      });
+    };
+    const save = async (blob, duration, transcript = null, chatId = null, messageId = null) => {
+      if (!isSupported)
+        throw new Error("IndexedDB not supported");
+      const database = await openDB();
+      await cleanupOldRecordings(database);
+      const id = generateId();
+      const record = {
+        id,
+        blob,
+        duration,
+        transcript,
+        createdAt: Date.now(),
+        chatId,
+        messageId
+      };
+      return new Promise((resolve, reject) => {
+        const transaction = database.transaction(storeName, "readwrite");
+        const store = transaction.objectStore(storeName);
+        const request = store.add(record);
+        request.onsuccess = () => resolve(id);
+        request.onerror = () => reject(new Error("Failed to save audio"));
+      });
+    };
+    const get = async (id) => {
+      if (!isSupported)
+        return null;
+      const database = await openDB();
+      return new Promise((resolve) => {
+        const transaction = database.transaction(storeName, "readonly");
+        const store = transaction.objectStore(storeName);
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => resolve(null);
+      });
+    };
+    const getAll = async () => {
+      if (!isSupported)
+        return [];
+      const database = await openDB();
+      return new Promise((resolve) => {
+        const transaction = database.transaction(storeName, "readonly");
+        const store = transaction.objectStore(storeName);
+        const index = store.index("createdAt");
+        const request = index.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => resolve([]);
+      });
+    };
+    const getByChatId = async (chatId) => {
+      if (!isSupported)
+        return [];
+      const database = await openDB();
+      return new Promise((resolve) => {
+        const transaction = database.transaction(storeName, "readonly");
+        const store = transaction.objectStore(storeName);
+        const index = store.index("chatId");
+        const request = index.getAll(chatId);
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => resolve([]);
+      });
+    };
+    const deleteRecord = async (id) => {
+      if (!isSupported)
+        return false;
+      const database = await openDB();
+      return new Promise((resolve) => {
+        const transaction = database.transaction(storeName, "readwrite");
+        const store = transaction.objectStore(storeName);
+        const request = store.delete(id);
+        request.onsuccess = () => resolve(true);
+        request.onerror = () => resolve(false);
+      });
+    };
+    const deleteAll = async () => {
+      if (!isSupported)
+        return false;
+      const database = await openDB();
+      return new Promise((resolve) => {
+        const transaction = database.transaction(storeName, "readwrite");
+        const store = transaction.objectStore(storeName);
+        const request = store.clear();
+        request.onsuccess = () => resolve(true);
+        request.onerror = () => resolve(false);
+      });
+    };
+    const getUrl = async (id) => {
+      const record = await get(id);
+      if (!record)
+        return null;
+      return URL.createObjectURL(record.blob);
+    };
+    const updateTranscript = async (id, transcript) => {
+      if (!isSupported)
+        return false;
+      const database = await openDB();
+      const record = await get(id);
+      if (!record)
+        return false;
+      record.transcript = transcript;
+      return new Promise((resolve) => {
+        const transaction = database.transaction(storeName, "readwrite");
+        const store = transaction.objectStore(storeName);
+        const request = store.put(record);
+        request.onsuccess = () => resolve(true);
+        request.onerror = () => resolve(false);
+      });
+    };
+    return {
+      isSupported,
+      save,
+      get,
+      getAll,
+      getByChatId,
+      delete: deleteRecord,
+      deleteAll,
+      getUrl,
+      updateTranscript
+    };
+  }
+  var audioStorageInstance = null;
+  function getAudioStorage(options) {
+    if (!audioStorageInstance) {
+      audioStorageInstance = useAudioStorage(options);
+    }
+    return audioStorageInstance;
   }
   return exports_stores;
 })();

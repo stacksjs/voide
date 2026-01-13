@@ -13,16 +13,99 @@
       </div>
     </div>
 
+    <!-- Audio Preview (shown after recording stops) -->
+    <div id="audioPreview" class="hidden mb-3">
+      <div class="bg-monokai-bg-dark border border-monokai-cyan rounded-xl p-3">
+        <!-- Audio player row -->
+        <div class="flex items-center gap-3">
+          <!-- Play/Pause button -->
+          <button
+            id="audioPlayBtn"
+            class="w-10 h-10 rounded-full bg-monokai-cyan/20 text-monokai-cyan hover:bg-monokai-cyan/30 flex items-center justify-center transition-colors"
+            title="Play audio"
+          >
+            <svg id="audioPlayIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+
+          <!-- Waveform placeholder / Duration -->
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <div id="audioWaveform" class="flex-1 h-8 bg-monokai-bg rounded flex items-center justify-center gap-0.5 px-2">
+                <!-- Simple bar visualization -->
+                <div class="w-1 bg-monokai-cyan/40 rounded-full" style="height: 30%"></div>
+                <div class="w-1 bg-monokai-cyan/60 rounded-full" style="height: 50%"></div>
+                <div class="w-1 bg-monokai-cyan/80 rounded-full" style="height: 80%"></div>
+                <div class="w-1 bg-monokai-cyan rounded-full" style="height: 100%"></div>
+                <div class="w-1 bg-monokai-cyan/80 rounded-full" style="height: 70%"></div>
+                <div class="w-1 bg-monokai-cyan/60 rounded-full" style="height: 40%"></div>
+                <div class="w-1 bg-monokai-cyan/40 rounded-full" style="height: 60%"></div>
+                <div class="w-1 bg-monokai-cyan/60 rounded-full" style="height: 90%"></div>
+                <div class="w-1 bg-monokai-cyan/80 rounded-full" style="height: 50%"></div>
+                <div class="w-1 bg-monokai-cyan/40 rounded-full" style="height: 30%"></div>
+              </div>
+              <span id="audioDuration" class="text-xs text-monokai-gray font-mono">0:00</span>
+            </div>
+          </div>
+
+          <!-- Delete audio -->
+          <button
+            id="audioDeleteBtn"
+            class="w-8 h-8 rounded-lg text-monokai-gray hover:text-monokai-pink hover:bg-monokai-pink/10 flex items-center justify-center transition-colors"
+            title="Delete recording"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Transcription toggle -->
+        <div class="mt-2 pt-2 border-t border-monokai-border/30">
+          <button
+            id="transcriptToggle"
+            class="flex items-center gap-2 text-xs text-monokai-gray hover:text-monokai-fg transition-colors"
+          >
+            <svg id="transcriptChevron" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span>View transcription</span>
+            <span id="transcriptStatus" class="text-monokai-purple"></span>
+          </button>
+
+          <!-- Transcription text (collapsible) -->
+          <div id="transcriptContent" class="hidden mt-2">
+            <textarea
+              id="transcriptText"
+              class="w-full bg-monokai-bg text-sm text-monokai-fg border border-monokai-border/50 rounded-lg p-2 resize-none min-h-[60px] max-h-[120px] outline-none focus:border-monokai-cyan"
+              placeholder="Transcription will appear here..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div
       id="inputContainer"
       class="bg-monokai-bg-dark border border-monokai-border rounded-2xl px-4 py-3"
     >
-      <!-- Input row -->
-      <div class="flex items-end gap-3">
+      <!-- Recording mode indicator (replaces textarea when recording) -->
+      <div id="recordingMode" class="hidden">
+        <div class="flex items-center justify-center gap-4 py-2">
+          <!-- Recording pulse -->
+          <div class="w-3 h-3 bg-monokai-pink rounded-full animate-pulse"></div>
+          <!-- Timer -->
+          <span id="recordingTimer" class="text-2xl font-mono text-monokai-fg">0:00</span>
+        </div>
+      </div>
+
+      <!-- Input row (hidden when recording) -->
+      <div id="inputRow" class="flex items-end gap-3">
         <textarea
           id="textInput"
           class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[160px] leading-6 placeholder-monokai-gray"
-          placeholder="Type / for commands"
+          placeholder="Type or click mic to record"
           rows="1"
         ></textarea>
       </div>
@@ -30,7 +113,7 @@
       <!-- Bottom bar -->
       <div class="flex items-center justify-between mt-3 pt-3 border-t border-monokai-border/50">
         <div class="flex items-center gap-2">
-          <!-- Attachment button (placeholder) -->
+          <!-- Attachment button -->
           <button
             class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
             title="Attach file"
@@ -38,14 +121,23 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
           </button>
 
-          <!-- Voice button -->
+          <!-- Voice/Mic button -->
           <button
             id="micButton"
             class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
-            title="Voice input (Space)"
+            title="Record voice message"
           >
             <svg id="micIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
           </button>
+
+          <!-- Volume Level Indicator (5 bars) -->
+          <div id="volumeIndicator" class="hidden flex items-end gap-0.5 h-5 px-1">
+            <div id="volBar1" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 20%"></div>
+            <div id="volBar2" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 40%"></div>
+            <div id="volBar3" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 60%"></div>
+            <div id="volBar4" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 80%"></div>
+            <div id="volBar5" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 100%"></div>
+          </div>
 
           <!-- Driving Mode toggle -->
           <button
@@ -88,11 +180,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Recording indicator -->
-    <div id="recordingIndicator" class="hidden mt-2 text-center">
-      <span class="text-xs text-monokai-pink animate-pulse">Listening...</span>
-    </div>
   </div>
 </template>
 
@@ -114,29 +201,39 @@
     // =========================================================================
     const sounds = stores.useAudioCues();
     const voiceCommands = stores.useVoiceCommands();
+    const audioStorage = stores.useAudioStorage();
     const drivingMode = stores.useDrivingMode({
-      onWake: () => console.log('[Voide] Wake word detected - listening for command'),
+      onWake: () => console.log('[Voide] Wake word detected'),
       onToggle: (enabled) => {
         updateDrivingModeUI();
-        if (enabled && !appStore.get().isRecording) {
+        if (enabled && !isRecording) {
           startRecording();
         }
       }
     });
 
-    // Speech recognition setup - continuous: true keeps mic on until user stops it
+    // Audio recorder with callbacks
+    const audioRecorder = stores.useAudioRecorder({
+      onVolumeChange: updateVolumeIndicator,
+      onDurationChange: updateRecordingTimer,
+      onRecordingStop: handleRecordingStop
+    });
+
+    // Background transcription using speech recognition
     const speechRecognition = stores.useSpeechRecognition({
       continuous: true,
-      interimResults: true,
+      interimResults: false,
       lang: 'en-US'
     });
 
-    // Local state for transcript handling
-    let lastDisplayedText = '';
-    let isRestarting = false;
-    let isSending = false;
-    let lastSendTime = 0;
-    let sessionStartTime = 0;
+    // State
+    let isRecording = false;
+    let hasRecording = false;
+    let currentAudioUrl = null;
+    let currentTranscript = '';
+    let isTranscriptVisible = false;
+    let audioElement = null;
+    let isPlaying = false;
 
     // DOM Elements
     const micButton = document.getElementById('micButton');
@@ -146,14 +243,288 @@
     const sendBtn = document.getElementById('sendBtn');
     const stopBtn = document.getElementById('stopBtn');
     const driverSelect = document.getElementById('driverSelect');
-    const recordingIndicator = document.getElementById('recordingIndicator');
     const drivingModeBtn = document.getElementById('drivingModeBtn');
     const drivingIcon = document.getElementById('drivingIcon');
 
-    console.log('[VoideInputBar] Initialized');
+    // Recording UI elements
+    const recordingMode = document.getElementById('recordingMode');
+    const recordingTimer = document.getElementById('recordingTimer');
+    const inputRow = document.getElementById('inputRow');
+    const volumeIndicator = document.getElementById('volumeIndicator');
+    const volBars = [
+      document.getElementById('volBar1'),
+      document.getElementById('volBar2'),
+      document.getElementById('volBar3'),
+      document.getElementById('volBar4'),
+      document.getElementById('volBar5')
+    ];
+
+    // Audio preview elements
+    const audioPreview = document.getElementById('audioPreview');
+    const audioPlayBtn = document.getElementById('audioPlayBtn');
+    const audioPlayIcon = document.getElementById('audioPlayIcon');
+    const audioDuration = document.getElementById('audioDuration');
+    const audioDeleteBtn = document.getElementById('audioDeleteBtn');
+    const transcriptToggle = document.getElementById('transcriptToggle');
+    const transcriptChevron = document.getElementById('transcriptChevron');
+    const transcriptContent = document.getElementById('transcriptContent');
+    const transcriptText = document.getElementById('transcriptText');
+    const transcriptStatus = document.getElementById('transcriptStatus');
+
+    console.log('[VoideInputBar] Initialized with audio recording mode');
 
     // =========================================================================
-    // Driving Mode (uses composable)
+    // Volume Indicator
+    // =========================================================================
+
+    function updateVolumeIndicator(level) {
+      // level is 0-10, map to 5 bars
+      const activeCount = Math.ceil(level / 2);
+      volBars.forEach((bar, i) => {
+        if (bar) {
+          if (i < activeCount) {
+            bar.classList.remove('bg-monokai-gray/30');
+            bar.classList.add('bg-monokai-cyan');
+          } else {
+            bar.classList.remove('bg-monokai-cyan');
+            bar.classList.add('bg-monokai-gray/30');
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // Recording Timer
+    // =========================================================================
+
+    function updateRecordingTimer(seconds) {
+      if (recordingTimer) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        recordingTimer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      }
+    }
+
+    // =========================================================================
+    // Recording Flow
+    // =========================================================================
+
+    async function startRecording() {
+      if (isRecording) return;
+
+      const success = await audioRecorder.start();
+      if (!success) {
+        console.error('[Voide] Failed to start recording');
+        return;
+      }
+
+      isRecording = true;
+      hasRecording = false;
+      currentTranscript = '';
+
+      // Update UI
+      if (recordingMode) recordingMode.classList.remove('hidden');
+      if (inputRow) inputRow.classList.add('hidden');
+      if (volumeIndicator) volumeIndicator.classList.remove('hidden');
+      if (audioPreview) audioPreview.classList.add('hidden');
+      if (inputContainer) {
+        inputContainer.classList.remove('border-monokai-border');
+        inputContainer.classList.add('border-monokai-pink');
+      }
+      if (micButton) {
+        micButton.classList.remove('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
+        micButton.classList.add('text-monokai-pink', 'bg-monokai-pink/20');
+      }
+      if (micIcon) micIcon.setAttribute('stroke', '#ff6188');
+
+      // Start background transcription
+      startBackgroundTranscription();
+
+      sounds.listening();
+    }
+
+    async function stopRecording() {
+      if (!isRecording) return;
+
+      const blob = await audioRecorder.stop();
+      isRecording = false;
+
+      // Stop background transcription
+      stopBackgroundTranscription();
+
+      if (blob) {
+        hasRecording = true;
+        currentAudioUrl = URL.createObjectURL(blob);
+
+        // Create audio element for playback
+        if (audioElement) {
+          audioElement.pause();
+          audioElement = null;
+        }
+        audioElement = new Audio(currentAudioUrl);
+        audioElement.onended = () => {
+          isPlaying = false;
+          updatePlayButton();
+        };
+
+        // Update duration display
+        const state = audioRecorder.get();
+        if (audioDuration) {
+          const mins = Math.floor(state.duration / 60);
+          const secs = state.duration % 60;
+          audioDuration.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Show audio preview
+        if (audioPreview) audioPreview.classList.remove('hidden');
+
+        // Update transcript text
+        if (transcriptText) {
+          transcriptText.value = currentTranscript || '';
+        }
+        updateTranscriptStatus();
+
+        sounds.done();
+      }
+
+      // Reset UI
+      if (recordingMode) recordingMode.classList.add('hidden');
+      if (inputRow) inputRow.classList.remove('hidden');
+      if (volumeIndicator) volumeIndicator.classList.add('hidden');
+      if (inputContainer) {
+        inputContainer.classList.remove('border-monokai-pink');
+        inputContainer.classList.add('border-monokai-border');
+      }
+      if (micButton) {
+        micButton.classList.remove('text-monokai-pink', 'bg-monokai-pink/20');
+        micButton.classList.add('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
+      }
+      if (micIcon) micIcon.setAttribute('stroke', 'currentColor');
+
+      // Reset volume bars
+      updateVolumeIndicator(0);
+    }
+
+    function toggleRecording() {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }
+
+    function handleRecordingStop(blob, duration) {
+      console.log('[Voide] Recording stopped:', duration, 'seconds');
+    }
+
+    // =========================================================================
+    // Background Transcription
+    // =========================================================================
+
+    function startBackgroundTranscription() {
+      if (!speechRecognition.isSupported) return;
+
+      currentTranscript = '';
+
+      speechRecognition.on('result', (data) => {
+        if (data.transcript) {
+          currentTranscript = voiceCommands.convertPunctuation(data.transcript);
+          if (transcriptText && isTranscriptVisible) {
+            transcriptText.value = currentTranscript;
+          }
+          updateTranscriptStatus();
+        }
+      });
+
+      speechRecognition.on('end', () => {
+        // Restart if still recording
+        if (isRecording) {
+          speechRecognition.start();
+        }
+      });
+
+      speechRecognition.start();
+    }
+
+    function stopBackgroundTranscription() {
+      speechRecognition.stop();
+    }
+
+    function updateTranscriptStatus() {
+      if (transcriptStatus) {
+        if (currentTranscript) {
+          transcriptStatus.textContent = `(${currentTranscript.split(' ').length} words)`;
+        } else {
+          transcriptStatus.textContent = isRecording ? '(transcribing...)' : '';
+        }
+      }
+    }
+
+    // =========================================================================
+    // Audio Playback
+    // =========================================================================
+
+    function togglePlayback() {
+      if (!audioElement) return;
+
+      if (isPlaying) {
+        audioElement.pause();
+        isPlaying = false;
+      } else {
+        audioElement.play();
+        isPlaying = true;
+      }
+      updatePlayButton();
+    }
+
+    function updatePlayButton() {
+      if (audioPlayIcon) {
+        audioPlayIcon.innerHTML = isPlaying
+          ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+          : '<path d="M8 5v14l11-7z"/>';
+      }
+    }
+
+    function deleteRecording() {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement = null;
+      }
+      if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
+        currentAudioUrl = null;
+      }
+      hasRecording = false;
+      currentTranscript = '';
+      isPlaying = false;
+
+      if (audioPreview) audioPreview.classList.add('hidden');
+      if (transcriptText) transcriptText.value = '';
+
+      audioRecorder.reset();
+    }
+
+    // =========================================================================
+    // Transcript Toggle
+    // =========================================================================
+
+    function toggleTranscript() {
+      isTranscriptVisible = !isTranscriptVisible;
+
+      if (transcriptContent) {
+        if (isTranscriptVisible) {
+          transcriptContent.classList.remove('hidden');
+        } else {
+          transcriptContent.classList.add('hidden');
+        }
+      }
+      if (transcriptChevron) {
+        transcriptChevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : '';
+      }
+    }
+
+    // =========================================================================
+    // Driving Mode
     // =========================================================================
 
     function updateDrivingModeUI() {
@@ -161,27 +532,15 @@
       if (drivingModeBtn) {
         drivingModeBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors ' +
           (isEnabled ? 'text-monokai-green bg-monokai-green/20' : 'text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg');
-        drivingModeBtn.title = isEnabled ? 'Driving Mode ON (click to disable)' : 'Driving Mode (hands-free)';
+        drivingModeBtn.title = isEnabled ? 'Driving Mode ON' : 'Driving Mode (hands-free)';
       }
       if (drivingIcon) {
         drivingIcon.setAttribute('stroke', isEnabled ? '#a9dc76' : 'currentColor');
       }
     }
 
-    // Bind driving mode toggle to composable
-    drivingModeBtn?.addEventListener('click', () => drivingMode.toggle());
-
-    // Initialize driver selector from store
-    const initialDriver = appStore.get().currentDriver || 'claude-sdk';
-    if (driverSelect) driverSelect.value = initialDriver;
-
-    // Handle driver selection change
-    driverSelect?.addEventListener('change', (e) => {
-      appActions.setDriver(e.target.value);
-    });
-
     // =========================================================================
-    // API Helpers
+    // API & Command Processing
     // =========================================================================
 
     function checkBackendAPI() {
@@ -212,48 +571,28 @@
       saveChat();
     }
 
-    // =========================================================================
-    // Command Processing
-    // =========================================================================
-
-    // Detect if a command is a question/explanation (simple mode) vs action/task (agentic mode)
     function detectMode(command) {
       const lower = command.toLowerCase().trim();
-
-      // Question patterns - use simple mode for true token-by-token streaming
       const questionPatterns = [
         /^(what|why|how|when|where|who|which|can you explain|could you explain|please explain|tell me|describe|is it|are there|do you|does|did|will|would|should|could|can|may|might)/i,
-        /\?$/,  // Ends with question mark
+        /\?$/,
         /^explain\s/i,
         /^describe\s/i,
         /^tell me\s/i,
         /^help me understand/i,
-        /^i('m| am) (curious|wondering|confused)/i,
       ];
-
-      // Action patterns - use agentic mode with tool access
       const actionPatterns = [
         /^(fix|create|add|remove|delete|update|change|modify|refactor|implement|write|build|make|generate|run|execute|install|setup|configure|debug|test)/i,
         /^please (fix|create|add|remove|delete|update|change|modify|refactor|implement|write|build|make)/i,
         /\b(in my|in the|this|the) (code|file|project|app|application|repo|repository|codebase)\b/i,
-        /\b(lint|format|compile|build|deploy|push|commit|merge)\b/i,
       ];
 
-      // Check for action patterns first (higher priority)
       for (const pattern of actionPatterns) {
-        if (pattern.test(lower)) {
-          return 'agentic';
-        }
+        if (pattern.test(lower)) return 'agentic';
       }
-
-      // Check for question patterns
       for (const pattern of questionPatterns) {
-        if (pattern.test(lower)) {
-          return 'simple';
-        }
+        if (pattern.test(lower)) return 'simple';
       }
-
-      // Default to agentic for safety (can use tools if needed)
       return 'agentic';
     }
 
@@ -263,18 +602,12 @@
         let currentEvent = '';
         const app = appStore.get();
         const chat = chatStore.get();
-
-        // Detect mode based on command type
         const mode = detectMode(command);
-        console.log('[Voide] Detected mode:', mode, 'for command:', command.substring(0, 50) + '...');
 
-        // Build conversation history for context (exclude the loading message we just added)
         const history = chat.messages.slice(0, -1).map(m => ({
           role: m.type === 'user' ? 'user' : 'assistant',
           content: m.content
         })).filter(m => m.role === 'user' || m.role === 'assistant');
-
-        console.log('[Voide] Sending request with', history.length, 'history messages, sessionId:', chat.sessionId || 'NONE');
 
         fetch(API_BASE_URL + '/process/stream', {
           method: 'POST',
@@ -320,7 +653,7 @@
 
                     if (currentEvent === 'session' && data.sessionId) {
                       chatActions.setSessionId(data.sessionId);
-                      saveChat(); // Persist sessionId immediately
+                      saveChat();
                     } else if (currentEvent === 'chunk' && data.text) {
                       fullContent += data.text;
                       updateLastMessage('assistant', fullContent);
@@ -334,30 +667,19 @@
                         } else if (data.tool === 'Write' && data.input.file_path) {
                           toolInfo = 'Writing ' + data.input.file_path.split('/').pop();
                         } else if (data.tool === 'Bash' && data.input.command) {
-                          toolInfo = '$ ' + data.input.command.substring(0, 40) + (data.input.command.length > 40 ? '...' : '');
+                          toolInfo = '$ ' + data.input.command.substring(0, 40);
                         } else if (data.tool === 'Glob' && data.input.pattern) {
                           toolInfo = 'Finding ' + data.input.pattern;
                         } else if (data.tool === 'Grep' && data.input.pattern) {
                           toolInfo = 'Searching "' + data.input.pattern + '"';
-                        } else if (data.tool === 'Task' && data.input.description) {
-                          toolInfo = 'Task: ' + data.input.description;
                         }
                       }
                       fullContent += '\n`' + toolInfo + '`';
                       updateLastMessage('assistant', fullContent);
-                    } else if (currentEvent === 'prompt') {
-                      chatActions.setPendingPrompt({
-                        id: data.id || Date.now().toString(),
-                        text: data.text || 'Please select an option:',
-                        options: data.options || ['y', 'n'],
-                        labels: data.labels || data.options || ['Yes', 'No']
-                      });
                     } else if (currentEvent === 'done') {
-                      chatActions.clearPendingPrompt();
                       resolve({ message: fullContent, hasChanges: data.hasChanges || false });
                       return;
                     } else if (currentEvent === 'error') {
-                      chatActions.clearPendingPrompt();
                       reject(new Error(data.error || 'Stream error'));
                       return;
                     }
@@ -372,7 +694,6 @@
       });
     }
 
-    // Generate a smart title for the chat using AI
     function generateChatTitle(chatId, prompt) {
       fetch(API_BASE_URL + '/title', {
         method: 'POST',
@@ -381,16 +702,12 @@
       })
       .then(res => res.json())
       .then(data => {
-        if (data.title) {
-          chatActions.setChatTitle(chatId, data.title);
-        }
+        if (data.title) chatActions.setChatTitle(chatId, data.title);
       })
-      .catch(err => {
-        console.log('[Voide] Failed to generate title:', err.message);
-      });
+      .catch(() => {});
     }
 
-    function processCommand(command) {
+    function processCommand(command, audioId = null) {
       if (!command.trim()) return;
 
       const chat = chatStore.get();
@@ -398,16 +715,22 @@
       let isNewChat = false;
       let newChatId = null;
 
+      // Create message with audio reference if available
+      const messageContent = audioId
+        ? `[Voice message: ${command}]`
+        : command;
+
       if (!chat.currentChatId) {
         newChatId = chatActions.startNewChat(app.repoPath, app.currentDriver, {
           type: 'user',
-          content: command,
-          header: 'You',
-          timestamp: Date.now()
+          content: messageContent,
+          header: audioId ? 'You (voice)' : 'You',
+          timestamp: Date.now(),
+          audioId: audioId
         });
         isNewChat = true;
       } else {
-        addMessage('user', command);
+        addMessage('user', messageContent, audioId ? 'You (voice)' : 'You');
       }
 
       appActions.setTerminalTitle('Processing...');
@@ -421,7 +744,6 @@
       appActions.setProcessing(true);
       addMessage('assistant', '...');
 
-      // Play processing sound in driving mode
       if (drivingMode.isEnabled()) {
         sounds.processing();
       }
@@ -433,30 +755,27 @@
           return new Promise(resolve => {
             setTimeout(() => {
               resolve({
-                message: '[Mock] Processing: "' + command + '"\n\nThis is a simulated response.',
-                hasChanges: command.toLowerCase().includes('fix')
+                message: '[Mock] Processing: "' + command + '"',
+                hasChanges: false
               });
             }, 1500);
           });
         } else {
-          return Promise.reject(new Error('Backend API not available. Start the server at localhost:3008.'));
+          return Promise.reject(new Error('Backend API not available.'));
         }
       }).then(response => {
         if (response.hasChanges) {
           appActions.setHasChanges(true);
-          addMessage('system', 'Changes staged. Click "Commit Changes" to create a commit.');
+          addMessage('system', 'Changes staged.');
         }
         appActions.setTerminalTitle('Voide - Ready');
 
-        // Generate a smart title for new chats
         if (isNewChat && newChatId) {
           generateChatTitle(newChatId, command);
         }
 
-        // Driving mode: play done sound and auto-TTS response
         if (drivingMode.isEnabled()) {
           sounds.done();
-          // Auto-speak the response after a brief delay
           setTimeout(() => {
             if (response.message && window.voide?.speak) {
               window.voide.speak(response.message, 'auto-tts');
@@ -468,7 +787,6 @@
         addMessage('error', 'Failed: ' + error.message);
         appActions.setTerminalTitle('Voide - Error');
 
-        // Play error sound in driving mode
         if (drivingMode.isEnabled()) {
           sounds.error();
         }
@@ -486,33 +804,50 @@
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, 160) + 'px';
       chatActions.setInputText(el.value);
-
-      // Sync keyboard edits with voice transcript so they stay in sync
-      accumulatedTranscript = el.value + (el.value ? ' ' : '');
-      lastDisplayedText = el.value;
-      appActions.setTranscript(el.value);
     }
 
     function handleInputKeydown(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleTextSubmit();
+        handleSend();
       }
     }
 
-    function handleTextSubmit() {
-      const chat = chatStore.get();
-      let text = chat.inputText.trim();
+    async function handleSend() {
+      // If we have a recording, send the transcription
+      if (hasRecording && currentTranscript) {
+        // Get transcript from textarea (user may have edited it)
+        const transcript = transcriptText?.value?.trim() || currentTranscript;
 
-      // Check if text ends with "send", "go", or "submit" (voice command triggers)
-      const sendTriggers = /\s+(send|go|submit)$/i;
-      if (sendTriggers.test(text)) {
-        text = text.replace(sendTriggers, '').trim();
-      }
-      // Also handle standalone triggers - do nothing if that's all there is
-      if (/^(send|go|submit)$/i.test(text)) {
+        if (transcript) {
+          // Save audio to storage
+          const state = audioRecorder.get();
+          let audioId = null;
+          if (state.audioBlob && audioStorage.isSupported) {
+            try {
+              audioId = await audioStorage.save(
+                state.audioBlob,
+                state.duration,
+                transcript,
+                chatStore.get().currentChatId
+              );
+            } catch (e) {
+              console.log('[Voide] Failed to save audio:', e);
+            }
+          }
+
+          // Clear recording state
+          deleteRecording();
+
+          // Process the command
+          processCommand(transcript, audioId);
+        }
         return;
       }
+
+      // Otherwise send text input
+      const chat = chatStore.get();
+      const text = chat.inputText.trim();
 
       if (text && !appStore.get().isProcessing) {
         chatActions.clearInput();
@@ -524,399 +859,12 @@
       }
     }
 
-    function handleSendClick() {
-      handleTextSubmit();
-    }
-
-    // =========================================================================
-    // Speech Recognition
-    // =========================================================================
-
-    function initSpeechRecognition() {
-      if (!speechRecognition.isSupported) {
-        appActions.setSpeechSupported(false);
-        return false;
-      }
-
-      speechRecognition.on('start', () => {
-        const app = appStore.get();
-        if (!app.isRecording) {
-          appActions.setTranscript('');
-        }
-        appActions.setRecording(true);
-        sessionStartTime = Date.now(); // Track session start
-        // Play listening sound in driving mode
-        if (drivingMode.isEnabled()) {
-          sounds.listening();
-        }
-      });
-
-      speechRecognition.on('result', (data) => {
-        // Skip processing during restart or send to prevent race conditions
-        if (isRestarting || isSending) return;
-
-        // Skip empty transcripts
-        const currentTranscript = data.transcript?.trim() || '';
-        if (!currentTranscript) return;
-
-        // Browser sends FULL transcript for current session - use it directly
-        const fullTranscript = currentTranscript;
-        const fullLower = fullTranscript.toLowerCase();
-        const displayedLower = lastDisplayedText.trim().toLowerCase();
-
-        // Detect if this is a potential re-send after restart
-        const timeSinceStart = Date.now() - sessionStartTime;
-        const isEarlyResult = timeSinceStart < 500; // Results within 500ms of restart
-
-        if (displayedLower) {
-          // If early result after restart, be strict - only accept if longer
-          if (isEarlyResult && fullLower.length <= displayedLower.length) {
-            return;
-          }
-          // If early result that overlaps with displayed, skip (re-send)
-          if (isEarlyResult && displayedLower.includes(fullLower.substring(0, 15))) {
-            return;
-          }
-          // After 500ms, accept anything that's different (new content)
-          if (!isEarlyResult && fullLower === displayedLower) {
-            return;
-          }
-        }
-
-        const trimmed = fullTranscript.toLowerCase();
-
-        // Wake word detection for driving mode (using composable)
-        if (drivingMode.isEnabled() && !drivingMode.isAwake()) {
-          if (drivingMode.checkWakeWord(trimmed)) {
-            // Clear the wake word from transcript
-            const wakeWordPatterns = [/^hey\b/i, /^okay\b/i, /^ok\b/i, /^yo\b/i];
-            let afterWake = trimmed;
-            for (const pattern of wakeWordPatterns) {
-              afterWake = afterWake.replace(pattern, '').trim();
-            }
-            accumulatedTranscript = afterWake ? afterWake + ' ' : '';
-            lastDisplayedText = afterWake;
-            appActions.setTranscript(afterWake);
-            chatActions.setInputText(afterWake);
-            if (textInput) {
-              textInput.value = afterWake;
-            }
-            return;
-          }
-          // No wake word - ignore input in driving mode when not awake
-          return;
-        }
-
-        // Voice commands for TTS control (work anytime, not just in driving mode)
-        // "repeat" or "say again" - repeat the last assistant response
-        if (trimmed === 'repeat' || trimmed === 'say again' || trimmed === 'repeat that' ||
-            trimmed.endsWith(' repeat') || trimmed.endsWith(' say again')) {
-          isRestarting = true;
-          accumulatedTranscript = '';
-          lastDisplayedText = '';
-          appActions.setTranscript('');
-          if (textInput) {
-            textInput.value = '';
-            textInput.style.height = 'auto';
-          }
-
-          // Find and speak the last assistant message
-          const messages = chatStore.get().messages;
-          const lastAssistant = [...messages].reverse().find(m => m.type === 'assistant' && m.content !== '...');
-          if (lastAssistant && window.voide?.speak) {
-            sounds.listening(); // Acknowledge
-            window.voide.speak(lastAssistant.content, 'repeat-tts');
-          }
-
-          speechRecognition.stop();
-          setTimeout(() => {
-            isRestarting = false;
-            const app = appStore.get();
-            if (app.isRecording) speechRecognition.start();
-          }, 300);
-          return;
-        }
-
-        // "quiet", "shut up", "be quiet", "silence" - stop TTS
-        if (trimmed === 'quiet' || trimmed === 'shut up' || trimmed === 'be quiet' ||
-            trimmed === 'silence' || trimmed === 'stop talking' ||
-            trimmed.endsWith(' quiet') || trimmed.endsWith(' shut up')) {
-          isRestarting = true;
-          accumulatedTranscript = '';
-          lastDisplayedText = '';
-          appActions.setTranscript('');
-          if (textInput) {
-            textInput.value = '';
-            textInput.style.height = 'auto';
-          }
-
-          // Stop any current TTS
-          if (window.voide?.stopSpeaking) {
-            window.voide.stopSpeaking();
-            sounds.listening(); // Soft acknowledgment
-          }
-
-          speechRecognition.stop();
-          setTimeout(() => {
-            isRestarting = false;
-            const app = appStore.get();
-            if (app.isRecording) speechRecognition.start();
-          }, 300);
-          return;
-        }
-
-        // "reset" clears the prompt
-        if (trimmed.endsWith(' reset') || trimmed === 'reset') {
-          isRestarting = true;
-          accumulatedTranscript = '';
-          lastDisplayedText = '';
-          appActions.setTranscript('');
-          chatActions.setInputText('');
-          if (textInput) {
-            textInput.value = '';
-            textInput.style.height = 'auto';
-          }
-          speechRecognition.stop();
-          setTimeout(() => {
-            isRestarting = false;
-            const app = appStore.get();
-            if (app.isRecording) speechRecognition.start();
-          }, 300);
-          return;
-        }
-
-        // "oops" deletes last word only (preserves newlines)
-        if (trimmed.endsWith(' oops') || trimmed === 'oops') {
-          isRestarting = true;
-          let text = fullTranscript.replace(/\s*oops\s*$/i, '');
-          text = text.replace(/[ \t]*[^ \t\n]+[ \t]*$/, '');
-          const newTranscript = voiceCommands.convertPunctuation(text);
-          accumulatedTranscript = newTranscript + (newTranscript ? ' ' : '');
-          lastDisplayedText = newTranscript;
-          appActions.setTranscript(newTranscript);
-          chatActions.setInputText(newTranscript);
-          if (textInput) {
-            textInput.value = newTranscript;
-            textInput.style.height = 'auto';
-            textInput.style.height = Math.min(textInput.scrollHeight, 120) + 'px';
-          }
-          speechRecognition.stop();
-          setTimeout(() => {
-            isRestarting = false;
-            const app = appStore.get();
-            if (app.isRecording) speechRecognition.start();
-          }, 300);
-          return;
-        }
-
-        // "go", "send", or "submit" submits the prompt
-        if (/(^|\s)(go|send|submit)$/i.test(trimmed)) {
-          // Double protection: flag + timestamp debounce (500ms)
-          const now = Date.now();
-          if (isSending || (now - lastSendTime) < 500) {
-            return; // Already sending or sent recently
-          }
-          isSending = true;
-          lastSendTime = now;
-
-          const cleanTranscript = voiceCommands.convertPunctuation(fullTranscript.replace(/\s*(go|send|submit)\s*$/i, '').trim());
-          if (cleanTranscript) {
-            // Keep mic on - just clear transcript and restart recognition
-            isRestarting = true;
-            accumulatedTranscript = '';
-            lastDisplayedText = '';
-            appActions.setTranscript('');
-            chatActions.clearInput();
-            if (textInput) {
-              textInput.value = '';
-              textInput.style.height = 'auto';
-            }
-            // Reset awake state in driving mode - user needs to say wake word again
-            if (drivingMode.isEnabled()) {
-              drivingMode.sleep();
-            }
-            speechRecognition.stop();
-            setTimeout(() => {
-              processCommand(cleanTranscript);
-              isSending = false;
-              isRestarting = false;
-              // Restart mic if it was on
-              const app = appStore.get();
-              if (app.isRecording) speechRecognition.start();
-            }, 100);
-          } else {
-            isSending = false;
-          }
-          return;
-        }
-
-        // "stop" or "pause" - turn off the mic
-        if (trimmed === 'stop' || trimmed === 'pause' || trimmed.endsWith(' stop') || trimmed.endsWith(' pause')) {
-          accumulatedTranscript = '';
-          lastDisplayedText = '';
-          appActions.setTranscript('');
-          appActions.setRecording(false);
-          speechRecognition.stop();
-          if (textInput) {
-            textInput.value = '';
-            textInput.style.height = 'auto';
-          }
-          return;
-        }
-
-        // "clear chat" or "new chat" - clear conversation
-        if (trimmed === 'clear chat' || trimmed === 'new chat' || trimmed.endsWith(' clear chat') || trimmed.endsWith(' new chat')) {
-          isRestarting = true;
-          accumulatedTranscript = '';
-          lastDisplayedText = '';
-          appActions.setTranscript('');
-          chatActions.clearMessages();
-          if (textInput) {
-            textInput.value = '';
-            textInput.style.height = 'auto';
-          }
-          speechRecognition.stop();
-          setTimeout(() => {
-            isRestarting = false;
-            const app = appStore.get();
-            if (app.isRecording) speechRecognition.start();
-          }, 300);
-          return;
-        }
-
-        // "cancel" - stop Claude mid-response
-        if (trimmed === 'cancel' || trimmed.endsWith(' cancel')) {
-          isRestarting = true;
-          accumulatedTranscript = '';
-          lastDisplayedText = '';
-          appActions.setTranscript('');
-          cancelProcessing();
-          if (textInput) {
-            textInput.value = '';
-            textInput.style.height = 'auto';
-          }
-          speechRecognition.stop();
-          setTimeout(() => {
-            isRestarting = false;
-            const app = appStore.get();
-            if (app.isRecording) speechRecognition.start();
-          }, 300);
-          return;
-        }
-
-        // Convert spoken punctuation to symbols and update display
-        const displayText = voiceCommands.convertPunctuation(fullTranscript);
-        lastDisplayedText = displayText;
-        appActions.setTranscript(displayText);
-      });
-
-      speechRecognition.on('end', () => {
-        // Don't auto-restart during controlled restart (like oops command)
-        // The command handler will restart recognition itself
-        if (isRestarting) return;
-
-        const app = appStore.get();
-        if (app.isRecording) {
-          // DON'T accumulate - it causes duplication when browser re-sends content
-          // Just keep lastDisplayedText in sync and restart fresh
-          const currentText = app.transcript || '';
-          accumulatedTranscript = ''; // Start fresh each session
-          lastDisplayedText = currentText;
-          speechRecognition.start();
-        } else {
-          accumulatedTranscript = '';
-          lastDisplayedText = '';
-        }
-      });
-
-      speechRecognition.on('error', (data) => {
-        stopRecording();
-        if (data.code !== 'aborted' && data.code !== 'no-speech') {
-          addMessage('error', data.message);
-        }
-      });
-
-      appActions.setSpeechSupported(true);
-      return true;
-    }
-
-    function startRecording() {
-      const app = appStore.get();
-      if (!app.speechSupported || app.isRecording) return;
-      appActions.setTranscript('');
-      accumulatedTranscript = '';
-      lastDisplayedText = '';
-      speechRecognition.start();
-    }
-
-    function stopRecording() {
-      const app = appStore.get();
-      if (app.transcript && app.transcript.trim()) {
-        chatActions.setInputText(app.transcript.trim());
-        if (textInput) textInput.value = app.transcript.trim();
-      }
-      appActions.setRecording(false);
-      speechRecognition.stop();
-    }
-
-    function toggleRecording() {
-      const app = appStore.get();
-      if (app.isRecording) {
-        stopRecording();
-      } else {
-        startRecording();
-      }
-    }
-
-    // =========================================================================
-    // Git Actions
-    // =========================================================================
-
-    function commitChanges() {
-      if (!appStore.get().hasChanges) return;
-
-      addMessage('system', 'Creating commit...');
-
-      checkBackendAPI().then(hasBackend => {
-        if (hasBackend) {
-          return fetch(API_BASE_URL + '/commit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          }).then(res => res.json());
-        }
-        return { success: true, hash: 'mock-commit-hash' };
-      }).then(response => {
-        addMessage('system', 'Committed: ' + (response.hash || 'success'));
-        appActions.setHasChanges(false);
-      }).catch(error => {
-        addMessage('error', 'Failed: ' + error.message);
-      });
-    }
-
-    function pushChanges() {
-      addMessage('system', 'Pushing to remote...');
-
-      checkBackendAPI().then(hasBackend => {
-        if (hasBackend) {
-          return fetch(API_BASE_URL + '/push', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        return Promise.resolve();
-      }).then(() => {
-        addMessage('system', 'Pushed successfully.');
-      }).catch(error => {
-        addMessage('error', 'Failed: ' + error.message);
-      });
-    }
-
     function cancelProcessing() {
       fetch(API_BASE_URL + '/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
-      }).then(res => res.json()).then(data => {
+      }).then(() => {
         appActions.setProcessing(false);
         const messages = chatStore.get().messages;
         if (messages.length > 0) {
@@ -925,16 +873,8 @@
             updateLastMessage('assistant', lastMsg.content + '\n\n— *Stopped*');
           }
         }
-      }).catch(error => {
-        // Even on error, stop processing locally
+      }).catch(() => {
         appActions.setProcessing(false);
-        const messages = chatStore.get().messages;
-        if (messages.length > 0) {
-          const lastMsg = messages[messages.length - 1];
-          if (lastMsg && lastMsg.type === 'assistant') {
-            updateLastMessage('assistant', lastMsg.content + '\n\n— *Stopped*');
-          }
-        }
       });
     }
 
@@ -942,14 +882,24 @@
     // Event Bindings
     // =========================================================================
 
-    // Button click handlers
     micButton?.addEventListener('click', toggleRecording);
-    sendBtn?.addEventListener('click', handleSendClick);
+    sendBtn?.addEventListener('click', handleSend);
     stopBtn?.addEventListener('click', cancelProcessing);
-
-    // Text input handlers
+    drivingModeBtn?.addEventListener('click', () => drivingMode.toggle());
     textInput?.addEventListener('input', handleInputChange);
     textInput?.addEventListener('keydown', handleInputKeydown);
+
+    // Audio preview controls
+    audioPlayBtn?.addEventListener('click', togglePlayback);
+    audioDeleteBtn?.addEventListener('click', deleteRecording);
+    transcriptToggle?.addEventListener('click', toggleTranscript);
+
+    // Driver selector
+    const initialDriver = appStore.get().currentDriver || 'claude-sdk';
+    if (driverSelect) driverSelect.value = initialDriver;
+    driverSelect?.addEventListener('change', (e) => {
+      appActions.setDriver(e.target.value);
+    });
 
     // Global keyboard shortcuts
     document.addEventListener('keydown', (e) => {
@@ -969,41 +919,39 @@
 
     const thinkingIndicator = document.getElementById('thinkingIndicator');
     const thinkingTimer = document.getElementById('thinkingTimer');
-    let timerInterval = null;
-    let timerStart = null;
+    let processingTimerInterval = null;
+    let processingTimerStart = null;
 
-    function startTimer() {
-      timerStart = Date.now();
+    function startProcessingTimer() {
+      processingTimerStart = Date.now();
       if (thinkingTimer) thinkingTimer.textContent = '0.0s';
-      timerInterval = setInterval(() => {
-        if (thinkingTimer && timerStart) {
-          const elapsed = ((Date.now() - timerStart) / 1000).toFixed(1);
+      processingTimerInterval = setInterval(() => {
+        if (thinkingTimer && processingTimerStart) {
+          const elapsed = ((Date.now() - processingTimerStart) / 1000).toFixed(1);
           thinkingTimer.textContent = `${elapsed}s`;
         }
       }, 100);
     }
 
-    function stopTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
+    function stopProcessingTimer() {
+      if (processingTimerInterval) {
+        clearInterval(processingTimerInterval);
+        processingTimerInterval = null;
       }
-      timerStart = null;
+      processingTimerStart = null;
     }
 
     appStore.subscribe((state) => {
-      // Show/hide thinking indicator above input
       if (thinkingIndicator) {
         if (state.isProcessing) {
           thinkingIndicator.classList.remove('hidden');
-          if (!timerInterval) startTimer();
+          if (!processingTimerInterval) startProcessingTimer();
         } else {
           thinkingIndicator.classList.add('hidden');
-          stopTimer();
+          stopProcessingTimer();
         }
       }
 
-      // Show/hide stop button based on processing state
       if (stopBtn) {
         if (state.isProcessing) {
           stopBtn.classList.remove('hidden');
@@ -1012,65 +960,29 @@
         }
       }
 
-      // Mic button state - cyan when ready to listen
-      if (micButton) {
-        micButton.className = 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors ' +
-          (state.isRecording ? 'text-monokai-cyan bg-monokai-cyan/10' : 'text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg');
-      }
-      if (micIcon) micIcon.setAttribute('stroke', state.isRecording ? '#78dce8' : 'currentColor');
-
-      // Recording indicator
-      if (recordingIndicator) {
-        if (state.isRecording) {
-          recordingIndicator.classList.remove('hidden');
-        } else {
-          recordingIndicator.classList.add('hidden');
-        }
-      }
-
-      // Input container state - cyan border when ready
-      if (inputContainer) {
-        inputContainer.className = 'bg-monokai-bg-dark border rounded-2xl px-4 py-3 ' +
-          (state.isRecording ? 'border-monokai-cyan' : 'border-monokai-border');
-      }
-
-      // Update placeholder and value based on recording state
-      if (textInput) {
-        textInput.placeholder = 'Type / for commands';
-        if (state.isRecording && state.transcript) {
-          textInput.value = state.transcript;
-          textInput.style.height = 'auto';
-          textInput.style.height = Math.min(textInput.scrollHeight, 160) + 'px';
-          chatActions.setInputText(state.transcript);
-        }
-      }
-
-      // Sync driver selector
       if (driverSelect && state.currentDriver) {
         driverSelect.value = state.currentDriver;
       }
     });
 
-    // Initialize speech recognition
-    initSpeechRecognition();
+    // =========================================================================
+    // Expose to window.voide
+    // =========================================================================
 
-    // Expose to window.voide for other components
     window.voide = window.voide || {};
     Object.assign(window.voide, {
       toggleRecording,
       startRecording,
       stopRecording,
-      handleInputChange,
-      handleInputKeydown,
-      handleSendClick,
-      handleTextSubmit,
+      handleSend,
       cancelProcessing,
       processCommand,
       addMessage,
-      // Driving mode
       toggleDrivingMode: () => drivingMode.toggle(),
       isDrivingMode: () => drivingMode.isEnabled(),
-      sounds
+      sounds,
+      audioRecorder,
+      audioStorage
     });
   }
 

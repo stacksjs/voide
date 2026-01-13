@@ -157,3 +157,22 @@ export {
   type VoiceCommandResult,
   type VoiceCommandsRef,
 } from './use-voice-commands'
+
+// Audio Recorder
+export {
+  useAudioRecorder,
+  formatDuration,
+  getVolumeLevelLabel,
+  type AudioRecorderState,
+  type AudioRecorderOptions,
+  type AudioRecorderRef,
+} from './use-audio-recorder'
+
+// Audio Storage (IndexedDB)
+export {
+  useAudioStorage,
+  getAudioStorage,
+  type AudioRecord,
+  type AudioStorageOptions,
+  type AudioStorageRef,
+} from './use-audio-storage'
