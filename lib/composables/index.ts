@@ -139,15 +139,6 @@ export {
   type AudioCuesRef,
 } from './use-audio-cues'
 
-// Driving Mode
-export {
-  useDrivingMode,
-  getDrivingMode,
-  type DrivingModeState,
-  type DrivingModeOptions,
-  type DrivingModeRef,
-} from './use-driving-mode'
-
 // Voice Commands
 export {
   useVoiceCommands,

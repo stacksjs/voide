@@ -1315,6 +1315,10 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}) {
     error: new Set(),
     start: new Set(),
     end: new Set(),
+    speechstart: new Set(),
+    speechend: new Set(),
+    soundend: new Set(),
+    nospeech: new Set(),
   }
   let recognition: any = null
 
@@ -1374,12 +1378,29 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}) {
       state = { ...state, error: errorMessages[event.error] || event.error, isListening: false }
       notify()
       emitEvent('error', { code: event.error, message: state.error })
+
+      // Emit specific no-speech event
+      if (event.error === 'no-speech') {
+        emitEvent('nospeech')
+      }
     }
 
     recognition.onend = () => {
       state = { ...state, isListening: false }
       notify()
       emitEvent('end', { transcript: state.transcript })
+    }
+
+    recognition.onspeechstart = () => {
+      emitEvent('speechstart')
+    }
+
+    recognition.onspeechend = () => {
+      emitEvent('speechend', { transcript: state.transcript })
+    }
+
+    recognition.onsoundend = () => {
+      emitEvent('soundend')
     }
   }
 

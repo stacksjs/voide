@@ -124,15 +124,6 @@
             <div @ref="volBar5" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 100%"></div>
           </div>
 
-          <!-- Driving Mode toggle -->
-          <button
-            @ref="drivingModeBtn"
-            class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
-            title="Driving Mode (hands-free)"
-          >
-            <svg @ref="drivingIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"></path></svg>
-          </button>
-
           <!-- Stop button (shown when processing) -->
           <button
             @ref="stopBtn"
@@ -209,8 +200,6 @@
       // Buttons
       micButton: { value: null },
       micIcon: { value: null },
-      drivingModeBtn: { value: null },
-      drivingIcon: { value: null },
       stopBtn: { value: null },
       sendBtn: { value: null },
       driverSelect: { value: null },
@@ -252,15 +241,6 @@
     const sounds = stores.useAudioCues();
     const voiceCommands = stores.useVoiceCommands();
     const audioStorage = stores.useAudioStorage();
-    const drivingMode = stores.useDrivingMode({
-      onWake: () => console.log('[Voide] Wake word detected'),
-      onToggle: (enabled) => {
-        updateDrivingModeUI();
-        if (enabled && !isRecording) {
-          startRecording();
-        }
-      }
-    });
 
     // Audio recorder with callbacks
     const audioRecorder = stores.useAudioRecorder({
@@ -284,6 +264,7 @@
     let currentAudioUrl = null;
     let currentTranscript = '';
     let isTranscriptVisible = false;
+    let handsFreeModeActive = false; // Track if we're in continuous voice mode
 
     // =========================================================================
     // Volume Indicator
@@ -333,6 +314,7 @@
       isRecording = true;
       hasRecording = false;
       currentTranscript = '';
+      handsFreeModeActive = true; // Enable hands-free mode
 
       // Update UI using refs
       $('recordingMode')?.classList.remove('hidden');
@@ -417,7 +399,13 @@
 
     function toggleRecording() {
       if (isRecording) {
+        // Manual stop - turn off hands-free mode
+        handsFreeModeActive = false;
         stopRecording();
+      } else if (hasRecording) {
+        // If we have a recording preview, clicking mic again cancels it
+        handsFreeModeActive = false;
+        deleteRecording();
       } else {
         startRecording();
       }
@@ -435,6 +423,9 @@
 
       currentTranscript = '';
 
+      let speechEndTimeout = null;
+      let hasSpeechStarted = false;
+
       speechRecognition.on('result', (data) => {
         if (data.transcript) {
           currentTranscript = voiceCommands.convertPunctuation(data.transcript);
@@ -443,7 +434,48 @@
             transcriptTextEl.textContent = currentTranscript;
           }
           updateTranscriptStatus();
+
+          // Clear any pending auto-stop since we got new speech
+          if (speechEndTimeout) {
+            clearTimeout(speechEndTimeout);
+            speechEndTimeout = null;
+          }
         }
+      });
+
+      speechRecognition.on('speechstart', () => {
+        hasSpeechStarted = true;
+        // Clear any pending auto-stop
+        if (speechEndTimeout) {
+          clearTimeout(speechEndTimeout);
+          speechEndTimeout = null;
+        }
+      });
+
+      speechRecognition.on('speechend', () => {
+        // Only auto-stop if we have a transcript and speech actually started
+        if (isRecording && hasSpeechStarted && currentTranscript.trim()) {
+          // Wait 5 seconds of silence before auto-stopping
+          speechEndTimeout = setTimeout(() => {
+            if (isRecording && currentTranscript.trim()) {
+              console.log('[Voide] 5s silence detected, auto-stopping recording');
+              stopRecording();
+
+              // Show preview for 1.5 seconds, then auto-send
+              setTimeout(() => {
+                if (hasRecording && currentTranscript.trim()) {
+                  console.log('[Voide] Auto-sending voice message');
+                  handleSend();
+                }
+              }, 1500);
+            }
+          }, 5000); // 5 second delay after speech ends
+        }
+      });
+
+      speechRecognition.on('nospeech', () => {
+        // No speech was detected - could show a hint to the user
+        console.log('[Voide] No speech detected');
       });
 
       speechRecognition.on('end', () => {
@@ -473,7 +505,7 @@
     // =========================================================================
     // Audio Management
     // =========================================================================
-    function deleteRecording() {
+    function deleteRecording(keepHandsFreeMode = false) {
       const player = $('audioPlayer');
       if (player) {
         player.pause();
@@ -485,6 +517,9 @@
       }
       hasRecording = false;
       currentTranscript = '';
+      if (!keepHandsFreeMode) {
+        handsFreeModeActive = false;
+      }
 
       $('audioPreview')?.classList.add('hidden');
       const transcriptTextEl = $('transcriptText');
@@ -513,20 +548,6 @@
       if (chevron) {
         chevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : '';
       }
-    }
-
-    // =========================================================================
-    // Driving Mode
-    // =========================================================================
-    function updateDrivingModeUI() {
-      const isEnabled = drivingMode.isEnabled();
-      const btn = $('drivingModeBtn');
-      if (btn) {
-        btn.className = 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors ' +
-          (isEnabled ? 'text-monokai-green bg-monokai-green/20' : 'text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg');
-        btn.title = isEnabled ? 'Driving Mode ON' : 'Driving Mode (hands-free)';
-      }
-      $('drivingIcon')?.setAttribute('stroke', isEnabled ? '#a9dc76' : 'currentColor');
     }
 
     // =========================================================================
@@ -725,10 +746,6 @@
       appActions.setProcessing(true);
       addMessage('assistant', '...');
 
-      if (drivingMode.isEnabled()) {
-        sounds.processing();
-      }
-
       checkBackendAPI().then(hasBackend => {
         if (hasBackend) {
           return processWithStreaming(command);
@@ -752,14 +769,20 @@
           generateChatTitle(newChatId, command);
         }
 
-        // Auto-play response if voice message was sent or driving mode is enabled
-        if (wasVoiceMessage || drivingMode.isEnabled()) {
-          if (drivingMode.isEnabled()) {
-            sounds.done();
-          }
+        // Auto-play response if voice message was sent
+        if (wasVoiceMessage) {
           setTimeout(() => {
             if (response.message && window.voide?.speak) {
-              window.voide.speak(response.message, 'auto-tts');
+              window.voide.speak(response.message, 'auto-tts', () => {
+                // Restart recording after TTS finishes (hands-free mode)
+                if (handsFreeModeActive) {
+                  console.log('[Voide] TTS finished, restarting recording');
+                  setTimeout(() => startRecording(), 500);
+                }
+              });
+            } else if (handsFreeModeActive) {
+              // No message to speak, restart recording anyway
+              setTimeout(() => startRecording(), 500);
             }
           }, 400);
         }
@@ -768,8 +791,9 @@
         addMessage('error', 'Failed: ' + error.message);
         appActions.setTerminalTitle('Voide - Error');
 
-        if (drivingMode.isEnabled()) {
-          sounds.error();
+        // Restart recording even on error (hands-free mode)
+        if (wasVoiceMessage && handsFreeModeActive) {
+          setTimeout(() => startRecording(), 1000);
         }
       }).finally(() => {
         appActions.setProcessing(false);
@@ -818,8 +842,9 @@
           }
         }
 
-        deleteRecording();
+        deleteRecording(true); // Keep hands-free mode active
         processCommand(transcript, audioId);
+        // Recording will restart after TTS finishes (handled in processCommand)
         return;
       }
 
@@ -862,10 +887,9 @@
     $('micButton')?.addEventListener('click', toggleRecording);
     $('sendBtn')?.addEventListener('click', handleSend);
     $('stopBtn')?.addEventListener('click', cancelProcessing);
-    $('drivingModeBtn')?.addEventListener('click', () => drivingMode.toggle());
     $('textInput')?.addEventListener('input', handleInputChange);
     $('textInput')?.addEventListener('keydown', handleInputKeydown);
-    $('audioDeleteBtn')?.addEventListener('click', deleteRecording);
+    $('audioDeleteBtn')?.addEventListener('click', () => deleteRecording());
     $('transcriptToggle')?.addEventListener('click', toggleTranscript);
 
     // Driver selector
@@ -1023,8 +1047,6 @@
       cancelProcessing,
       processCommand,
       addMessage,
-      toggleDrivingMode: () => drivingMode.toggle(),
-      isDrivingMode: () => drivingMode.isEnabled(),
       sounds,
       audioRecorder,
       audioStorage

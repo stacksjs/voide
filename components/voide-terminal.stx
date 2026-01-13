@@ -94,7 +94,7 @@
   let currentUtterance = null;
   let isSpeaking = false;
 
-  function speak(text, msgId) {
+  function speak(text, msgId, onComplete = null) {
     // Stop any current speech
     if (isSpeaking) {
       stopSpeaking();
@@ -113,7 +113,10 @@
       .replace(/\s+/g, ' ')  // Normalize whitespace
       .trim();
 
-    if (!cleanText) return;
+    if (!cleanText) {
+      if (onComplete) onComplete();
+      return;
+    }
 
     currentUtterance = new SpeechSynthesisUtterance(cleanText);
     currentUtterance.rate = 1.1;  // Slightly faster
@@ -143,12 +146,14 @@
       isSpeaking = false;
       currentUtterance = null;
       updateSpeakButton(msgId, false);
+      if (onComplete) onComplete();
     };
 
     currentUtterance.onerror = () => {
       isSpeaking = false;
       currentUtterance = null;
       updateSpeakButton(msgId, false);
+      if (onComplete) onComplete();
     };
 
     speechSynthesis.speak(currentUtterance);
