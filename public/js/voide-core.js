@@ -18,13 +18,13 @@
   const API_BASE_URL = 'http://localhost:3008/voide';
 
   function init() {
-    const stores = window.VoideStores;
-    if (!stores) {
+    // Wait for stores to be registered
+    if (!window.__STX_STORES__) {
       setTimeout(init, 10);
       return;
     }
 
-    const { appStore, appActions, chatStore, chatActions, settingsStore, settingsActions, uiStore, uiActions } = stores;
+    const { appStore, chatStore, settingsStore, uiStore } = window.__STX_STORES__;
 
     console.log('[VoideCore] Initializing...');
 
@@ -35,7 +35,7 @@
     function initNativeFeatures() {
       if (!window.craft) return;
 
-      appActions.setNativeApp(true);
+      appStore.setNativeApp(true);
       try {
         window.craft.tray.setTitle('Voide');
         window.craft.tray.setTooltip('Voide - Voice AI Code Assistant');
@@ -48,14 +48,14 @@
           { id: 'quit', label: 'Quit Voide', action: 'quit', shortcut: 'Cmd+Q' }
         ]);
         window.craft.tray.onClickToggleWindow();
-        chatActions.addMessage('system', 'Running as native app - system tray enabled', 'System');
+        chatStore.addMessage('system', 'Running as native app - system tray enabled', 'System');
       } catch (e) {
         console.log('[VoideCore] Native features not fully available:', e);
       }
     }
 
     function updateTrayStatus(status) {
-      if (!appStore.get().isNativeApp || !window.craft) return;
+      if (!appStore.isNativeApp || !window.craft) return;
       const icons = { ready: '🤖', recording: '🔴', processing: '⏳', success: '✅', error: '❌' };
       try {
         window.craft.tray.setTitle((icons[status] || '🤖') + ' Voide');
@@ -63,7 +63,7 @@
     }
 
     function sendNotification(title, body) {
-      if (!appStore.get().isNativeApp || !window.craft) return;
+      if (!appStore.isNativeApp || !window.craft) return;
       try {
         window.craft.app.notify({ title: title, body: body });
       } catch (e) {}
@@ -74,14 +74,16 @@
     // =========================================================================
 
     function loadChat(chatId) {
-      const loaded = chatActions.loadChat(chatId);
+      const loaded = chatStore.loadChat(chatId);
       if (loaded) {
-        const chat = chatStore.get();
-        if (chat.repoPath) {
-          appActions.setRepoPath(chat.repoPath);
+        // Access loaded chat state
+        const repoPath = chatStore.$state.repoPath;
+        const driver = chatStore.$state.driver;
+        if (repoPath) {
+          appStore.setRepoPath(repoPath);
         }
-        if (chat.driver) {
-          appActions.setDriver(chat.driver);
+        if (driver) {
+          appStore.setDriver(driver);
         }
         return true;
       }
@@ -110,8 +112,8 @@
       console.log('[VoideCore] Clearing invalid repo path:', path);
 
       // Clear from all stores
-      appActions.setRepoPath('');
-      settingsActions.setLastRepoPath('');
+      appStore.setRepoPath('');
+      settingsStore.setLastRepoPath('');
 
       // Clear the input field
       const repoInput = document.getElementById('repoInput');
@@ -119,20 +121,20 @@
 
       // Also clear directly from localStorage to ensure it's gone
       try {
-        const appState = localStorage.getItem('voide-app');
+        const appState = localStorage.getItem('voide:app');
         if (appState) {
           const parsed = JSON.parse(appState);
           if (parsed.repoPath === path) {
             parsed.repoPath = '';
-            localStorage.setItem('voide-app', JSON.stringify(parsed));
+            localStorage.setItem('voide:app', JSON.stringify(parsed));
           }
         }
-        const settingsState = localStorage.getItem('voide-settings');
+        const settingsState = localStorage.getItem('voide:settings');
         if (settingsState) {
           const parsed = JSON.parse(settingsState);
           if (parsed.lastRepoPath === path) {
             parsed.lastRepoPath = '';
-            localStorage.setItem('voide-settings', JSON.stringify(parsed));
+            localStorage.setItem('voide:settings', JSON.stringify(parsed));
           }
         }
       } catch (e) {
@@ -144,13 +146,13 @@
         const shownKey = 'voide_invalid_path_shown_' + path;
         if (!sessionStorage.getItem(shownKey)) {
           sessionStorage.setItem(shownKey, 'true');
-          chatActions.addMessage('error', 'The previously saved path no longer exists:\n' + path + '\n\nPlease enter a valid repository path.', 'Error');
+          chatStore.addMessage('error', 'The previously saved path no longer exists:\n' + path + '\n\nPlease enter a valid repository path.', 'Error');
         }
       }
     }
 
     function initUrlRouting() {
-      const chatIdFromUrl = chatActions.getChatIdFromUrl();
+      const chatIdFromUrl = chatStore.getChatIdFromUrl();
       const routeParams = window.__STX_ROUTE_PARAMS__ || {};
       const chatId = routeParams.id || chatIdFromUrl;
 
@@ -160,8 +162,7 @@
         }
       } else {
         // Restore repo path from app store (persisted in localStorage)
-        const app = appStore.get();
-        const pathToValidate = app.repoPath || settingsStore.get().lastRepoPath;
+        const pathToValidate = appStore.repoPath || settingsStore.lastRepoPath;
 
         if (pathToValidate) {
           // Validate the stored path exists
@@ -171,8 +172,8 @@
               clearInvalidRepoPath(pathToValidate, true);
             } else if (valid === true) {
               // Path confirmed valid
-              if (!app.repoPath) {
-                appActions.setRepoPath(pathToValidate);
+              if (!appStore.repoPath) {
+                appStore.setRepoPath(pathToValidate);
               }
             }
             // If valid === null, backend unavailable - keep path but can't validate
@@ -182,11 +183,11 @@
 
       // Handle browser back/forward navigation
       window.addEventListener('popstate', (e) => {
-        const chatId = chatActions.getChatIdFromUrl();
+        const chatId = chatStore.getChatIdFromUrl();
         if (chatId) {
           loadChat(chatId);
         } else {
-          chatActions.newChat();
+          chatStore.newChat();
         }
       });
     }
@@ -221,20 +222,18 @@
     // Expose Stores and Core Methods to window.voide
     // =========================================================================
 
+    const stores = window.VoideStores || {};
+
     window.voide = window.voide || {};
     Object.assign(window.voide, {
-      // Stores
-      stores: stores,
+      // Stores (using new pattern)
+      stores: window.__STX_STORES__,
       appStore: appStore,
       chatStore: chatStore,
       settingsStore: settingsStore,
       uiStore: uiStore,
-      appActions: appActions,
-      chatActions: chatActions,
-      settingsActions: settingsActions,
-      uiActions: uiActions,
 
-      // Composables
+      // Composables (from bundled stores)
       useStorage: stores.useStorage,
       useLocalStorage: stores.useLocalStorage,
       useSessionStorage: stores.useSessionStorage,
@@ -254,15 +253,15 @@
       copyToClipboard: stores.copyToClipboard,
 
       // State getters
-      get state() { return appStore.get(); },
-      get messages() { return chatStore.get().messages; },
-      get charCount() { return chatStore.get().charCount; },
+      get state() { return appStore.$state; },
+      get messages() { return chatStore.messages; },
+      get charCount() { return chatStore.charCount; },
 
       // Core methods
       loadChat: loadChat,
-      newChat: chatActions.newChat,
-      getAllChats: chatActions.getAllChats,
-      deleteChat: chatActions.deleteChat,
+      newChat: () => chatStore.newChat(),
+      getAllChats: () => chatStore.getAllChats(),
+      deleteChat: (id) => chatStore.deleteChat(id),
       updateTrayStatus: updateTrayStatus,
       sendNotification: sendNotification
     });

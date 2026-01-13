@@ -160,9 +160,8 @@
 </template>
 
 <script client>
-import { appStore, chatStore, settingsStore } from '@stores'
-
 (() => {
+  const { appStore, chatStore, settingsStore } = window.__STX_STORES__;
   const API_BASE_URL = 'http://localhost:3008/voide';
 
   function init() {

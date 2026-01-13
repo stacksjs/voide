@@ -217,9 +217,8 @@
 </template>
 
 <script client>
-import { appStore, settingsStore, uiStore, chatStore } from '@stores'
-
 (() => {
+  const { appStore, settingsStore, uiStore, chatStore } = window.__STX_STORES__;
   console.log('[VoideModals] Initialized');
 
   // =========================================================================

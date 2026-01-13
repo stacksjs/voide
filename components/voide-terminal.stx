@@ -30,9 +30,8 @@
 </template>
 
 <script client>
-import { appStore, chatStore } from '@stores'
-
 (() => {
+  const { appStore, chatStore } = window.__STX_STORES__;
   const API_BASE_URL = 'http://localhost:3008/voide';
 
   let renderedCount = 0;
