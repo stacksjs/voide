@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-3xl mx-auto w-full">
     <!-- Thinking indicator - shown above input when processing -->
-    <div id="thinkingIndicator" class="hidden mb-3 px-4">
+    <div @ref="thinkingIndicator" class="hidden mb-3 px-4">
       <div class="flex items-center gap-2 text-monokai-gray/70">
         <div class="flex gap-1">
           <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 0ms"></span>
@@ -9,49 +9,26 @@
           <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 300ms"></span>
         </div>
         <span class="text-sm italic">thinking...</span>
-        <span id="thinkingTimer" class="opacity-40 font-mono" style="font-size: 10px">0.0s</span>
+        <span @ref="thinkingTimer" class="opacity-40 font-mono" style="font-size: 10px">0.0s</span>
       </div>
     </div>
 
     <!-- Audio Preview (shown after recording stops) -->
-    <div id="audioPreview" class="hidden mb-3">
+    <div @ref="audioPreview" class="hidden mb-3">
       <div class="bg-monokai-bg-dark border border-monokai-cyan rounded-xl p-3">
         <!-- Audio player row -->
         <div class="flex items-center gap-3">
-          <!-- Play/Pause button -->
-          <button
-            id="audioPlayBtn"
-            class="w-10 h-10 rounded-full bg-monokai-cyan/20 text-monokai-cyan hover:bg-monokai-cyan/30 flex items-center justify-center transition-colors"
-            title="Play audio"
-          >
-            <svg id="audioPlayIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </button>
-
-          <!-- Waveform placeholder / Duration -->
-          <div class="flex-1">
-            <div class="flex items-center gap-2">
-              <div id="audioWaveform" class="flex-1 h-8 bg-monokai-bg rounded flex items-center justify-center gap-0.5 px-2">
-                <!-- Simple bar visualization -->
-                <div class="w-1 bg-monokai-cyan/40 rounded-full" style="height: 30%"></div>
-                <div class="w-1 bg-monokai-cyan/60 rounded-full" style="height: 50%"></div>
-                <div class="w-1 bg-monokai-cyan/80 rounded-full" style="height: 80%"></div>
-                <div class="w-1 bg-monokai-cyan rounded-full" style="height: 100%"></div>
-                <div class="w-1 bg-monokai-cyan/80 rounded-full" style="height: 70%"></div>
-                <div class="w-1 bg-monokai-cyan/60 rounded-full" style="height: 40%"></div>
-                <div class="w-1 bg-monokai-cyan/40 rounded-full" style="height: 60%"></div>
-                <div class="w-1 bg-monokai-cyan/60 rounded-full" style="height: 90%"></div>
-                <div class="w-1 bg-monokai-cyan/80 rounded-full" style="height: 50%"></div>
-                <div class="w-1 bg-monokai-cyan/40 rounded-full" style="height: 30%"></div>
-              </div>
-              <span id="audioDuration" class="text-xs text-monokai-gray font-mono">0:00</span>
-            </div>
-          </div>
+          <!-- Native audio element -->
+          <audio
+            @ref="audioPlayer"
+            class="flex-1 h-10"
+            controls
+            style="filter: sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%); border-radius: 8px;"
+          ></audio>
 
           <!-- Delete audio -->
           <button
-            id="audioDeleteBtn"
+            @ref="audioDeleteBtn"
             class="w-8 h-8 rounded-lg text-monokai-gray hover:text-monokai-pink hover:bg-monokai-pink/10 flex items-center justify-center transition-colors"
             title="Delete recording"
           >
@@ -64,20 +41,20 @@
         <!-- Transcription toggle -->
         <div class="mt-2 pt-2 border-t border-monokai-border/30">
           <button
-            id="transcriptToggle"
+            @ref="transcriptToggle"
             class="flex items-center gap-2 text-xs text-monokai-gray hover:text-monokai-fg transition-colors"
           >
-            <svg id="transcriptChevron" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg @ref="transcriptChevron" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
             <span>View transcription</span>
-            <span id="transcriptStatus" class="text-monokai-purple"></span>
+            <span @ref="transcriptStatus" class="text-monokai-purple"></span>
           </button>
 
           <!-- Transcription text (collapsible) -->
-          <div id="transcriptContent" class="hidden mt-2">
+          <div @ref="transcriptContent" class="hidden mt-2">
             <textarea
-              id="transcriptText"
+              @ref="transcriptText"
               class="w-full bg-monokai-bg text-sm text-monokai-fg border border-monokai-border/50 rounded-lg p-2 resize-none min-h-[60px] max-h-[120px] outline-none focus:border-monokai-cyan"
               placeholder="Transcription will appear here..."
             ></textarea>
@@ -87,23 +64,23 @@
     </div>
 
     <div
-      id="inputContainer"
+      @ref="inputContainer"
       class="bg-monokai-bg-dark border border-monokai-border rounded-2xl px-4 py-3"
     >
       <!-- Recording mode indicator (replaces textarea when recording) -->
-      <div id="recordingMode" class="hidden">
+      <div @ref="recordingMode" class="hidden">
         <div class="flex items-center justify-center gap-4 py-2">
           <!-- Recording pulse -->
           <div class="w-3 h-3 bg-monokai-pink rounded-full animate-pulse"></div>
           <!-- Timer -->
-          <span id="recordingTimer" class="text-2xl font-mono text-monokai-fg">0:00</span>
+          <span @ref="recordingTimer" class="text-2xl font-mono text-monokai-fg">0:00</span>
         </div>
       </div>
 
       <!-- Input row (hidden when recording) -->
-      <div id="inputRow" class="flex items-end gap-3">
+      <div @ref="inputRow" class="flex items-end gap-3">
         <textarea
-          id="textInput"
+          @ref="textInput"
           class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[160px] leading-6 placeholder-monokai-gray"
           placeholder="Type or click mic to record"
           rows="1"
@@ -123,34 +100,34 @@
 
           <!-- Voice/Mic button -->
           <button
-            id="micButton"
+            @ref="micButton"
             class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
             title="Record voice message"
           >
-            <svg id="micIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
+            <svg @ref="micIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
           </button>
 
-          <!-- Volume Level Indicator (5 bars) -->
-          <div id="volumeIndicator" class="hidden flex items-end gap-0.5 h-5 px-1">
-            <div id="volBar1" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 20%"></div>
-            <div id="volBar2" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 40%"></div>
-            <div id="volBar3" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 60%"></div>
-            <div id="volBar4" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 80%"></div>
-            <div id="volBar5" class="w-1 bg-monokai-gray/30 rounded-full transition-colors" style="height: 100%"></div>
+          <!-- Volume Level Indicator (5 bars) - shows mic input level -->
+          <div @ref="volumeIndicator" class="hidden flex items-end gap-1 h-6 px-2 py-1 bg-monokai-bg rounded-lg">
+            <div @ref="volBar1" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 20%"></div>
+            <div @ref="volBar2" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 40%"></div>
+            <div @ref="volBar3" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 60%"></div>
+            <div @ref="volBar4" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 80%"></div>
+            <div @ref="volBar5" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 100%"></div>
           </div>
 
           <!-- Driving Mode toggle -->
           <button
-            id="drivingModeBtn"
+            @ref="drivingModeBtn"
             class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
             title="Driving Mode (hands-free)"
           >
-            <svg id="drivingIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"></path></svg>
+            <svg @ref="drivingIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"></path></svg>
           </button>
 
           <!-- Stop button (shown when processing) -->
           <button
-            id="stopBtn"
+            @ref="stopBtn"
             class="hidden w-8 h-8 rounded-lg flex items-center justify-center bg-monokai-pink/20 text-monokai-pink hover:bg-monokai-pink/30 transition-colors"
             title="Stop"
           >
@@ -161,7 +138,7 @@
         <div class="flex items-center gap-3">
           <!-- Driver selector -->
           <select
-            id="driverSelect"
+            @ref="driverSelect"
             class="bg-transparent text-sm text-monokai-fg/70 border-none outline-none cursor-pointer"
           >
             <option value="claude-sdk">Claude</option>
@@ -171,7 +148,7 @@
 
           <!-- Send button -->
           <button
-            id="sendBtn"
+            @ref="sendBtn"
             class="w-8 h-8 rounded-lg bg-monokai-yellow flex items-center justify-center cursor-pointer hover:bg-monokai-yellow/90 transition-colors"
             title="Send (Enter)"
           >
@@ -194,7 +171,69 @@
       return;
     }
 
-    const { appStore, appActions, chatStore, chatActions, settingsStore, settingsActions } = stores;
+    const { appStore, appActions, chatStore, chatActions } = stores;
+
+    // =========================================================================
+    // Refs - bound to DOM elements via @ref attributes
+    // =========================================================================
+    const refs = {
+      // Thinking indicator
+      thinkingIndicator: { value: null },
+      thinkingTimer: { value: null },
+      // Audio preview
+      audioPreview: { value: null },
+      audioPlayer: { value: null },
+      audioDeleteBtn: { value: null },
+      transcriptToggle: { value: null },
+      transcriptChevron: { value: null },
+      transcriptContent: { value: null },
+      transcriptText: { value: null },
+      transcriptStatus: { value: null },
+      // Input container
+      inputContainer: { value: null },
+      recordingMode: { value: null },
+      recordingTimer: { value: null },
+      inputRow: { value: null },
+      textInput: { value: null },
+      // Buttons
+      micButton: { value: null },
+      micIcon: { value: null },
+      drivingModeBtn: { value: null },
+      drivingIcon: { value: null },
+      stopBtn: { value: null },
+      sendBtn: { value: null },
+      driverSelect: { value: null },
+      // Volume indicator
+      volumeIndicator: { value: null },
+      volBar1: { value: null },
+      volBar2: { value: null },
+      volBar3: { value: null },
+      volBar4: { value: null },
+      volBar5: { value: null },
+    };
+
+    // Bind refs to DOM elements
+    if (window.STX?.bindRefs) {
+      window.STX.bindRefs(document, refs);
+    } else {
+      // Fallback: manually bind refs from data-ref attributes
+      document.querySelectorAll('[data-ref]').forEach(el => {
+        const refName = el.getAttribute('data-ref');
+        if (refs[refName]) {
+          refs[refName].value = el;
+        }
+      });
+    }
+
+    // Helper to get ref value
+    const $ = (name) => refs[name]?.value;
+
+    // Volume bars as array for easy iteration
+    const volBars = [
+      $('volBar1'), $('volBar2'), $('volBar3'), $('volBar4'), $('volBar5')
+    ].filter(Boolean);
+
+    console.log('[VoideInputBar] Initialized with refs');
 
     // =========================================================================
     // Composables
@@ -226,89 +265,51 @@
       lang: 'en-US'
     });
 
+    // =========================================================================
     // State
+    // =========================================================================
     let isRecording = false;
     let hasRecording = false;
     let currentAudioUrl = null;
     let currentTranscript = '';
     let isTranscriptVisible = false;
-    let audioElement = null;
-    let isPlaying = false;
-
-    // DOM Elements
-    const micButton = document.getElementById('micButton');
-    const micIcon = document.getElementById('micIcon');
-    const inputContainer = document.getElementById('inputContainer');
-    const textInput = document.getElementById('textInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const driverSelect = document.getElementById('driverSelect');
-    const drivingModeBtn = document.getElementById('drivingModeBtn');
-    const drivingIcon = document.getElementById('drivingIcon');
-
-    // Recording UI elements
-    const recordingMode = document.getElementById('recordingMode');
-    const recordingTimer = document.getElementById('recordingTimer');
-    const inputRow = document.getElementById('inputRow');
-    const volumeIndicator = document.getElementById('volumeIndicator');
-    const volBars = [
-      document.getElementById('volBar1'),
-      document.getElementById('volBar2'),
-      document.getElementById('volBar3'),
-      document.getElementById('volBar4'),
-      document.getElementById('volBar5')
-    ];
-
-    // Audio preview elements
-    const audioPreview = document.getElementById('audioPreview');
-    const audioPlayBtn = document.getElementById('audioPlayBtn');
-    const audioPlayIcon = document.getElementById('audioPlayIcon');
-    const audioDuration = document.getElementById('audioDuration');
-    const audioDeleteBtn = document.getElementById('audioDeleteBtn');
-    const transcriptToggle = document.getElementById('transcriptToggle');
-    const transcriptChevron = document.getElementById('transcriptChevron');
-    const transcriptContent = document.getElementById('transcriptContent');
-    const transcriptText = document.getElementById('transcriptText');
-    const transcriptStatus = document.getElementById('transcriptStatus');
-
-    console.log('[VoideInputBar] Initialized with audio recording mode');
 
     // =========================================================================
     // Volume Indicator
     // =========================================================================
-
     function updateVolumeIndicator(level) {
-      // level is 0-10, map to 5 bars
       const activeCount = Math.ceil(level / 2);
       volBars.forEach((bar, i) => {
         if (bar) {
           if (i < activeCount) {
-            bar.classList.remove('bg-monokai-gray/30');
+            bar.classList.remove('bg-monokai-gray/40');
             bar.classList.add('bg-monokai-cyan');
           } else {
             bar.classList.remove('bg-monokai-cyan');
-            bar.classList.add('bg-monokai-gray/30');
+            bar.classList.add('bg-monokai-gray/40');
           }
         }
       });
+      if (level > 0) {
+        console.log('[Voide] Mic level:', level, '/ 10');
+      }
     }
 
     // =========================================================================
     // Recording Timer
     // =========================================================================
-
     function updateRecordingTimer(seconds) {
-      if (recordingTimer) {
+      const timer = $('recordingTimer');
+      if (timer) {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        recordingTimer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        timer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
       }
     }
 
     // =========================================================================
     // Recording Flow
     // =========================================================================
-
     async function startRecording() {
       if (isRecording) return;
 
@@ -322,24 +323,27 @@
       hasRecording = false;
       currentTranscript = '';
 
-      // Update UI
-      if (recordingMode) recordingMode.classList.remove('hidden');
-      if (inputRow) inputRow.classList.add('hidden');
-      if (volumeIndicator) volumeIndicator.classList.remove('hidden');
-      if (audioPreview) audioPreview.classList.add('hidden');
-      if (inputContainer) {
-        inputContainer.classList.remove('border-monokai-border');
-        inputContainer.classList.add('border-monokai-pink');
-      }
-      if (micButton) {
-        micButton.classList.remove('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
-        micButton.classList.add('text-monokai-pink', 'bg-monokai-pink/20');
-      }
-      if (micIcon) micIcon.setAttribute('stroke', '#ff6188');
+      // Update UI using refs
+      $('recordingMode')?.classList.remove('hidden');
+      $('inputRow')?.classList.add('hidden');
+      $('volumeIndicator')?.classList.remove('hidden');
+      $('audioPreview')?.classList.add('hidden');
 
-      // Start background transcription
+      const container = $('inputContainer');
+      if (container) {
+        container.classList.remove('border-monokai-border');
+        container.classList.add('border-monokai-pink');
+      }
+
+      const micBtn = $('micButton');
+      if (micBtn) {
+        micBtn.classList.remove('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
+        micBtn.classList.add('text-monokai-pink', 'bg-monokai-pink/20');
+      }
+
+      $('micIcon')?.setAttribute('stroke', '#ff6188');
+
       startBackgroundTranscription();
-
       sounds.listening();
     }
 
@@ -348,60 +352,46 @@
 
       const blob = await audioRecorder.stop();
       isRecording = false;
-
-      // Stop background transcription
       stopBackgroundTranscription();
 
       if (blob) {
         hasRecording = true;
         currentAudioUrl = URL.createObjectURL(blob);
 
-        // Create audio element for playback
-        if (audioElement) {
-          audioElement.pause();
-          audioElement = null;
-        }
-        audioElement = new Audio(currentAudioUrl);
-        audioElement.onended = () => {
-          isPlaying = false;
-          updatePlayButton();
-        };
-
-        // Update duration display
-        const state = audioRecorder.get();
-        if (audioDuration) {
-          const mins = Math.floor(state.duration / 60);
-          const secs = state.duration % 60;
-          audioDuration.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        const player = $('audioPlayer');
+        if (player) {
+          player.src = currentAudioUrl;
+          player.load();
         }
 
-        // Show audio preview
-        if (audioPreview) audioPreview.classList.remove('hidden');
+        $('audioPreview')?.classList.remove('hidden');
 
-        // Update transcript text
-        if (transcriptText) {
-          transcriptText.value = currentTranscript || '';
+        const transcriptTextEl = $('transcriptText');
+        if (transcriptTextEl) {
+          transcriptTextEl.value = currentTranscript || '';
         }
         updateTranscriptStatus();
-
         sounds.done();
       }
 
       // Reset UI
-      if (recordingMode) recordingMode.classList.add('hidden');
-      if (inputRow) inputRow.classList.remove('hidden');
-      if (volumeIndicator) volumeIndicator.classList.add('hidden');
-      if (inputContainer) {
-        inputContainer.classList.remove('border-monokai-pink');
-        inputContainer.classList.add('border-monokai-border');
-      }
-      if (micButton) {
-        micButton.classList.remove('text-monokai-pink', 'bg-monokai-pink/20');
-        micButton.classList.add('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
-      }
-      if (micIcon) micIcon.setAttribute('stroke', 'currentColor');
+      $('recordingMode')?.classList.add('hidden');
+      $('inputRow')?.classList.remove('hidden');
+      $('volumeIndicator')?.classList.add('hidden');
 
-      // Reset volume bars
+      const container = $('inputContainer');
+      if (container) {
+        container.classList.remove('border-monokai-pink');
+        container.classList.add('border-monokai-border');
+      }
+
+      const micBtn = $('micButton');
+      if (micBtn) {
+        micBtn.classList.remove('text-monokai-pink', 'bg-monokai-pink/20');
+        micBtn.classList.add('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
+      }
+
+      $('micIcon')?.setAttribute('stroke', 'currentColor');
       updateVolumeIndicator(0);
     }
 
@@ -420,7 +410,6 @@
     // =========================================================================
     // Background Transcription
     // =========================================================================
-
     function startBackgroundTranscription() {
       if (!speechRecognition.isSupported) return;
 
@@ -429,15 +418,15 @@
       speechRecognition.on('result', (data) => {
         if (data.transcript) {
           currentTranscript = voiceCommands.convertPunctuation(data.transcript);
-          if (transcriptText && isTranscriptVisible) {
-            transcriptText.value = currentTranscript;
+          const transcriptTextEl = $('transcriptText');
+          if (transcriptTextEl && isTranscriptVisible) {
+            transcriptTextEl.value = currentTranscript;
           }
           updateTranscriptStatus();
         }
       });
 
       speechRecognition.on('end', () => {
-        // Restart if still recording
         if (isRecording) {
           speechRecognition.start();
         }
@@ -451,44 +440,24 @@
     }
 
     function updateTranscriptStatus() {
-      if (transcriptStatus) {
+      const status = $('transcriptStatus');
+      if (status) {
         if (currentTranscript) {
-          transcriptStatus.textContent = `(${currentTranscript.split(' ').length} words)`;
+          status.textContent = `(${currentTranscript.split(' ').length} words)`;
         } else {
-          transcriptStatus.textContent = isRecording ? '(transcribing...)' : '';
+          status.textContent = isRecording ? '(transcribing...)' : '';
         }
       }
     }
 
     // =========================================================================
-    // Audio Playback
+    // Audio Management
     // =========================================================================
-
-    function togglePlayback() {
-      if (!audioElement) return;
-
-      if (isPlaying) {
-        audioElement.pause();
-        isPlaying = false;
-      } else {
-        audioElement.play();
-        isPlaying = true;
-      }
-      updatePlayButton();
-    }
-
-    function updatePlayButton() {
-      if (audioPlayIcon) {
-        audioPlayIcon.innerHTML = isPlaying
-          ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
-          : '<path d="M8 5v14l11-7z"/>';
-      }
-    }
-
     function deleteRecording() {
-      if (audioElement) {
-        audioElement.pause();
-        audioElement = null;
+      const player = $('audioPlayer');
+      if (player) {
+        player.pause();
+        player.src = '';
       }
       if (currentAudioUrl) {
         URL.revokeObjectURL(currentAudioUrl);
@@ -496,10 +465,10 @@
       }
       hasRecording = false;
       currentTranscript = '';
-      isPlaying = false;
 
-      if (audioPreview) audioPreview.classList.add('hidden');
-      if (transcriptText) transcriptText.value = '';
+      $('audioPreview')?.classList.add('hidden');
+      const transcriptTextEl = $('transcriptText');
+      if (transcriptTextEl) transcriptTextEl.value = '';
 
       audioRecorder.reset();
     }
@@ -507,46 +476,39 @@
     // =========================================================================
     // Transcript Toggle
     // =========================================================================
-
     function toggleTranscript() {
       isTranscriptVisible = !isTranscriptVisible;
 
-      if (transcriptContent) {
-        if (isTranscriptVisible) {
-          transcriptContent.classList.remove('hidden');
-        } else {
-          transcriptContent.classList.add('hidden');
-        }
+      const content = $('transcriptContent');
+      if (content) {
+        content.classList.toggle('hidden', !isTranscriptVisible);
       }
-      if (transcriptChevron) {
-        transcriptChevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : '';
+
+      const chevron = $('transcriptChevron');
+      if (chevron) {
+        chevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : '';
       }
     }
 
     // =========================================================================
     // Driving Mode
     // =========================================================================
-
     function updateDrivingModeUI() {
       const isEnabled = drivingMode.isEnabled();
-      if (drivingModeBtn) {
-        drivingModeBtn.className = 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors ' +
+      const btn = $('drivingModeBtn');
+      if (btn) {
+        btn.className = 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors ' +
           (isEnabled ? 'text-monokai-green bg-monokai-green/20' : 'text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg');
-        drivingModeBtn.title = isEnabled ? 'Driving Mode ON' : 'Driving Mode (hands-free)';
+        btn.title = isEnabled ? 'Driving Mode ON' : 'Driving Mode (hands-free)';
       }
-      if (drivingIcon) {
-        drivingIcon.setAttribute('stroke', isEnabled ? '#a9dc76' : 'currentColor');
-      }
+      $('drivingIcon')?.setAttribute('stroke', isEnabled ? '#a9dc76' : 'currentColor');
     }
 
     // =========================================================================
     // API & Command Processing
     // =========================================================================
-
     function checkBackendAPI() {
-      return fetch(API_BASE_URL + '/state')
-        .then(res => res.ok)
-        .catch(() => false);
+      return fetch(API_BASE_URL + '/state').then(res => res.ok).catch(() => false);
     }
 
     function saveChat() {
@@ -613,12 +575,12 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            command: command,
+            command,
             driver: app.currentDriver,
             repository: app.repoPath,
             sessionId: chat.sessionId,
-            history: history,
-            mode: mode
+            history,
+            mode
           })
         }).then(response => {
           if (!response.ok) throw new Error('Stream request failed');
@@ -668,10 +630,6 @@
                           toolInfo = 'Writing ' + data.input.file_path.split('/').pop();
                         } else if (data.tool === 'Bash' && data.input.command) {
                           toolInfo = '$ ' + data.input.command.substring(0, 40);
-                        } else if (data.tool === 'Glob' && data.input.pattern) {
-                          toolInfo = 'Finding ' + data.input.pattern;
-                        } else if (data.tool === 'Grep' && data.input.pattern) {
-                          toolInfo = 'Searching "' + data.input.pattern + '"';
                         }
                       }
                       fullContent += '\n`' + toolInfo + '`';
@@ -715,10 +673,7 @@
       let isNewChat = false;
       let newChatId = null;
 
-      // Create message with audio reference if available
-      const messageContent = audioId
-        ? `[Voice message: ${command}]`
-        : command;
+      const messageContent = audioId ? `[Voice message: ${command}]` : command;
 
       if (!chat.currentChatId) {
         newChatId = chatActions.startNewChat(app.repoPath, app.currentDriver, {
@@ -726,7 +681,7 @@
           content: messageContent,
           header: audioId ? 'You (voice)' : 'You',
           timestamp: Date.now(),
-          audioId: audioId
+          audioId
         });
         isNewChat = true;
       } else {
@@ -754,10 +709,7 @@
         } else if (app.currentDriver === 'mock') {
           return new Promise(resolve => {
             setTimeout(() => {
-              resolve({
-                message: '[Mock] Processing: "' + command + '"',
-                hasChanges: false
-              });
+              resolve({ message: '[Mock] Processing: "' + command + '"', hasChanges: false });
             }, 1500);
           });
         } else {
@@ -798,7 +750,6 @@
     // =========================================================================
     // Input Handlers
     // =========================================================================
-
     function handleInputChange(e) {
       const el = e.target;
       el.style.height = 'auto';
@@ -814,46 +765,44 @@
     }
 
     async function handleSend() {
-      // If we have a recording, send the transcription
-      if (hasRecording && currentTranscript) {
-        // Get transcript from textarea (user may have edited it)
-        const transcript = transcriptText?.value?.trim() || currentTranscript;
+      if (hasRecording) {
+        const transcriptTextEl = $('transcriptText');
+        const transcript = transcriptTextEl?.value?.trim() || currentTranscript;
 
-        if (transcript) {
-          // Save audio to storage
-          const state = audioRecorder.get();
-          let audioId = null;
-          if (state.audioBlob && audioStorage.isSupported) {
-            try {
-              audioId = await audioStorage.save(
-                state.audioBlob,
-                state.duration,
-                transcript,
-                chatStore.get().currentChatId
-              );
-            } catch (e) {
-              console.log('[Voide] Failed to save audio:', e);
-            }
-          }
-
-          // Clear recording state
-          deleteRecording();
-
-          // Process the command
-          processCommand(transcript, audioId);
+        if (!transcript) {
+          console.log('[Voide] No transcript available yet');
+          return;
         }
+
+        const state = audioRecorder.get();
+        let audioId = null;
+        if (state.audioBlob && audioStorage.isSupported) {
+          try {
+            audioId = await audioStorage.save(
+              state.audioBlob,
+              state.duration,
+              transcript,
+              chatStore.get().currentChatId
+            );
+          } catch (e) {
+            console.log('[Voide] Failed to save audio:', e);
+          }
+        }
+
+        deleteRecording();
+        processCommand(transcript, audioId);
         return;
       }
 
-      // Otherwise send text input
       const chat = chatStore.get();
       const text = chat.inputText.trim();
 
       if (text && !appStore.get().isProcessing) {
         chatActions.clearInput();
-        if (textInput) {
-          textInput.value = '';
-          textInput.style.height = 'auto';
+        const textInputEl = $('textInput');
+        if (textInputEl) {
+          textInputEl.value = '';
+          textInputEl.style.height = 'auto';
         }
         processCommand(text);
       }
@@ -869,7 +818,7 @@
         const messages = chatStore.get().messages;
         if (messages.length > 0) {
           const lastMsg = messages[messages.length - 1];
-          if (lastMsg && lastMsg.type === 'assistant') {
+          if (lastMsg?.type === 'assistant') {
             updateLastMessage('assistant', lastMsg.content + '\n\n— *Stopped*');
           }
         }
@@ -881,23 +830,20 @@
     // =========================================================================
     // Event Bindings
     // =========================================================================
-
-    micButton?.addEventListener('click', toggleRecording);
-    sendBtn?.addEventListener('click', handleSend);
-    stopBtn?.addEventListener('click', cancelProcessing);
-    drivingModeBtn?.addEventListener('click', () => drivingMode.toggle());
-    textInput?.addEventListener('input', handleInputChange);
-    textInput?.addEventListener('keydown', handleInputKeydown);
-
-    // Audio preview controls
-    audioPlayBtn?.addEventListener('click', togglePlayback);
-    audioDeleteBtn?.addEventListener('click', deleteRecording);
-    transcriptToggle?.addEventListener('click', toggleTranscript);
+    $('micButton')?.addEventListener('click', toggleRecording);
+    $('sendBtn')?.addEventListener('click', handleSend);
+    $('stopBtn')?.addEventListener('click', cancelProcessing);
+    $('drivingModeBtn')?.addEventListener('click', () => drivingMode.toggle());
+    $('textInput')?.addEventListener('input', handleInputChange);
+    $('textInput')?.addEventListener('keydown', handleInputKeydown);
+    $('audioDeleteBtn')?.addEventListener('click', deleteRecording);
+    $('transcriptToggle')?.addEventListener('click', toggleTranscript);
 
     // Driver selector
+    const driverSelectEl = $('driverSelect');
     const initialDriver = appStore.get().currentDriver || 'claude-sdk';
-    if (driverSelect) driverSelect.value = initialDriver;
-    driverSelect?.addEventListener('change', (e) => {
+    if (driverSelectEl) driverSelectEl.value = initialDriver;
+    driverSelectEl?.addEventListener('change', (e) => {
       appActions.setDriver(e.target.value);
     });
 
@@ -916,19 +862,18 @@
     // =========================================================================
     // State Subscriptions
     // =========================================================================
-
-    const thinkingIndicator = document.getElementById('thinkingIndicator');
-    const thinkingTimer = document.getElementById('thinkingTimer');
     let processingTimerInterval = null;
     let processingTimerStart = null;
 
     function startProcessingTimer() {
       processingTimerStart = Date.now();
-      if (thinkingTimer) thinkingTimer.textContent = '0.0s';
+      const timer = $('thinkingTimer');
+      if (timer) timer.textContent = '0.0s';
       processingTimerInterval = setInterval(() => {
-        if (thinkingTimer && processingTimerStart) {
+        const timerEl = $('thinkingTimer');
+        if (timerEl && processingTimerStart) {
           const elapsed = ((Date.now() - processingTimerStart) / 1000).toFixed(1);
-          thinkingTimer.textContent = `${elapsed}s`;
+          timerEl.textContent = `${elapsed}s`;
         }
       }, 100);
     }
@@ -942,33 +887,31 @@
     }
 
     appStore.subscribe((state) => {
-      if (thinkingIndicator) {
+      const indicator = $('thinkingIndicator');
+      if (indicator) {
         if (state.isProcessing) {
-          thinkingIndicator.classList.remove('hidden');
+          indicator.classList.remove('hidden');
           if (!processingTimerInterval) startProcessingTimer();
         } else {
-          thinkingIndicator.classList.add('hidden');
+          indicator.classList.add('hidden');
           stopProcessingTimer();
         }
       }
 
-      if (stopBtn) {
-        if (state.isProcessing) {
-          stopBtn.classList.remove('hidden');
-        } else {
-          stopBtn.classList.add('hidden');
-        }
+      const stopBtnEl = $('stopBtn');
+      if (stopBtnEl) {
+        stopBtnEl.classList.toggle('hidden', !state.isProcessing);
       }
 
-      if (driverSelect && state.currentDriver) {
-        driverSelect.value = state.currentDriver;
+      const driverSelectEl = $('driverSelect');
+      if (driverSelectEl && state.currentDriver) {
+        driverSelectEl.value = state.currentDriver;
       }
     });
 
     // =========================================================================
     // Expose to window.voide
     // =========================================================================
-
     window.voide = window.voide || {};
     Object.assign(window.voide, {
       toggleRecording,
