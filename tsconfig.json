@@ -1,16 +1,75 @@
 {
   "compilerOptions": {
+    // Language & Environment
     "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "useDefineForClassFields": true,
+
+    // Modules
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
     "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+
+    // Type Checking (Strict)
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    // Additional Checks
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false,
+
+    // Emit
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "noEmit": true,
+
+    // Interop
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Skip checking declaration files for faster builds
+    "skipLibCheck": true,
+
+    // Path Aliases
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@lib/*": ["lib/*"],
+      "@stores/*": ["lib/stores/*"],
+      "@composables/*": ["lib/composables/*"],
+      "@components/*": ["components/*"],
+      "@partials/*": ["partials/*"]
+    }
   },
-  "include": ["**/*.ts", "**/*.stx"],
-  "exclude": ["node_modules", "dist", ".stx"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.stx",
+    "lib/**/*.ts",
+    "components/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".stx",
+    "public",
+    "../*"
+  ]
 }
