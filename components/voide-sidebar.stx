@@ -1,5 +1,4 @@
-<template>
-  <aside class="w-56 bg-monokai-bg border-r border-monokai-border flex flex-col h-full overflow-hidden">
+<aside class="w-56 bg-monokai-bg border-r border-monokai-border flex flex-col h-full overflow-hidden">
     <!-- New Chat Button -->
     <div class="p-3">
       <button
@@ -32,8 +31,7 @@
         <!-- Chats will be rendered here -->
       </div>
     </div>
-  </aside>
-</template>
+</aside>
 
 <script client>
 (() => {

@@ -24,7 +24,6 @@
     "@stacksjs/headwind": "link:@stacksjs/headwind",
     "@stacksjs/stx": "link:@stacksjs/stx",
     "better-dx": "^0.2.5",
-    "bun-plugin-stx": "link:bun-plugin-stx",
-    "typescript": "^5.0.0"
+    "bun-plugin-stx": "link:bun-plugin-stx"
   }
 }

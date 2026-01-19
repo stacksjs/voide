@@ -15,8 +15,7 @@ const typeClasses = {
 const baseClass = typeClasses[type] || typeClasses.system
 </script>
 
-<template>
-  <div class="mb-4 p-3 rounded-lg animate-fade-in {{ baseClass }} {{ streaming ? 'streaming' : '' }}">
+<div class="mb-4 p-3 rounded-lg animate-fade-in {{ baseClass }} {{ streaming ? 'streaming' : '' }}">
     <div class="flex items-center gap-2 mb-2 text-[11px] text-[#8b949e] uppercase tracking-wider">
       {{ header }}
     </div>
@@ -26,8 +25,7 @@ const baseClass = typeClasses[type] || typeClasses.system
         <span class="animate-blink text-[#e94560] font-bold">&#9608;</span>
       @endif
     </div>
-  </div>
-</template>
+</div>
 
 <style>
   .message-content code {

@@ -1,5 +1,4 @@
-<template>
-  <header class="relative px-4 py-3 bg-monokai-bg border-b border-monokai-border">
+<header class="relative px-4 py-3 bg-monokai-bg border-b border-monokai-border">
     <div class="flex items-center justify-between">
       <!-- Left: empty for balance -->
       <div class="w-24"></div>
@@ -29,8 +28,7 @@
 
     <!-- Hidden repo input (for path entry modal/dropdown) -->
     <input type="hidden" id="repoInput" />
-  </header>
-</template>
+</header>
 
 <script client>
 (() => {

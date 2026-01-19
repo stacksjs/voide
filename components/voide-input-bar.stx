@@ -1,5 +1,4 @@
-<template>
-  <div class="max-w-3xl mx-auto w-full">
+<div class="max-w-3xl mx-auto w-full">
     <!-- Thinking/Done indicator - shown above input when processing or just completed -->
     <div @ref="thinkingIndicator" class="hidden mb-3 px-4">
       <!-- Thinking state -->
@@ -156,8 +155,7 @@
         </div>
       </div>
     </div>
-  </div>
-</template>
+</div>
 
 <script client>
 (() => {

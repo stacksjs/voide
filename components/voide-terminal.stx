@@ -1,5 +1,4 @@
-<template>
-  <div id="chatContainer" class="flex-1 relative flex flex-col overflow-hidden">
+<div id="chatContainer" class="flex-1 relative flex flex-col overflow-hidden">
     <!-- Prompt Overlay (shown when Claude CLI asks for input) -->
     <div id="promptOverlay" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
@@ -26,8 +25,7 @@
       </div>
     </div>
 
-  </div>
-</template>
+</div>
 
 <script client>
 (() => {
