@@ -187,6 +187,7 @@
 
   function newChat() {
     chatStore.newChat();
+    appStore.setRepoPath('');
     history.pushState({}, '', '/');
     renderChatList();
   }
