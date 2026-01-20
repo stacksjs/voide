@@ -384,6 +384,7 @@ window.VoideStores = (function() {
       isRecording: false,
       isProcessing: false,
       processingChatId: null,
+      processingStartTime: null,
       transcript: "",
       repoPath: "",
       hasChanges: false,
@@ -399,6 +400,7 @@ window.VoideStores = (function() {
       setProcessing(isProcessing, chatId = null) {
         this.isProcessing = isProcessing;
         this.processingChatId = isProcessing ? chatId : null;
+        this.processingStartTime = isProcessing ? Date.now() : null;
       },
       setTranscript(transcript) {
         this.transcript = transcript;

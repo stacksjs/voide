@@ -196,15 +196,18 @@
   function highlightCode(code, lang) {
     // Simple syntax highlighting for common languages
     // We use a token-based approach to avoid escaping issues:
-    // 1. Highlight on raw code using placeholders
+    // 1. Highlight on raw code using unique string placeholders
     // 2. Then escape everything except our placeholders
     // 3. Replace placeholders with actual HTML spans
 
     const tokens = []
     let tokenIndex = 0
+    // Use unique string placeholders that won't be affected by HTML escaping
+    const PLACEHOLDER_PREFIX = '___VOIDE_TOKEN_'
+    const PLACEHOLDER_SUFFIX = '___'
 
     function addToken(text, className) {
-      const placeholder = `\x00${tokenIndex++}\x00`
+      const placeholder = `${PLACEHOLDER_PREFIX}${tokenIndex++}${PLACEHOLDER_SUFFIX}`
       tokens.push({ placeholder, text, className })
       return placeholder
     }
@@ -248,7 +251,7 @@
     // Function calls
     highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, (m, name) => addToken(name, 'text-monokai-green') + '(')
 
-    // Now escape HTML in the result (placeholders use \x00 which won't be in normal text)
+    // Now escape HTML in the result (placeholders are safe alphanumeric strings)
     highlighted = escapeHtml(highlighted)
 
     // Replace placeholders with actual spans
