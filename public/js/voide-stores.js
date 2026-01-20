@@ -383,6 +383,7 @@ window.VoideStores = (function() {
     state: {
       isRecording: false,
       isProcessing: false,
+      processingChatId: null,
       transcript: "",
       repoPath: "",
       hasChanges: false,
@@ -395,8 +396,9 @@ window.VoideStores = (function() {
       setRecording(isRecording) {
         this.isRecording = isRecording;
       },
-      setProcessing(isProcessing) {
+      setProcessing(isProcessing, chatId = null) {
         this.isProcessing = isProcessing;
+        this.processingChatId = isProcessing ? chatId : null;
       },
       setTranscript(transcript) {
         this.transcript = transcript;
@@ -3615,37 +3617,37 @@ window.VoideStores = (function() {
   }
 
   // Setup stx runtime for @stores imports
-  var stx = window.stx || {};
+  var stx = window.stx || {}
 
   // Store registry is populated by registerStoresClient
-  stx.stores = window.__STX_STORES__ || {};
+  stx.stores = window.__STX_STORES__ || {}
 
   // useStore - get a store by name
   stx.useStore = function(name) {
-    return stx.stores[name] || window.__STX_STORES__?.[name];
-  };
+    return stx.stores[name] || window.__STX_STORES__?.[name]
+  }
 
   // waitForStore - wait for a store to be available
   stx.waitForStore = function(name, timeout) {
-    timeout = timeout || 5000;
-    var start = Date.now();
+    timeout = timeout || 5000
+    var start = Date.now()
     return new Promise(function(resolve, reject) {
       function check() {
-        var store = stx.useStore(name);
+        var store = stx.useStore(name)
         if (store) {
-          resolve(store);
+          resolve(store)
         } else if (Date.now() - start > timeout) {
-          reject(new Error('Timeout waiting for store: ' + name));
+          reject(new Error('Timeout waiting for store: ' + name))
         } else {
-          requestAnimationFrame(check);
+          requestAnimationFrame(check)
         }
       }
-      check();
-    });
-  };
+      check()
+    })
+  }
 
-  window.stx = stx;
+  window.stx = stx
 
   // Return exports for backwards compatibility
-  return exports_stores;
+  return exports_stores
 })();
