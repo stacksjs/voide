@@ -956,7 +956,6 @@
     // State Subscriptions
     // =========================================================================
     let processingTimerInterval = null
-    let processingTimerStart = null
     let isThinking = false
     let doneHideTimeout = null
 
@@ -971,21 +970,29 @@
     }
 
     function startProcessingTimer() {
-      processingTimerStart = Date.now()
+      // Timer start time is now stored in appStore.processingStartTime
       isThinking = true
       const timer = $('thinkingTimer')
       if (timer) timer.textContent = '0.0s'
+
+      // Clear any existing interval
+      if (processingTimerInterval) {
+        clearInterval(processingTimerInterval)
+      }
+
       processingTimerInterval = setInterval(() => {
         const timerEl = $('thinkingTimer')
-        if (timerEl && processingTimerStart) {
-          const elapsed = ((Date.now() - processingTimerStart) / 1000).toFixed(1)
+        const startTime = appStore.$state.processingStartTime
+        if (timerEl && startTime) {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
           timerEl.textContent = `${elapsed}s`
         }
       }, 100)
     }
 
     function stopProcessingTimer() {
-      const elapsedMs = processingTimerStart ? Date.now() - processingTimerStart : 0
+      const startTime = appStore.$state.processingStartTime
+      const elapsedMs = startTime ? Date.now() - startTime : 0
       if (processingTimerInterval) {
         clearInterval(processingTimerInterval)
         processingTimerInterval = null
@@ -1022,7 +1029,6 @@
         indicator.classList.add('hidden')
         doneState.classList.add('hidden')
         thinkingState.classList.remove('hidden')
-        processingTimerStart = null
       }, 3000)
     }
 
@@ -1054,15 +1060,14 @@
         if (isProcessingThisChat) {
           showThinkingState()
           if (!processingTimerInterval) startProcessingTimer()
-        } else if (isThinking || processingTimerStart) {
+        } else if (isThinking || state.processingStartTime) {
           // Was processing, now done - show done state
           const elapsedMs = stopProcessingTimer()
-          if (elapsedMs > 500 && state.processingChatId === currentChatId) {
-            // Only show done state if processing took more than 0.5s and it's this chat
+          if (elapsedMs > 500) {
+            // Only show done state if processing took more than 0.5s
             showDoneState(elapsedMs)
           } else {
             indicator.classList.add('hidden')
-            processingTimerStart = null
           }
         }
       }

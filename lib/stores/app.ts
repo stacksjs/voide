@@ -7,6 +7,7 @@ export interface AppState {
   isRecording: boolean
   isProcessing: boolean
   processingChatId: string | null
+  processingStartTime: number | null
   transcript: string
   repoPath: string
   hasChanges: boolean
@@ -21,6 +22,7 @@ export const appStore = defineStore<AppState>('app', {
     isRecording: false,
     isProcessing: false,
     processingChatId: null,
+    processingStartTime: null,
     transcript: '',
     repoPath: '',
     hasChanges: false,
@@ -38,6 +40,7 @@ export const appStore = defineStore<AppState>('app', {
     setProcessing(isProcessing: boolean, chatId: string | null = null) {
       this.isProcessing = isProcessing
       this.processingChatId = isProcessing ? chatId : null
+      this.processingStartTime = isProcessing ? Date.now() : null
     },
 
     setTranscript(transcript: string) {
