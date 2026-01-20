@@ -6,6 +6,7 @@ import { defineStore } from '../store'
 export interface AppState {
   isRecording: boolean
   isProcessing: boolean
+  processingChatId: string | null
   transcript: string
   repoPath: string
   hasChanges: boolean
@@ -19,6 +20,7 @@ export const appStore = defineStore<AppState>('app', {
   state: {
     isRecording: false,
     isProcessing: false,
+    processingChatId: null,
     transcript: '',
     repoPath: '',
     hasChanges: false,
@@ -33,8 +35,9 @@ export const appStore = defineStore<AppState>('app', {
       this.isRecording = isRecording
     },
 
-    setProcessing(isProcessing: boolean) {
+    setProcessing(isProcessing: boolean, chatId: string | null = null) {
       this.isProcessing = isProcessing
+      this.processingChatId = isProcessing ? chatId : null
     },
 
     setTranscript(transcript: string) {

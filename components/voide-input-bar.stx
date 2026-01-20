@@ -615,13 +615,18 @@
       return 'agentic';
     }
 
-    function processWithStreaming(command) {
+    function processWithStreaming(command, targetChatId) {
       return new Promise((resolve, reject) => {
         let fullContent = '';
         let currentEvent = '';
         const app = appStore.$state;
         const chat = chatStore.$state;
         const mode = detectMode(command);
+
+        // Helper to check if we're still on the same chat
+        function isStillCurrentChat() {
+          return chatStore.$state.currentChatId === targetChatId;
+        }
 
         const history = chat.messages.slice(0, -1).map(m => ({
           role: m.type === 'user' ? 'user' : 'assistant',
@@ -649,7 +654,13 @@
           function readChunk() {
             reader.read().then(result => {
               if (result.done) {
-                resolve({ message: fullContent, hasChanges: false });
+                resolve({ message: fullContent, hasChanges: false, targetChatId });
+                return;
+              }
+
+              // Skip updates if user switched to a different chat
+              if (!isStillCurrentChat()) {
+                resolve({ message: fullContent, hasChanges: false, targetChatId, switched: true });
                 return;
               }
 
@@ -671,11 +682,15 @@
                     const data = JSON.parse(trimmed.substring(6));
 
                     if (currentEvent === 'session' && data.sessionId) {
-                      chatStore.setSessionId(data.sessionId);
-                      saveChat();
+                      if (isStillCurrentChat()) {
+                        chatStore.setSessionId(data.sessionId);
+                        saveChat();
+                      }
                     } else if (currentEvent === 'chunk' && data.text) {
                       fullContent += data.text;
-                      updateLastMessage('assistant', fullContent);
+                      if (isStillCurrentChat()) {
+                        updateLastMessage('assistant', fullContent);
+                      }
                     } else if (currentEvent === 'tool' && data.tool) {
                       let toolInfo = data.tool;
                       if (data.input) {
@@ -690,9 +705,11 @@
                         }
                       }
                       fullContent += '\n`' + toolInfo + '`';
-                      updateLastMessage('assistant', fullContent);
+                      if (isStillCurrentChat()) {
+                        updateLastMessage('assistant', fullContent);
+                      }
                     } else if (currentEvent === 'done') {
-                      resolve({ message: fullContent, hasChanges: data.hasChanges || false });
+                      resolve({ message: fullContent, hasChanges: data.hasChanges || false, targetChatId });
                       return;
                     } else if (currentEvent === 'error') {
                       reject(new Error(data.error || 'Stream error'));
@@ -746,6 +763,9 @@
         addMessage('user', messageContent, audioId ? 'You (voice)' : 'You');
       }
 
+      // Capture the chatId for this processing session
+      const targetChatId = newChatId || chat.currentChatId;
+
       appStore.setTerminalTitle('Processing...');
 
       if (!app.repoPath) {
@@ -759,7 +779,7 @@
 
       checkBackendAPI().then(hasBackend => {
         if (hasBackend) {
-          return processWithStreaming(command);
+          return processWithStreaming(command, targetChatId);
         } else if (app.currentDriver === 'mock') {
           return new Promise(resolve => {
             setTimeout(() => {
@@ -770,6 +790,12 @@
           return Promise.reject(new Error('Backend API not available.'));
         }
       }).then(response => {
+        // Skip post-processing if user switched to a different chat
+        if (response.switched || chatStore.$state.currentChatId !== targetChatId) {
+          appStore.setProcessing(false);
+          return;
+        }
+
         if (response.hasChanges) {
           appStore.setHasChanges(true);
           addMessage('system', 'Changes staged.');
@@ -798,9 +824,12 @@
           }, 400);
         }
       }).catch(error => {
-        chatStore.removeLastMessage();
-        addMessage('error', 'Failed: ' + error.message);
-        appStore.setTerminalTitle('Voide - Error');
+        // Only show error in the original chat
+        if (chatStore.$state.currentChatId === targetChatId) {
+          chatStore.removeLastMessage();
+          addMessage('error', 'Failed: ' + error.message);
+          appStore.setTerminalTitle('Voide - Error');
+        }
 
         // Restart recording even on error (hands-free mode)
         if (wasVoiceMessage && handsFreeModeActive) {

@@ -209,7 +209,8 @@
       return placeholder;
     }
 
-    let highlighted = code;
+    // Normalize tabs to 2 spaces for consistent rendering
+    let highlighted = code.replace(/\t/g, '  ');
 
     // Language-specific keywords
     const keywords = {
