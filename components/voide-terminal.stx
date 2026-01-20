@@ -220,13 +220,14 @@
       rust: /\b(fn|let|mut|const|if|else|for|while|loop|match|return|use|mod|pub|struct|enum|impl|trait|where|self|Self|true|false|Some|None|Ok|Err|async|await|move)\b/g,
       go: /\b(func|var|const|if|else|for|range|return|import|package|type|struct|interface|map|chan|go|defer|select|case|default|break|continue|nil|true|false|make|new|append|len|cap)\b/g,
       bash: /\b(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|echo|export|source|alias|cd|ls|rm|cp|mv|mkdir|chmod|chown|grep|sed|awk|cat|head|tail|find|xargs)\b/g,
+      json: /\b(true|false|null)\b/g,
     }
 
     // Normalize language aliases
     const langAliases = {
       javascript: 'js', jsx: 'js', tsx: 'ts', typescript: 'ts',
       py: 'python', sh: 'bash', shell: 'bash', zsh: 'bash',
-      golang: 'go', rs: 'rust'
+      golang: 'go', rs: 'rust', jsonc: 'json'
     }
     const langKey = langAliases[(lang || '').toLowerCase()] || (lang || '').toLowerCase()
     const keywordRegex = keywords[langKey] || keywords.js
