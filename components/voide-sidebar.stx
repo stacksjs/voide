@@ -35,56 +35,56 @@
 
 <script client>
 (() => {
-  const { appStore, chatStore } = window.__STX_STORES__;
+  const { appStore, chatStore } = window.__STX_STORES__
   // DOM Elements
-  const chatList = document.getElementById('chatList');
-  const newChatBtn = document.getElementById('newChatBtn');
-  const chatSearch = document.getElementById('chatSearch');
+  const chatList = document.getElementById('chatList')
+  const newChatBtn = document.getElementById('newChatBtn')
+  const chatSearch = document.getElementById('chatSearch')
 
-  let searchQuery = '';
+  let searchQuery = ''
 
-  console.log('[VoideSidebar] Initialized');
+  console.log('[VoideSidebar] Initialized')
 
   // =========================================================================
   // Helper Functions
   // =========================================================================
 
   function getFirstMessage(messages) {
-    if (!messages || messages.length === 0) return null;
-    const userMsg = messages.find(m => m.type === 'user');
-    return userMsg ? userMsg.content : null;
+    if (!messages || messages.length === 0) return null
+    const userMsg = messages.find(m => m.type === 'user')
+    return userMsg ? userMsg.content : null
   }
 
   function getChatTitle(chat) {
     // Use AI-generated title if available
-    if (chat.title) return chat.title;
+    if (chat.title) return chat.title
 
     // Fallback to first message
-    const firstMessage = getFirstMessage(chat.messages);
-    if (!firstMessage) return 'New Chat';
-    const clean = firstMessage.replace(/\n/g, ' ').trim();
-    return clean.length > 28 ? clean.substring(0, 28) + '...' : clean;
+    const firstMessage = getFirstMessage(chat.messages)
+    if (!firstMessage) return 'New Chat'
+    const clean = firstMessage.replace(/\n/g, ' ').trim()
+    return clean.length > 28 ? clean.substring(0, 28) + '...' : clean
   }
 
   function getProjectName(path) {
-    if (!path) return null;
-    const parts = path.split('/').filter(Boolean);
-    return parts.length > 0 ? parts[parts.length - 1] : null;
+    if (!path) return null
+    const parts = path.split('/').filter(Boolean)
+    return parts.length > 0 ? parts[parts.length - 1] : null
   }
 
   function chatMatchesSearch(chat, query) {
-    if (!query) return true;
-    const lowerQuery = query.toLowerCase();
-    const title = getChatTitle(chat).toLowerCase();
-    if (title.includes(lowerQuery)) return true;
+    if (!query) return true
+    const lowerQuery = query.toLowerCase()
+    const title = getChatTitle(chat).toLowerCase()
+    if (title.includes(lowerQuery)) return true
 
     // Also search in message content
     for (const msg of (chat.messages || [])) {
       if (msg.content && msg.content.toLowerCase().includes(lowerQuery)) {
-        return true;
+        return true
       }
     }
-    return false;
+    return false
   }
 
   // =========================================================================
@@ -92,31 +92,31 @@
   // =========================================================================
 
   function renderChatList() {
-    const chatsObj = chatStore.getAllChats() || {};
-    const chats = Object.values(chatsObj);
-    const currentChatId = chatStore.currentChatId;
+    const chatsObj = chatStore.getAllChats() || {}
+    const chats = Object.values(chatsObj)
+    const currentChatId = chatStore.currentChatId
 
-    if (!chatList) return;
+    if (!chatList) return
 
     if (chats.length === 0) {
-      chatList.innerHTML = '<div class="px-3 py-4 text-xs text-monokai-gray text-center">No chats yet</div>';
-      return;
+      chatList.innerHTML = '<div class="px-3 py-4 text-xs text-monokai-gray text-center">No chats yet</div>'
+      return
     }
 
     // Filter by search query
-    const filteredChats = chats.filter(chat => chatMatchesSearch(chat, searchQuery));
+    const filteredChats = chats.filter(chat => chatMatchesSearch(chat, searchQuery))
 
     if (filteredChats.length === 0) {
-      chatList.innerHTML = '<div class="px-3 py-4 text-xs text-monokai-gray text-center">No matching chats</div>';
-      return;
+      chatList.innerHTML = '<div class="px-3 py-4 text-xs text-monokai-gray text-center">No matching chats</div>'
+      return
     }
 
-    const sortedChats = [...filteredChats].sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+    const sortedChats = [...filteredChats].sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt))
 
     chatList.innerHTML = sortedChats.map(chat => {
-      const isActive = chat.id === currentChatId;
-      const title = getChatTitle(chat);
-      const projectName = getProjectName(chat.repoPath);
+      const isActive = chat.id === currentChatId
+      const title = getChatTitle(chat)
+      const projectName = getProjectName(chat.repoPath)
 
       return `
         <div class="relative">
@@ -135,48 +135,48 @@
             </button>
           </div>
         </div>
-      `;
-    }).join('');
+      `
+    }).join('')
 
     // Bind click handlers for chat items
     chatList.querySelectorAll('.chat-item').forEach(item => {
       item.addEventListener('click', (e) => {
         // Don't load chat if clicking delete button
-        if (e.target.closest('.delete-btn')) return;
-        const chatId = item.dataset.chatId;
-        loadChat(chatId);
-      });
-    });
+        if (e.target.closest('.delete-btn')) return
+        const chatId = item.dataset.chatId
+        loadChat(chatId)
+      })
+    })
 
     // Bind click handlers for delete buttons
     chatList.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const chatId = btn.dataset.chatId;
-        confirmDeleteChat(chatId);
-      });
-    });
+        e.stopPropagation()
+        const chatId = btn.dataset.chatId
+        confirmDeleteChat(chatId)
+      })
+    })
   }
 
   function confirmDeleteChat(chatId) {
-    const chat = Object.values(chatStore.getAllChats() || {}).find(c => c.id === chatId);
-    const title = chat ? getChatTitle(chat) : 'this chat';
+    const chat = Object.values(chatStore.getAllChats() || {}).find(c => c.id === chatId)
+    const title = chat ? getChatTitle(chat) : 'this chat'
 
     if (confirm(`Delete "${title}"?\n\nThis action cannot be undone.`)) {
-      deleteChat(chatId);
+      deleteChat(chatId)
     }
   }
 
   function deleteChat(chatId) {
-    chatStore.deleteChat(chatId);
+    chatStore.deleteChat(chatId)
 
     // If we deleted the current chat, start a new one
     if (chatId === chatStore.currentChatId) {
-      chatStore.newChat();
-      history.pushState({}, '', '/');
+      chatStore.newChat()
+      history.pushState({}, '', '/')
     }
 
-    renderChatList();
+    renderChatList()
   }
 
   // =========================================================================
@@ -184,59 +184,59 @@
   // =========================================================================
 
   function loadChat(chatId) {
-    if (chatId === chatStore.currentChatId) return;
+    if (chatId === chatStore.currentChatId) return
 
-    const loaded = chatStore.loadChat(chatId);
+    const loaded = chatStore.loadChat(chatId)
     if (loaded) {
       // Restore the chat's repoPath to appStore
-      const chat = chatStore.getAllChats()[chatId];
+      const chat = chatStore.getAllChats()[chatId]
       if (chat?.repoPath) {
-        appStore.setRepoPath(chat.repoPath);
+        appStore.setRepoPath(chat.repoPath)
       }
-      history.pushState({}, '', '/chat/' + chatId);
-      renderChatList();
+      history.pushState({}, '', '/chat/' + chatId)
+      renderChatList()
     }
   }
 
   function newChat() {
-    chatStore.newChat();
-    appStore.setRepoPath('');
-    history.pushState({}, '', '/');
-    renderChatList();
+    chatStore.newChat()
+    appStore.setRepoPath('')
+    history.pushState({}, '', '/')
+    renderChatList()
   }
 
   // =========================================================================
   // Event Bindings
   // =========================================================================
 
-  newChatBtn?.addEventListener('click', newChat);
+  newChatBtn?.addEventListener('click', newChat)
 
   // Search input handler
   chatSearch?.addEventListener('input', (e) => {
-    searchQuery = e.target.value.trim();
-    renderChatList();
-  });
+    searchQuery = e.target.value.trim()
+    renderChatList()
+  })
 
   chatStore.$subscribe(() => {
-    renderChatList();
-  });
+    renderChatList()
+  })
 
   // Re-render periodically to pick up title updates
   setInterval(() => {
-    renderChatList();
-  }, 2000);
+    renderChatList()
+  }, 2000)
 
-  renderChatList();
+  renderChatList()
 
   // =========================================================================
   // Expose to window.voide
   // =========================================================================
 
-  window.voide = window.voide || {};
+  window.voide = window.voide || {}
   Object.assign(window.voide, {
     renderChatList,
     newChat,
     deleteChat
-  });
-})();
+  })
+})()
 </script>

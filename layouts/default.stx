@@ -36,54 +36,54 @@
 
     /* Reset and body styling */
     *, *::before, *::after {
-      box-sizing: border-box;
+      box-sizing: border-box
     }
     html {
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow: hidden;
+      margin: 0 !important
+      padding: 0 !important
+      overflow: hidden
     }
     body {
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100vw;
-      max-width: 100vw;
-      overflow-x: hidden;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      position: relative;
+      margin: 0 !important
+      padding: 0 !important
+      width: 100vw
+      max-width: 100vw
+      overflow-x: hidden
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
+      position: relative
     }
 
     /* Monokai Pro background */
     .gradient-bg {
-      background: #221f22;
-      position: relative;
+      background: #221f22
+      position: relative
     }
 
     /* Floating orbs - Monokai colors */
     .orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.15;
-      animation: float 20s ease-in-out infinite;
-      pointer-events: none;
-      z-index: 0;
+      position: fixed
+      border-radius: 50%
+      filter: blur(80px)
+      opacity: 0.15
+      animation: float 20s ease-in-out infinite
+      pointer-events: none
+      z-index: 0
     }
     .orb-1 {
-      width: 400px;
-      height: 400px;
-      background: linear-gradient(to right, #ab9df2, #78dce8);
-      top: -100px;
-      right: -100px;
-      animation-delay: 0s;
+      width: 400px
+      height: 400px
+      background: linear-gradient(to right, #ab9df2, #78dce8)
+      top: -100px
+      right: -100px
+      animation-delay: 0s
     }
     .orb-2 {
-      width: 300px;
-      height: 300px;
-      background: linear-gradient(to right, #ff6188, #ab9df2);
-      bottom: -50px;
-      left: -50px;
-      animation-delay: -10s;
+      width: 300px
+      height: 300px
+      background: linear-gradient(to right, #ff6188, #ab9df2)
+      bottom: -50px
+      left: -50px
+      animation-delay: -10s
     }
   </style>
 
@@ -91,25 +91,25 @@
   <script client>
     (() => {
       if (!document.getElementById('voide-css')) {
-        const link = document.createElement('link');
-        link.id = 'voide-css';
-        link.rel = 'stylesheet';
-        link.href = '/dist/voide.css';
-        document.head.appendChild(link);
+        const link = document.createElement('link')
+        link.id = 'voide-css'
+        link.rel = 'stylesheet'
+        link.href = '/dist/voide.css'
+        document.head.appendChild(link)
       }
-    })();
+    })()
   </script>
 
   <!-- Voide Stores (loaded synchronously before body parses) -->
   <script>
     // Use document.write to load synchronously and bypass bundler resolution
-    document.write('<scr' + 'ipt src="/js/voide-stores.js"></scr' + 'ipt>');
+    document.write('<scr' + 'ipt src="/js/voide-stores.js"></scr' + 'ipt>')
   </script>
   <script>
     if (window.VoideStores) {
-      console.log('[Voide] Stores loaded successfully');
+      console.log('[Voide] Stores loaded successfully')
     } else {
-      console.error('[Voide] Failed to load stores!');
+      console.error('[Voide] Failed to load stores!')
     }
   </script>
 
@@ -130,19 +130,19 @@
           _callbacks: {},
           _callbackId: 0,
           _invoke: function(method, args) {
-            args = args || {};
-            const self = this;
+            args = args || {}
+            const self = this
             return new Promise(function(resolve, reject) {
-              const id = ++self._callbackId;
-              self._callbacks[id] = { resolve: resolve, reject: reject };
-              window.webkit.messageHandlers.craftBridge.postMessage({ id: id, method: method, args: args });
-            });
+              const id = ++self._callbackId
+              self._callbacks[id] = { resolve: resolve, reject: reject }
+              window.webkit.messageHandlers.craftBridge.postMessage({ id: id, method: method, args: args })
+            })
           },
           _handleResponse: function(id, result, error) {
-            const cb = this._callbacks[id];
+            const cb = this._callbacks[id]
             if (cb) {
-              delete this._callbacks[id];
-              error ? cb.reject(new Error(error)) : cb.resolve(result);
+              delete this._callbacks[id]
+              error ? cb.reject(new Error(error)) : cb.resolve(result)
             }
           },
           window: {
@@ -161,15 +161,15 @@
             quit: () => { return window.craft._invoke('app.quit'); },
             notify: function(options) { return window.craft._invoke('app.notify', options); }
           }
-        };
-        console.log('[Voide] Craft native bridge initialized');
+        }
+        console.log('[Voide] Craft native bridge initialized')
       }
-    })();
+    })()
   </script>
 
   <!-- Voide Core (minimal shared functionality) -->
   <script>
-    document.write('<scr' + 'ipt src="/js/voide-core.js"></scr' + 'ipt>');
+    document.write('<scr' + 'ipt src="/js/voide-core.js"></scr' + 'ipt>')
   </script>
 
 </body>

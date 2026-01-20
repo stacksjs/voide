@@ -14,16 +14,16 @@
           _callbackId: 0,
           _invoke(method, args = {}) {
             return new Promise((resolve, reject) => {
-              const id = ++this._callbackId;
-              this._callbacks[id] = { resolve, reject };
-              window.webkit.messageHandlers.craftBridge.postMessage({ id, method, args });
-            });
+              const id = ++this._callbackId
+              this._callbacks[id] = { resolve, reject }
+              window.webkit.messageHandlers.craftBridge.postMessage({ id, method, args })
+            })
           },
           _handleResponse(id, result, error) {
-            const cb = this._callbacks[id];
+            const cb = this._callbacks[id]
             if (cb) {
-              delete this._callbacks[id];
-              error ? cb.reject(new Error(error)) : cb.resolve(result);
+              delete this._callbacks[id]
+              error ? cb.reject(new Error(error)) : cb.resolve(result)
             }
           },
           window: {
@@ -68,10 +68,10 @@
             openExternal: (url) => window.craft._invoke('shell.openExternal', { url }),
             showItemInFolder: (path) => window.craft._invoke('shell.showItemInFolder', { path }),
           },
-        };
-        console.log('[Voide] Craft native bridge initialized');
+        }
+        console.log('[Voide] Craft native bridge initialized')
       }
-    })();
+    })()
   </script>
 
   <!-- Headwind CSS -->

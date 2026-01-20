@@ -159,9 +159,9 @@
 
 <script client>
 (() => {
-  const { appStore, chatStore, settingsStore } = window.__STX_STORES__;
+  const { appStore, chatStore, settingsStore } = window.__STX_STORES__
   const stores = window.VoideStores; // For composables
-  const API_BASE_URL = 'http://localhost:3008/voide';
+  const API_BASE_URL = 'http://localhost:3008/voide'
 
   function init() {
 
@@ -203,80 +203,80 @@
       volBar3: { value: null },
       volBar4: { value: null },
       volBar5: { value: null },
-    };
+    }
 
     // Bind refs to DOM elements
     if (window.STX?.bindRefs) {
-      window.STX.bindRefs(document, refs);
+      window.STX.bindRefs(document, refs)
     } else {
       // Fallback: manually bind refs from data-ref attributes
       document.querySelectorAll('[data-ref]').forEach(el => {
-        const refName = el.getAttribute('data-ref');
+        const refName = el.getAttribute('data-ref')
         if (refs[refName]) {
-          refs[refName].value = el;
+          refs[refName].value = el
         }
-      });
+      })
     }
 
     // Helper to get ref value
-    const $ = (name) => refs[name]?.value;
+    const $ = (name) => refs[name]?.value
 
     // Volume bars as array for easy iteration
     const volBars = [
       $('volBar1'), $('volBar2'), $('volBar3'), $('volBar4'), $('volBar5')
-    ].filter(Boolean);
+    ].filter(Boolean)
 
-    console.log('[VoideInputBar] Initialized with refs');
+    console.log('[VoideInputBar] Initialized with refs')
 
     // =========================================================================
     // Composables
     // =========================================================================
-    const sounds = stores.useAudioCues();
-    const voiceCommands = stores.useVoiceCommands();
-    const audioStorage = stores.useAudioStorage();
+    const sounds = stores.useAudioCues()
+    const voiceCommands = stores.useVoiceCommands()
+    const audioStorage = stores.useAudioStorage()
 
     // Audio recorder with callbacks
     const audioRecorder = stores.useAudioRecorder({
       onVolumeChange: updateVolumeIndicator,
       onDurationChange: updateRecordingTimer,
       onRecordingStop: handleRecordingStop
-    });
+    })
 
     // Background transcription using speech recognition
     const speechRecognition = stores.useSpeechRecognition({
       continuous: true,
       interimResults: false,
       lang: 'en-US'
-    });
+    })
 
     // =========================================================================
     // State
     // =========================================================================
-    let isRecording = false;
-    let hasRecording = false;
-    let currentAudioUrl = null;
-    let currentTranscript = '';
-    let isTranscriptVisible = false;
+    let isRecording = false
+    let hasRecording = false
+    let currentAudioUrl = null
+    let currentTranscript = ''
+    let isTranscriptVisible = false
     let handsFreeModeActive = false; // Track if we're in continuous voice mode
 
     // =========================================================================
     // Volume Indicator
     // =========================================================================
     function updateVolumeIndicator(level) {
-      const activeCount = Math.ceil(level / 2);
+      const activeCount = Math.ceil(level / 2)
       volBars.forEach((bar, i) => {
         if (bar) {
           if (i < activeCount) {
-            bar.classList.remove('bg-monokai-gray/40');
-            bar.classList.add('bg-monokai-cyan');
+            bar.classList.remove('bg-monokai-gray/40')
+            bar.classList.add('bg-monokai-cyan')
           } else {
-            bar.classList.remove('bg-monokai-cyan');
-            bar.classList.add('bg-monokai-gray/40');
+            bar.classList.remove('bg-monokai-cyan')
+            bar.classList.add('bg-monokai-gray/40')
           }
         }
-      });
+      })
       if (level > 0) {
-        console.log('[Voide] Mic level:', level, '/ 10');
+        console.log('[Voide] Mic level:', level, '/ 10')
       }
     }
 
@@ -284,11 +284,11 @@
     // Recording Timer
     // =========================================================================
     function updateRecordingTimer(seconds) {
-      const timer = $('recordingTimer');
+      const timer = $('recordingTimer')
       if (timer) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        timer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        timer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`
       }
     }
 
@@ -296,133 +296,133 @@
     // Recording Flow
     // =========================================================================
     async function startRecording() {
-      if (isRecording) return;
+      if (isRecording) return
 
-      const success = await audioRecorder.start();
+      const success = await audioRecorder.start()
       if (!success) {
-        console.error('[Voide] Failed to start recording');
-        return;
+        console.error('[Voide] Failed to start recording')
+        return
       }
 
-      isRecording = true;
-      hasRecording = false;
-      currentTranscript = '';
+      isRecording = true
+      hasRecording = false
+      currentTranscript = ''
       handsFreeModeActive = true; // Enable hands-free mode
 
       // Update UI using refs
-      $('recordingMode')?.classList.remove('hidden');
-      $('inputRow')?.classList.add('hidden');
-      $('volumeIndicator')?.classList.remove('hidden');
-      $('audioPreview')?.classList.add('hidden');
+      $('recordingMode')?.classList.remove('hidden')
+      $('inputRow')?.classList.add('hidden')
+      $('volumeIndicator')?.classList.remove('hidden')
+      $('audioPreview')?.classList.add('hidden')
 
-      const container = $('inputContainer');
+      const container = $('inputContainer')
       if (container) {
-        container.classList.remove('border-monokai-border');
-        container.classList.add('border-monokai-pink');
+        container.classList.remove('border-monokai-border')
+        container.classList.add('border-monokai-pink')
       }
 
-      const micBtn = $('micButton');
+      const micBtn = $('micButton')
       if (micBtn) {
-        micBtn.classList.remove('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
-        micBtn.classList.add('text-monokai-pink', 'bg-monokai-pink/20');
+        micBtn.classList.remove('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg')
+        micBtn.classList.add('text-monokai-pink', 'bg-monokai-pink/20')
       }
 
-      $('micIcon')?.setAttribute('stroke', '#ff6188');
+      $('micIcon')?.setAttribute('stroke', '#ff6188')
 
-      startBackgroundTranscription();
-      sounds.listening();
+      startBackgroundTranscription()
+      sounds.listening()
     }
 
     async function stopRecording() {
-      if (!isRecording) return;
+      if (!isRecording) return
 
-      const blob = await audioRecorder.stop();
-      isRecording = false;
-      stopBackgroundTranscription();
+      const blob = await audioRecorder.stop()
+      isRecording = false
+      stopBackgroundTranscription()
 
       if (blob) {
-        hasRecording = true;
-        currentAudioUrl = URL.createObjectURL(blob);
+        hasRecording = true
+        currentAudioUrl = URL.createObjectURL(blob)
 
-        const player = $('audioPlayer');
+        const player = $('audioPlayer')
         if (player) {
-          player.src = currentAudioUrl;
-          player.load();
+          player.src = currentAudioUrl
+          player.load()
         }
 
-        $('audioPreview')?.classList.remove('hidden');
+        $('audioPreview')?.classList.remove('hidden')
 
         // Show transcript immediately
-        const transcriptTextEl = $('transcriptText');
+        const transcriptTextEl = $('transcriptText')
         if (transcriptTextEl) {
-          transcriptTextEl.textContent = currentTranscript || '';
+          transcriptTextEl.textContent = currentTranscript || ''
         }
 
         // Auto-expand transcript section if we have content
         if (currentTranscript) {
-          $('transcriptContent')?.classList.remove('hidden');
-          $('transcriptChevron')?.classList.add('rotate-90');
-          isTranscriptVisible = true;
+          $('transcriptContent')?.classList.remove('hidden')
+          $('transcriptChevron')?.classList.add('rotate-90')
+          isTranscriptVisible = true
         }
 
-        updateTranscriptStatus();
-        sounds.done();
+        updateTranscriptStatus()
+        sounds.done()
       }
 
       // Reset UI
-      $('recordingMode')?.classList.add('hidden');
-      $('inputRow')?.classList.remove('hidden');
-      $('volumeIndicator')?.classList.add('hidden');
+      $('recordingMode')?.classList.add('hidden')
+      $('inputRow')?.classList.remove('hidden')
+      $('volumeIndicator')?.classList.add('hidden')
 
-      const container = $('inputContainer');
+      const container = $('inputContainer')
       if (container) {
-        container.classList.remove('border-monokai-pink');
-        container.classList.add('border-monokai-border');
+        container.classList.remove('border-monokai-pink')
+        container.classList.add('border-monokai-border')
       }
 
-      const micBtn = $('micButton');
+      const micBtn = $('micButton')
       if (micBtn) {
-        micBtn.classList.remove('text-monokai-pink', 'bg-monokai-pink/20');
-        micBtn.classList.add('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg');
+        micBtn.classList.remove('text-monokai-pink', 'bg-monokai-pink/20')
+        micBtn.classList.add('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg')
       }
 
-      $('micIcon')?.setAttribute('stroke', 'currentColor');
-      updateVolumeIndicator(0);
+      $('micIcon')?.setAttribute('stroke', 'currentColor')
+      updateVolumeIndicator(0)
     }
 
     function toggleRecording() {
       if (isRecording) {
         // Manual stop - turn off hands-free mode
-        handsFreeModeActive = false;
-        stopRecording();
+        handsFreeModeActive = false
+        stopRecording()
       } else if (hasRecording) {
         // If we have a recording preview, clicking mic again cancels it
-        handsFreeModeActive = false;
-        deleteRecording();
+        handsFreeModeActive = false
+        deleteRecording()
       } else {
-        startRecording();
+        startRecording()
       }
     }
 
     function handleRecordingStop(blob, duration) {
-      console.log('[Voide] Recording stopped:', duration, 'seconds');
+      console.log('[Voide] Recording stopped:', duration, 'seconds')
     }
 
     // =========================================================================
     // Background Transcription & Silence Detection
     // =========================================================================
-    let lastTranscriptTime = 0;
-    let lastTranscriptLength = 0;
-    let silenceCheckInterval = null;
-    let transcriptResultHandler = null;
-    let transcriptEndHandler = null;
+    let lastTranscriptTime = 0
+    let lastTranscriptLength = 0
+    let silenceCheckInterval = null
+    let transcriptResultHandler = null
+    let transcriptEndHandler = null
 
     function startBackgroundTranscription() {
-      if (!speechRecognition.isSupported) return;
+      if (!speechRecognition.isSupported) return
 
-      currentTranscript = '';
-      lastTranscriptTime = Date.now();
-      lastTranscriptLength = 0;
+      currentTranscript = ''
+      lastTranscriptTime = Date.now()
+      lastTranscriptLength = 0
 
       // Remove old handlers if they exist
       if (transcriptResultHandler) {
@@ -430,20 +430,20 @@
       }
 
       transcriptResultHandler = (data) => {
-        if (!isRecording) return;
+        if (!isRecording) return
         if (data.transcript && data.transcript.length > lastTranscriptLength) {
-          currentTranscript = voiceCommands.convertPunctuation(data.transcript);
-          lastTranscriptLength = data.transcript.length;
-          lastTranscriptTime = Date.now();
+          currentTranscript = voiceCommands.convertPunctuation(data.transcript)
+          lastTranscriptLength = data.transcript.length
+          lastTranscriptTime = Date.now()
 
-          const transcriptTextEl = $('transcriptText');
+          const transcriptTextEl = $('transcriptText')
           if (transcriptTextEl) {
-            transcriptTextEl.textContent = currentTranscript;
+            transcriptTextEl.textContent = currentTranscript
           }
-          updateTranscriptStatus();
-          console.log('[Voide] Got words:', currentTranscript.split(' ').length);
+          updateTranscriptStatus()
+          console.log('[Voide] Got words:', currentTranscript.split(' ').length)
         }
-      };
+      }
 
       transcriptEndHandler = () => {
         if (isRecording) {
@@ -452,63 +452,63 @@
             if (isRecording) {
               try { speechRecognition.start(); } catch (e) {}
             }
-          }, 100);
+          }, 100)
         }
-      };
+      }
 
-      speechRecognition.on('result', transcriptResultHandler);
-      speechRecognition.on('end', transcriptEndHandler);
+      speechRecognition.on('result', transcriptResultHandler)
+      speechRecognition.on('end', transcriptEndHandler)
 
       // Start silence detection polling
-      startSilenceDetection();
+      startSilenceDetection()
 
-      speechRecognition.start();
+      speechRecognition.start()
     }
 
     function stopBackgroundTranscription() {
-      speechRecognition.stop();
-      stopSilenceDetection();
+      speechRecognition.stop()
+      stopSilenceDetection()
     }
 
     function startSilenceDetection() {
       stopSilenceDetection(); // Clear any existing
 
       silenceCheckInterval = setInterval(() => {
-        if (!isRecording || !handsFreeModeActive) return;
+        if (!isRecording || !handsFreeModeActive) return
 
-        const silenceDuration = Date.now() - lastTranscriptTime;
-        const hasContent = currentTranscript.trim().length > 0;
+        const silenceDuration = Date.now() - lastTranscriptTime
+        const hasContent = currentTranscript.trim().length > 0
 
         // If we have content and 5 seconds of silence, auto-stop
         if (hasContent && silenceDuration >= 5000) {
-          console.log('[Voide] 5s silence detected, auto-stopping recording');
-          stopRecording();
+          console.log('[Voide] 5s silence detected, auto-stopping recording')
+          stopRecording()
 
           // Show preview for 1.5 seconds, then auto-send
           setTimeout(() => {
             if (hasRecording && currentTranscript.trim()) {
-              console.log('[Voide] Auto-sending voice message');
-              handleSend();
+              console.log('[Voide] Auto-sending voice message')
+              handleSend()
             }
-          }, 1500);
+          }, 1500)
         }
       }, 500); // Check every 500ms
     }
 
     function stopSilenceDetection() {
       if (silenceCheckInterval) {
-        clearInterval(silenceCheckInterval);
-        silenceCheckInterval = null;
+        clearInterval(silenceCheckInterval)
+        silenceCheckInterval = null
       }
     }
 
     function updateTranscriptStatus() {
-      const status = $('transcriptStatus');
+      const status = $('transcriptStatus')
       if (status) {
         if (currentTranscript) {
-          status.textContent = `(${currentTranscript.split(' ').length} words)`;
+          status.textContent = `(${currentTranscript.split(' ').length} words)`
         } else {
-          status.textContent = isRecording ? '(transcribing...)' : '';
+          status.textContent = isRecording ? '(transcribing...)' : ''
         }
       }
     }
@@ -517,47 +517,47 @@
     // Audio Management
     // =========================================================================
     function deleteRecording(keepHandsFreeMode = false) {
-      const player = $('audioPlayer');
+      const player = $('audioPlayer')
       if (player) {
-        player.pause();
-        player.src = '';
+        player.pause()
+        player.src = ''
       }
       if (currentAudioUrl) {
-        URL.revokeObjectURL(currentAudioUrl);
-        currentAudioUrl = null;
+        URL.revokeObjectURL(currentAudioUrl)
+        currentAudioUrl = null
       }
-      hasRecording = false;
-      currentTranscript = '';
+      hasRecording = false
+      currentTranscript = ''
       if (!keepHandsFreeMode) {
-        handsFreeModeActive = false;
+        handsFreeModeActive = false
       }
 
-      $('audioPreview')?.classList.add('hidden');
-      const transcriptTextEl = $('transcriptText');
-      if (transcriptTextEl) transcriptTextEl.textContent = '';
+      $('audioPreview')?.classList.add('hidden')
+      const transcriptTextEl = $('transcriptText')
+      if (transcriptTextEl) transcriptTextEl.textContent = ''
 
       // Reset transcript visibility
-      $('transcriptContent')?.classList.add('hidden');
-      $('transcriptChevron')?.classList.remove('rotate-90');
-      isTranscriptVisible = false;
+      $('transcriptContent')?.classList.add('hidden')
+      $('transcriptChevron')?.classList.remove('rotate-90')
+      isTranscriptVisible = false
 
-      audioRecorder.reset();
+      audioRecorder.reset()
     }
 
     // =========================================================================
     // Transcript Toggle
     // =========================================================================
     function toggleTranscript() {
-      isTranscriptVisible = !isTranscriptVisible;
+      isTranscriptVisible = !isTranscriptVisible
 
-      const content = $('transcriptContent');
+      const content = $('transcriptContent')
       if (content) {
-        content.classList.toggle('hidden', !isTranscriptVisible);
+        content.classList.toggle('hidden', !isTranscriptVisible)
       }
 
-      const chevron = $('transcriptChevron');
+      const chevron = $('transcriptChevron')
       if (chevron) {
-        chevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : '';
+        chevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : ''
       }
     }
 
@@ -565,33 +565,33 @@
     // API & Command Processing
     // =========================================================================
     function checkBackendAPI() {
-      return fetch(API_BASE_URL + '/state').then(res => res.ok).catch(() => false);
+      return fetch(API_BASE_URL + '/state').then(res => res.ok).catch(() => false)
     }
 
     function saveChat() {
-      const app = appStore.$state;
-      chatStore.saveCurrentChat(app.repoPath, app.currentDriver);
+      const app = appStore.$state
+      chatStore.saveCurrentChat(app.repoPath, app.currentDriver)
     }
 
-    let saveChatDebounceTimer = null;
+    let saveChatDebounceTimer = null
     function updateLastMessage(type, content) {
-      chatStore.updateLastMessage(type, content);
-      clearTimeout(saveChatDebounceTimer);
-      saveChatDebounceTimer = setTimeout(saveChat, 500);
+      chatStore.updateLastMessage(type, content)
+      clearTimeout(saveChatDebounceTimer)
+      saveChatDebounceTimer = setTimeout(saveChat, 500)
     }
 
     function addMessage(type, content, header) {
-      const app = appStore.$state;
+      const app = appStore.$state
       const driverName = app.currentDriver === 'claude-sdk' ? 'Claude SDK' :
                          app.currentDriver === 'openai' ? 'OpenAI' :
-                         app.currentDriver === 'ollama' ? 'Ollama' : 'AI';
-      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error');
-      chatStore.addMessage(type, content, headerText);
-      saveChat();
+                         app.currentDriver === 'ollama' ? 'Ollama' : 'AI'
+      const headerText = header || (type === 'user' ? 'You' : type === 'assistant' ? driverName : type === 'system' ? 'System' : 'Error')
+      chatStore.addMessage(type, content, headerText)
+      saveChat()
     }
 
     function detectMode(command) {
-      const lower = command.toLowerCase().trim();
+      const lower = command.toLowerCase().trim()
       const questionPatterns = [
         /^(what|why|how|when|where|who|which|can you explain|could you explain|please explain|tell me|describe|is it|are there|do you|does|did|will|would|should|could|can|may|might)/i,
         /\?$/,
@@ -599,39 +599,39 @@
         /^describe\s/i,
         /^tell me\s/i,
         /^help me understand/i,
-      ];
+      ]
       const actionPatterns = [
         /^(fix|create|add|remove|delete|update|change|modify|refactor|implement|write|build|make|generate|run|execute|install|setup|configure|debug|test)/i,
         /^please (fix|create|add|remove|delete|update|change|modify|refactor|implement|write|build|make)/i,
         /\b(in my|in the|this|the) (code|file|project|app|application|repo|repository|codebase)\b/i,
-      ];
+      ]
 
       for (const pattern of actionPatterns) {
-        if (pattern.test(lower)) return 'agentic';
+        if (pattern.test(lower)) return 'agentic'
       }
       for (const pattern of questionPatterns) {
-        if (pattern.test(lower)) return 'simple';
+        if (pattern.test(lower)) return 'simple'
       }
-      return 'agentic';
+      return 'agentic'
     }
 
     function processWithStreaming(command, targetChatId) {
       return new Promise((resolve, reject) => {
-        let fullContent = '';
-        let currentEvent = '';
-        const app = appStore.$state;
-        const chat = chatStore.$state;
-        const mode = detectMode(command);
+        let fullContent = ''
+        let currentEvent = ''
+        const app = appStore.$state
+        const chat = chatStore.$state
+        const mode = detectMode(command)
 
         // Helper to check if we're still on the same chat
         function isStillCurrentChat() {
-          return chatStore.$state.currentChatId === targetChatId;
+          return chatStore.$state.currentChatId === targetChatId
         }
 
         const history = chat.messages.slice(0, -1).map(m => ({
           role: m.type === 'user' ? 'user' : 'assistant',
           content: m.content
-        })).filter(m => m.role === 'user' || m.role === 'assistant');
+        })).filter(m => m.role === 'user' || m.role === 'assistant')
 
         fetch(API_BASE_URL + '/process/stream', {
           method: 'POST',
@@ -645,85 +645,85 @@
             mode
           })
         }).then(response => {
-          if (!response.ok) throw new Error('Stream request failed');
+          if (!response.ok) throw new Error('Stream request failed')
 
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
+          const reader = response.body.getReader()
+          const decoder = new TextDecoder()
+          let buffer = ''
 
           function readChunk() {
             reader.read().then(result => {
               if (result.done) {
-                resolve({ message: fullContent, hasChanges: false, targetChatId });
-                return;
+                resolve({ message: fullContent, hasChanges: false, targetChatId })
+                return
               }
 
               // Skip updates if user switched to a different chat
               if (!isStillCurrentChat()) {
-                resolve({ message: fullContent, hasChanges: false, targetChatId, switched: true });
-                return;
+                resolve({ message: fullContent, hasChanges: false, targetChatId, switched: true })
+                return
               }
 
-              buffer += decoder.decode(result.value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || '';
+              buffer += decoder.decode(result.value, { stream: true })
+              const lines = buffer.split('\n')
+              buffer = lines.pop() || ''
 
               for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed) continue;
+                const trimmed = line.trim()
+                if (!trimmed) continue
 
                 if (trimmed.startsWith('event: ')) {
-                  currentEvent = trimmed.substring(7);
-                  continue;
+                  currentEvent = trimmed.substring(7)
+                  continue
                 }
 
                 if (trimmed.startsWith('data: ')) {
                   try {
-                    const data = JSON.parse(trimmed.substring(6));
+                    const data = JSON.parse(trimmed.substring(6))
 
                     if (currentEvent === 'session' && data.sessionId) {
                       if (isStillCurrentChat()) {
-                        chatStore.setSessionId(data.sessionId);
-                        saveChat();
+                        chatStore.setSessionId(data.sessionId)
+                        saveChat()
                       }
                     } else if (currentEvent === 'chunk' && data.text) {
-                      fullContent += data.text;
+                      fullContent += data.text
                       if (isStillCurrentChat()) {
-                        updateLastMessage('assistant', fullContent);
+                        updateLastMessage('assistant', fullContent)
                       }
                     } else if (currentEvent === 'tool' && data.tool) {
-                      let toolInfo = data.tool;
+                      let toolInfo = data.tool
                       if (data.input) {
                         if (data.tool === 'Read' && data.input.file_path) {
-                          toolInfo = 'Reading ' + data.input.file_path.split('/').pop();
+                          toolInfo = 'Reading ' + data.input.file_path.split('/').pop()
                         } else if (data.tool === 'Edit' && data.input.file_path) {
-                          toolInfo = 'Editing ' + data.input.file_path.split('/').pop();
+                          toolInfo = 'Editing ' + data.input.file_path.split('/').pop()
                         } else if (data.tool === 'Write' && data.input.file_path) {
-                          toolInfo = 'Writing ' + data.input.file_path.split('/').pop();
+                          toolInfo = 'Writing ' + data.input.file_path.split('/').pop()
                         } else if (data.tool === 'Bash' && data.input.command) {
-                          toolInfo = '$ ' + data.input.command.substring(0, 40);
+                          toolInfo = '$ ' + data.input.command.substring(0, 40)
                         }
                       }
-                      fullContent += '\n`' + toolInfo + '`';
+                      fullContent += '\n`' + toolInfo + '`'
                       if (isStillCurrentChat()) {
-                        updateLastMessage('assistant', fullContent);
+                        updateLastMessage('assistant', fullContent)
                       }
                     } else if (currentEvent === 'done') {
-                      resolve({ message: fullContent, hasChanges: data.hasChanges || false, targetChatId });
-                      return;
+                      resolve({ message: fullContent, hasChanges: data.hasChanges || false, targetChatId })
+                      return
                     } else if (currentEvent === 'error') {
-                      reject(new Error(data.error || 'Stream error'));
-                      return;
+                      reject(new Error(data.error || 'Stream error'))
+                      return
                     }
                   } catch (e) {}
                 }
               }
-              readChunk();
-            }).catch(reject);
+              readChunk()
+            }).catch(reject)
           }
-          readChunk();
-        }).catch(reject);
-      });
+          readChunk()
+        }).catch(reject)
+      })
     }
 
     function generateChatTitle(chatId, prompt) {
@@ -734,21 +734,21 @@
       })
       .then(res => res.json())
       .then(data => {
-        if (data.title) chatStore.setChatTitle(chatId, data.title);
+        if (data.title) chatStore.setChatTitle(chatId, data.title)
       })
-      .catch(() => {});
+      .catch(() => {})
     }
 
     function processCommand(command, audioId = null) {
-      if (!command.trim()) return;
+      if (!command.trim()) return
 
-      const chat = chatStore.$state;
-      const app = appStore.$state;
-      let isNewChat = false;
-      let newChatId = null;
-      const wasVoiceMessage = !!audioId;
+      const chat = chatStore.$state
+      const app = appStore.$state
+      let isNewChat = false
+      let newChatId = null
+      const wasVoiceMessage = !!audioId
 
-      const messageContent = audioId ? `[Voice message: ${command}]` : command;
+      const messageContent = audioId ? `[Voice message: ${command}]` : command
 
       if (!chat.currentChatId) {
         newChatId = chatStore.startNewChat(app.repoPath, app.currentDriver, {
@@ -757,53 +757,53 @@
           header: audioId ? 'You (voice)' : 'You',
           timestamp: Date.now(),
           audioId
-        });
-        isNewChat = true;
+        })
+        isNewChat = true
       } else {
-        addMessage('user', messageContent, audioId ? 'You (voice)' : 'You');
+        addMessage('user', messageContent, audioId ? 'You (voice)' : 'You')
       }
 
       // Capture the chatId for this processing session
-      const targetChatId = newChatId || chat.currentChatId;
+      const targetChatId = newChatId || chat.currentChatId
 
-      appStore.setTerminalTitle('Processing...');
+      appStore.setTerminalTitle('Processing...')
 
       if (!app.repoPath) {
-        addMessage('error', 'Please enter a repository URL or path first.');
-        appStore.setTerminalTitle('Voide - Ready');
-        return;
+        addMessage('error', 'Please enter a repository URL or path first.')
+        appStore.setTerminalTitle('Voide - Ready')
+        return
       }
 
-      appStore.setProcessing(true);
-      addMessage('assistant', '...');
+      appStore.setProcessing(true, targetChatId)
+      addMessage('assistant', '...')
 
       checkBackendAPI().then(hasBackend => {
         if (hasBackend) {
-          return processWithStreaming(command, targetChatId);
+          return processWithStreaming(command, targetChatId)
         } else if (app.currentDriver === 'mock') {
           return new Promise(resolve => {
             setTimeout(() => {
-              resolve({ message: '[Mock] Processing: "' + command + '"', hasChanges: false });
-            }, 1500);
-          });
+              resolve({ message: '[Mock] Processing: "' + command + '"', hasChanges: false })
+            }, 1500)
+          })
         } else {
-          return Promise.reject(new Error('Backend API not available.'));
+          return Promise.reject(new Error('Backend API not available.'))
         }
       }).then(response => {
         // Skip post-processing if user switched to a different chat
         if (response.switched || chatStore.$state.currentChatId !== targetChatId) {
-          appStore.setProcessing(false);
-          return;
+          appStore.setProcessing(false)
+          return
         }
 
         if (response.hasChanges) {
-          appStore.setHasChanges(true);
-          addMessage('system', 'Changes staged.');
+          appStore.setHasChanges(true)
+          addMessage('system', 'Changes staged.')
         }
-        appStore.setTerminalTitle('Voide - Ready');
+        appStore.setTerminalTitle('Voide - Ready')
 
         if (isNewChat && newChatId) {
-          generateChatTitle(newChatId, command);
+          generateChatTitle(newChatId, command)
         }
 
         // Auto-play response if voice message was sent
@@ -813,62 +813,62 @@
               window.voide.speak(response.message, 'auto-tts', () => {
                 // Restart recording after TTS finishes (hands-free mode)
                 if (handsFreeModeActive) {
-                  console.log('[Voide] TTS finished, restarting recording');
-                  setTimeout(() => startRecording(), 500);
+                  console.log('[Voide] TTS finished, restarting recording')
+                  setTimeout(() => startRecording(), 500)
                 }
-              });
+              })
             } else if (handsFreeModeActive) {
               // No message to speak, restart recording anyway
-              setTimeout(() => startRecording(), 500);
+              setTimeout(() => startRecording(), 500)
             }
-          }, 400);
+          }, 400)
         }
       }).catch(error => {
         // Only show error in the original chat
         if (chatStore.$state.currentChatId === targetChatId) {
-          chatStore.removeLastMessage();
-          addMessage('error', 'Failed: ' + error.message);
-          appStore.setTerminalTitle('Voide - Error');
+          chatStore.removeLastMessage()
+          addMessage('error', 'Failed: ' + error.message)
+          appStore.setTerminalTitle('Voide - Error')
         }
 
         // Restart recording even on error (hands-free mode)
         if (wasVoiceMessage && handsFreeModeActive) {
-          setTimeout(() => startRecording(), 1000);
+          setTimeout(() => startRecording(), 1000)
         }
       }).finally(() => {
-        appStore.setProcessing(false);
-      });
+        appStore.setProcessing(false)
+      })
     }
 
     // =========================================================================
     // Input Handlers
     // =========================================================================
     function handleInputChange(e) {
-      const el = e.target;
-      el.style.height = 'auto';
-      el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-      chatStore.setInputText(el.value);
+      const el = e.target
+      el.style.height = 'auto'
+      el.style.height = Math.min(el.scrollHeight, 160) + 'px'
+      chatStore.setInputText(el.value)
     }
 
     function handleInputKeydown(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
+        e.preventDefault()
+        handleSend()
       }
     }
 
     async function handleSend() {
       if (hasRecording) {
-        const transcriptTextEl = $('transcriptText');
-        const transcript = transcriptTextEl?.textContent?.trim() || currentTranscript;
+        const transcriptTextEl = $('transcriptText')
+        const transcript = transcriptTextEl?.textContent?.trim() || currentTranscript
 
         if (!transcript) {
-          console.log('[Voide] No transcript available yet');
-          return;
+          console.log('[Voide] No transcript available yet')
+          return
         }
 
-        const state = audioRecorder.get();
-        let audioId = null;
+        const state = audioRecorder.get()
+        let audioId = null
         if (state.audioBlob && audioStorage.isSupported) {
           try {
             audioId = await audioStorage.save(
@@ -876,29 +876,29 @@
               state.duration,
               transcript,
               chatStore.$state.currentChatId
-            );
+            )
           } catch (e) {
-            console.log('[Voide] Failed to save audio:', e);
+            console.log('[Voide] Failed to save audio:', e)
           }
         }
 
         deleteRecording(true); // Keep hands-free mode active
-        processCommand(transcript, audioId);
+        processCommand(transcript, audioId)
         // Recording will restart after TTS finishes (handled in processCommand)
-        return;
+        return
       }
 
-      const chat = chatStore.$state;
-      const text = chat.inputText.trim();
+      const chat = chatStore.$state
+      const text = chat.inputText.trim()
 
       if (text && !appStore.$state.isProcessing) {
-        chatStore.clearInput();
-        const textInputEl = $('textInput');
+        chatStore.clearInput()
+        const textInputEl = $('textInput')
         if (textInputEl) {
-          textInputEl.value = '';
-          textInputEl.style.height = 'auto';
+          textInputEl.value = ''
+          textInputEl.style.height = 'auto'
         }
-        processCommand(text);
+        processCommand(text)
       }
     }
 
@@ -908,177 +908,205 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
       }).then(() => {
-        appStore.setProcessing(false);
-        const messages = chatStore.$state.messages;
+        appStore.setProcessing(false)
+        const messages = chatStore.$state.messages
         if (messages.length > 0) {
-          const lastMsg = messages[messages.length - 1];
+          const lastMsg = messages[messages.length - 1]
           if (lastMsg?.type === 'assistant') {
-            updateLastMessage('assistant', lastMsg.content + '\n\n— *Stopped*');
+            updateLastMessage('assistant', lastMsg.content + '\n\n— *Stopped*')
           }
         }
       }).catch(() => {
-        appStore.setProcessing(false);
-      });
+        appStore.setProcessing(false)
+      })
     }
 
     // =========================================================================
     // Event Bindings
     // =========================================================================
-    $('micButton')?.addEventListener('click', toggleRecording);
-    $('sendBtn')?.addEventListener('click', handleSend);
-    $('stopBtn')?.addEventListener('click', cancelProcessing);
-    $('textInput')?.addEventListener('input', handleInputChange);
-    $('textInput')?.addEventListener('keydown', handleInputKeydown);
-    $('audioDeleteBtn')?.addEventListener('click', () => deleteRecording());
-    $('transcriptToggle')?.addEventListener('click', toggleTranscript);
+    $('micButton')?.addEventListener('click', toggleRecording)
+    $('sendBtn')?.addEventListener('click', handleSend)
+    $('stopBtn')?.addEventListener('click', cancelProcessing)
+    $('textInput')?.addEventListener('input', handleInputChange)
+    $('textInput')?.addEventListener('keydown', handleInputKeydown)
+    $('audioDeleteBtn')?.addEventListener('click', () => deleteRecording())
+    $('transcriptToggle')?.addEventListener('click', toggleTranscript)
 
     // Driver selector
-    const driverSelectEl = $('driverSelect');
-    const initialDriver = appStore.$state.currentDriver || 'claude-sdk';
-    if (driverSelectEl) driverSelectEl.value = initialDriver;
+    const driverSelectEl = $('driverSelect')
+    const initialDriver = appStore.$state.currentDriver || 'claude-sdk'
+    if (driverSelectEl) driverSelectEl.value = initialDriver
     driverSelectEl?.addEventListener('change', (e) => {
-      appStore.setDriver(e.target.value);
-    });
+      appStore.setDriver(e.target.value)
+    })
 
     // Global keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !e.repeat) {
-        const active = document.activeElement;
-        const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+        const active = document.activeElement
+        const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')
         if (!isInput) {
-          e.preventDefault();
-          toggleRecording();
+          e.preventDefault()
+          toggleRecording()
         }
       }
-    });
+    })
 
     // =========================================================================
     // State Subscriptions
     // =========================================================================
-    let processingTimerInterval = null;
-    let processingTimerStart = null;
-    let isThinking = false;
-    let doneHideTimeout = null;
+    let processingTimerInterval = null
+    let processingTimerStart = null
+    let isThinking = false
+    let doneHideTimeout = null
 
     function formatElapsedTime(ms) {
-      const totalSeconds = Math.floor(ms / 1000);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
+      const totalSeconds = Math.floor(ms / 1000)
+      const minutes = Math.floor(totalSeconds / 60)
+      const seconds = totalSeconds % 60
       if (minutes > 0) {
-        return `${minutes}m ${seconds}s`;
+        return `${minutes}m ${seconds}s`
       }
-      return `${totalSeconds}s`;
+      return `${totalSeconds}s`
     }
 
     function startProcessingTimer() {
-      processingTimerStart = Date.now();
-      isThinking = true;
-      const timer = $('thinkingTimer');
-      if (timer) timer.textContent = '0.0s';
+      processingTimerStart = Date.now()
+      isThinking = true
+      const timer = $('thinkingTimer')
+      if (timer) timer.textContent = '0.0s'
       processingTimerInterval = setInterval(() => {
-        const timerEl = $('thinkingTimer');
+        const timerEl = $('thinkingTimer')
         if (timerEl && processingTimerStart) {
-          const elapsed = ((Date.now() - processingTimerStart) / 1000).toFixed(1);
-          timerEl.textContent = `${elapsed}s`;
+          const elapsed = ((Date.now() - processingTimerStart) / 1000).toFixed(1)
+          timerEl.textContent = `${elapsed}s`
         }
-      }, 100);
+      }, 100)
     }
 
     function stopProcessingTimer() {
-      const elapsedMs = processingTimerStart ? Date.now() - processingTimerStart : 0;
+      const elapsedMs = processingTimerStart ? Date.now() - processingTimerStart : 0
       if (processingTimerInterval) {
-        clearInterval(processingTimerInterval);
-        processingTimerInterval = null;
+        clearInterval(processingTimerInterval)
+        processingTimerInterval = null
       }
-      isThinking = false;
-      return elapsedMs;
+      isThinking = false
+      return elapsedMs
     }
 
     function showDoneState(elapsedMs) {
-      const indicator = $('thinkingIndicator');
-      const thinkingState = $('thinkingState');
-      const doneState = $('doneState');
-      const doneTimer = $('doneTimer');
+      const indicator = $('thinkingIndicator')
+      const thinkingState = $('thinkingState')
+      const doneState = $('doneState')
+      const doneTimer = $('doneTimer')
 
-      if (!indicator || !thinkingState || !doneState) return;
+      if (!indicator || !thinkingState || !doneState) return
 
       // Show done state, hide thinking state
-      thinkingState.classList.add('hidden');
-      doneState.classList.remove('hidden');
-      indicator.classList.remove('hidden');
+      thinkingState.classList.add('hidden')
+      doneState.classList.remove('hidden')
+      indicator.classList.remove('hidden')
 
       // Set the elapsed time
       if (doneTimer) {
-        doneTimer.textContent = formatElapsedTime(elapsedMs);
+        doneTimer.textContent = formatElapsedTime(elapsedMs)
       }
 
       // Clear any existing timeout
       if (doneHideTimeout) {
-        clearTimeout(doneHideTimeout);
+        clearTimeout(doneHideTimeout)
       }
 
       // Hide after 3 seconds
       doneHideTimeout = setTimeout(() => {
-        indicator.classList.add('hidden');
-        doneState.classList.add('hidden');
-        thinkingState.classList.remove('hidden');
-        processingTimerStart = null;
-      }, 3000);
+        indicator.classList.add('hidden')
+        doneState.classList.add('hidden')
+        thinkingState.classList.remove('hidden')
+        processingTimerStart = null
+      }, 3000)
     }
 
     function showThinkingState() {
-      const indicator = $('thinkingIndicator');
-      const thinkingState = $('thinkingState');
-      const doneState = $('doneState');
+      const indicator = $('thinkingIndicator')
+      const thinkingState = $('thinkingState')
+      const doneState = $('doneState')
 
-      if (!indicator || !thinkingState || !doneState) return;
+      if (!indicator || !thinkingState || !doneState) return
 
       // Clear any done timeout
       if (doneHideTimeout) {
-        clearTimeout(doneHideTimeout);
-        doneHideTimeout = null;
+        clearTimeout(doneHideTimeout)
+        doneHideTimeout = null
       }
 
       // Show thinking state, hide done state
-      thinkingState.classList.remove('hidden');
-      doneState.classList.add('hidden');
-      indicator.classList.remove('hidden');
+      thinkingState.classList.remove('hidden')
+      doneState.classList.add('hidden')
+      indicator.classList.remove('hidden')
     }
 
     appStore.$subscribe((state) => {
-      const indicator = $('thinkingIndicator');
+      const indicator = $('thinkingIndicator')
+      const currentChatId = chatStore.$state.currentChatId
+      const isProcessingThisChat = state.isProcessing && state.processingChatId === currentChatId
+
       if (indicator) {
-        if (state.isProcessing) {
-          showThinkingState();
-          if (!processingTimerInterval) startProcessingTimer();
+        if (isProcessingThisChat) {
+          showThinkingState()
+          if (!processingTimerInterval) startProcessingTimer()
         } else if (isThinking || processingTimerStart) {
           // Was processing, now done - show done state
-          const elapsedMs = stopProcessingTimer();
-          if (elapsedMs > 500) {
-            // Only show done state if processing took more than 0.5s
-            showDoneState(elapsedMs);
+          const elapsedMs = stopProcessingTimer()
+          if (elapsedMs > 500 && state.processingChatId === currentChatId) {
+            // Only show done state if processing took more than 0.5s and it's this chat
+            showDoneState(elapsedMs)
           } else {
-            indicator.classList.add('hidden');
-            processingTimerStart = null;
+            indicator.classList.add('hidden')
+            processingTimerStart = null
           }
         }
       }
 
-      const stopBtnEl = $('stopBtn');
+      const stopBtnEl = $('stopBtn')
       if (stopBtnEl) {
-        stopBtnEl.classList.toggle('hidden', !state.isProcessing);
+        stopBtnEl.classList.toggle('hidden', !isProcessingThisChat)
       }
 
-      const driverSelectEl = $('driverSelect');
+      const driverSelectEl = $('driverSelect')
       if (driverSelectEl && state.currentDriver) {
-        driverSelectEl.value = state.currentDriver;
+        driverSelectEl.value = state.currentDriver
       }
-    });
+    })
+
+    // Update indicator when switching chats
+    chatStore.$subscribe((chatState) => {
+      const appState = appStore.$state
+      const indicator = $('thinkingIndicator')
+      const stopBtnEl = $('stopBtn')
+      const isProcessingThisChat = appState.isProcessing && appState.processingChatId === chatState.currentChatId
+
+      if (indicator) {
+        if (isProcessingThisChat) {
+          showThinkingState()
+          if (!processingTimerInterval) startProcessingTimer()
+        } else {
+          indicator.classList.add('hidden')
+          if (processingTimerInterval) {
+            clearInterval(processingTimerInterval)
+            processingTimerInterval = null
+          }
+        }
+      }
+
+      if (stopBtnEl) {
+        stopBtnEl.classList.toggle('hidden', !isProcessingThisChat)
+      }
+    })
 
     // =========================================================================
     // Expose to window.voide
     // =========================================================================
-    window.voide = window.voide || {};
+    window.voide = window.voide || {}
     Object.assign(window.voide, {
       toggleRecording,
       startRecording,
@@ -1090,9 +1118,9 @@
       sounds,
       audioRecorder,
       audioStorage
-    });
+    })
   }
 
-  init();
-})();
+  init()
+})()
 </script>

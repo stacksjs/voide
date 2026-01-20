@@ -29,42 +29,42 @@
 
 <script client>
 (() => {
-  const { appStore, chatStore } = window.__STX_STORES__;
-  const API_BASE_URL = 'http://localhost:3008/voide';
+  const { appStore, chatStore } = window.__STX_STORES__
+  const API_BASE_URL = 'http://localhost:3008/voide'
 
-  let renderedCount = 0;
-  const messageElements = new Map();
-  const messageUpdates = new Map();
-  let isCurrentlyProcessing = false;
+  let renderedCount = 0
+  const messageElements = new Map()
+  const messageUpdates = new Map()
+  let isCurrentlyProcessing = false
 
   // =========================================================================
   // Greeting
   // =========================================================================
 
   function getGreeting() {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Good morning';
-    if (hour >= 12 && hour < 17) return 'Good afternoon';
-    if (hour >= 17 && hour < 21) return 'Good evening';
-    return 'Good night';
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) return 'Good morning'
+    if (hour >= 12 && hour < 17) return 'Good afternoon'
+    if (hour >= 17 && hour < 21) return 'Good evening'
+    return 'Good night'
   }
 
   function getUserName() {
     try {
-      const settings = localStorage.getItem('voide-settings');
+      const settings = localStorage.getItem('voide-settings')
       if (settings) {
-        const parsed = JSON.parse(settings);
-        if (parsed.userName) return parsed.userName;
+        const parsed = JSON.parse(settings)
+        if (parsed.userName) return parsed.userName
       }
     } catch (e) {}
-    return null;
+    return null
   }
 
   function updateGreeting() {
-    const el = document.getElementById('greetingText');
-    if (!el) return;
-    const name = getUserName();
-    el.textContent = name ? `${getGreeting()}, ${name}` : getGreeting();
+    const el = document.getElementById('greetingText')
+    if (!el) return
+    const name = getUserName()
+    el.textContent = name ? `${getGreeting()}, ${name}` : getGreeting()
   }
 
   // =========================================================================
@@ -72,31 +72,31 @@
   // =========================================================================
 
   function isNearBottom(el) {
-    const threshold = 100;
-    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    const threshold = 100
+    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold
   }
 
   function scrollToBottom(el) {
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }
 
   function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
   }
 
   // =========================================================================
   // Text-to-Speech
   // =========================================================================
 
-  let currentUtterance = null;
-  let isSpeaking = false;
+  let currentUtterance = null
+  let isSpeaking = false
 
   function speak(text, msgId, onComplete = null) {
     // Stop any current speech
     if (isSpeaking) {
-      stopSpeaking();
+      stopSpeaking()
     }
 
     // Clean text for speech (remove markdown, code blocks, etc.)
@@ -110,88 +110,88 @@
       .replace(/[-*+]\s+/g, '')  // Remove list markers
       .replace(/\n+/g, '. ')  // Convert newlines to pauses
       .replace(/\s+/g, ' ')  // Normalize whitespace
-      .trim();
+      .trim()
 
     if (!cleanText) {
-      if (onComplete) onComplete();
-      return;
+      if (onComplete) onComplete()
+      return
     }
 
-    currentUtterance = new SpeechSynthesisUtterance(cleanText);
+    currentUtterance = new SpeechSynthesisUtterance(cleanText)
     currentUtterance.rate = 1.1;  // Slightly faster
-    currentUtterance.pitch = 1;
-    currentUtterance.volume = 1;
+    currentUtterance.pitch = 1
+    currentUtterance.volume = 1
 
     // Try to get a good voice (prefer natural/enhanced voices)
-    const voices = speechSynthesis.getVoices();
+    const voices = speechSynthesis.getVoices()
     const preferredVoice = voices.find(v =>
       v.name.includes('Samantha') ||  // Mac
       v.name.includes('Daniel') ||     // Mac
       v.name.includes('Google') ||     // Chrome
       v.name.includes('Natural') ||
       v.name.includes('Enhanced')
-    ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+    ) || voices.find(v => v.lang.startsWith('en')) || voices[0]
 
     if (preferredVoice) {
-      currentUtterance.voice = preferredVoice;
+      currentUtterance.voice = preferredVoice
     }
 
     currentUtterance.onstart = () => {
-      isSpeaking = true;
-      updateSpeakButton(msgId, true);
-    };
+      isSpeaking = true
+      updateSpeakButton(msgId, true)
+    }
 
     currentUtterance.onend = () => {
-      isSpeaking = false;
-      currentUtterance = null;
-      updateSpeakButton(msgId, false);
-      if (onComplete) onComplete();
-    };
+      isSpeaking = false
+      currentUtterance = null
+      updateSpeakButton(msgId, false)
+      if (onComplete) onComplete()
+    }
 
     currentUtterance.onerror = () => {
-      isSpeaking = false;
-      currentUtterance = null;
-      updateSpeakButton(msgId, false);
-      if (onComplete) onComplete();
-    };
+      isSpeaking = false
+      currentUtterance = null
+      updateSpeakButton(msgId, false)
+      if (onComplete) onComplete()
+    }
 
-    speechSynthesis.speak(currentUtterance);
+    speechSynthesis.speak(currentUtterance)
   }
 
   function stopSpeaking() {
-    speechSynthesis.cancel();
-    isSpeaking = false;
-    currentUtterance = null;
+    speechSynthesis.cancel()
+    isSpeaking = false
+    currentUtterance = null
     // Reset all speak buttons
     document.querySelectorAll('.speak-btn').forEach(btn => {
-      btn.innerHTML = getSpeakIcon();
-      btn.title = 'Read aloud';
-    });
+      btn.innerHTML = getSpeakIcon()
+      btn.title = 'Read aloud'
+    })
   }
 
   function updateSpeakButton(msgId, speaking) {
-    const btn = document.querySelector(`#${msgId} .speak-btn`);
+    const btn = document.querySelector(`#${msgId} .speak-btn`)
     if (btn) {
-      btn.innerHTML = speaking ? getStopIcon() : getSpeakIcon();
-      btn.title = speaking ? 'Stop reading' : 'Read aloud';
+      btn.innerHTML = speaking ? getStopIcon() : getSpeakIcon()
+      btn.title = speaking ? 'Stop reading' : 'Read aloud'
     }
   }
 
   function getSpeakIcon() {
-    return `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`;
+    return `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`
   }
 
   function getStopIcon() {
-    return `<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>`;
+    return `<svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>`
   }
 
   // Load voices (needed for some browsers)
   if (typeof speechSynthesis !== 'undefined') {
-    speechSynthesis.getVoices();
-    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+    speechSynthesis.getVoices()
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices()
   }
 
-  let codeBlockId = 0;
+  let codeBlockId = 0
 
   function highlightCode(code, lang) {
     // Simple syntax highlighting for common languages
@@ -200,17 +200,17 @@
     // 2. Then escape everything except our placeholders
     // 3. Replace placeholders with actual HTML spans
 
-    const tokens = [];
-    let tokenIndex = 0;
+    const tokens = []
+    let tokenIndex = 0
 
     function addToken(text, className) {
-      const placeholder = `\x00${tokenIndex++}\x00`;
-      tokens.push({ placeholder, text, className });
-      return placeholder;
+      const placeholder = `\x00${tokenIndex++}\x00`
+      tokens.push({ placeholder, text, className })
+      return placeholder
     }
 
     // Normalize tabs to 2 spaces for consistent rendering
-    let highlighted = code.replace(/\t/g, '  ');
+    let highlighted = code.replace(/\t/g, '  ')
 
     // Language-specific keywords
     const keywords = {
@@ -220,47 +220,47 @@
       rust: /\b(fn|let|mut|const|if|else|for|while|loop|match|return|use|mod|pub|struct|enum|impl|trait|where|self|Self|true|false|Some|None|Ok|Err|async|await|move)\b/g,
       go: /\b(func|var|const|if|else|for|range|return|import|package|type|struct|interface|map|chan|go|defer|select|case|default|break|continue|nil|true|false|make|new|append|len|cap)\b/g,
       bash: /\b(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|echo|export|source|alias|cd|ls|rm|cp|mv|mkdir|chmod|chown|grep|sed|awk|cat|head|tail|find|xargs)\b/g,
-    };
+    }
 
     // Normalize language aliases
     const langAliases = {
       javascript: 'js', jsx: 'js', tsx: 'ts', typescript: 'ts',
       py: 'python', sh: 'bash', shell: 'bash', zsh: 'bash',
       golang: 'go', rs: 'rust'
-    };
-    const langKey = langAliases[(lang || '').toLowerCase()] || (lang || '').toLowerCase();
-    const keywordRegex = keywords[langKey] || keywords.js;
+    }
+    const langKey = langAliases[(lang || '').toLowerCase()] || (lang || '').toLowerCase()
+    const keywordRegex = keywords[langKey] || keywords.js
 
     // Apply highlighting in order of precedence (strings first to avoid highlighting inside strings)
     // Strings (double and single quotes) - be careful with escapes
-    highlighted = highlighted.replace(/"([^"\\]|\\.)*"/g, (m) => addToken(m, 'text-monokai-yellow'));
-    highlighted = highlighted.replace(/'([^'\\]|\\.)*'/g, (m) => addToken(m, 'text-monokai-yellow'));
+    highlighted = highlighted.replace(/"([^"\\]|\\.)*"/g, (m) => addToken(m, 'text-monokai-yellow'))
+    highlighted = highlighted.replace(/'([^'\\]|\\.)*'/g, (m) => addToken(m, 'text-monokai-yellow'))
     // Template literals
-    highlighted = highlighted.replace(/`[^`]*`/g, (m) => addToken(m, 'text-monokai-yellow'));
+    highlighted = highlighted.replace(/`[^`]*`/g, (m) => addToken(m, 'text-monokai-yellow'))
     // Comments (// and #) - only match to end of line
-    highlighted = highlighted.replace(/\/\/[^\n]*/g, (m) => addToken(m, 'text-monokai-gray'));
-    highlighted = highlighted.replace(/#[^\n]*/g, (m) => addToken(m, 'text-monokai-gray'));
+    highlighted = highlighted.replace(/\/\/[^\n]*/g, (m) => addToken(m, 'text-monokai-gray'))
+    highlighted = highlighted.replace(/#[^\n]*/g, (m) => addToken(m, 'text-monokai-gray'))
     // Numbers (not inside tokens)
-    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, (m) => addToken(m, 'text-monokai-purple'));
+    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, (m) => addToken(m, 'text-monokai-purple'))
     // Keywords
-    highlighted = highlighted.replace(keywordRegex, (m) => addToken(m, 'text-monokai-pink'));
+    highlighted = highlighted.replace(keywordRegex, (m) => addToken(m, 'text-monokai-pink'))
     // Function calls
-    highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, (m, name) => addToken(name, 'text-monokai-green') + '(');
+    highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, (m, name) => addToken(name, 'text-monokai-green') + '(')
 
     // Now escape HTML in the result (placeholders use \x00 which won't be in normal text)
-    highlighted = escapeHtml(highlighted);
+    highlighted = escapeHtml(highlighted)
 
     // Replace placeholders with actual spans
     for (const { placeholder, text, className } of tokens) {
-      const escapedText = escapeHtml(text);
-      highlighted = highlighted.replace(placeholder, `<span class="${className}">${escapedText}</span>`);
+      const escapedText = escapeHtml(text)
+      highlighted = highlighted.replace(placeholder, `<span class="${className}">${escapedText}</span>`)
     }
 
-    return highlighted;
+    return highlighted
   }
 
   function renderMarkdown(text) {
-    if (!text) return '';
+    if (!text) return ''
 
     // Filter out "*thinking*" and "thinking..." patterns from Claude's response
     let cleaned = text
@@ -269,12 +269,12 @@
       .replace(/\nthinking\.\.\.\s*/gi, '\n');  // Remove "thinking..." after newlines
 
     // Extract code blocks BEFORE escaping (to avoid double-escaping < and >)
-    const codeBlocks = [];
+    const codeBlocks = []
     let html = cleaned.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
-      const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
-      const blockId = `code-block-${codeBlockId++}`;
-      const highlighted = highlightCode(code.trim(), lang);
-      const langLabel = lang ? `<span class="text-monokai-gray text-xs">${escapeHtml(lang)}</span>` : '';
+      const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`
+      const blockId = `code-block-${codeBlockId++}`
+      const highlighted = highlightCode(code.trim(), lang)
+      const langLabel = lang ? `<span class="text-monokai-gray text-xs">${escapeHtml(lang)}</span>` : ''
       codeBlocks.push(`
         <div class="relative group my-3">
           <div class="flex items-center justify-between bg-monokai-border/40 rounded-t-lg px-3 py-1.5">
@@ -286,64 +286,64 @@
           </div>
           <pre id="${blockId}" class="bg-monokai-bg-dark border border-monokai-border/40 border-t-0 rounded-b-lg p-3 overflow-x-auto"><code class="text-xs font-mono whitespace-pre-wrap">${highlighted}</code></pre>
         </div>
-      `);
-      return placeholder;
-    });
+      `)
+      return placeholder
+    })
 
     // Now escape the rest of the HTML (code blocks are already processed)
-    html = escapeHtml(html);
+    html = escapeHtml(html)
 
     // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-monokai-bg-dark text-monokai-cyan px-1.5 py-0.5 rounded text-xs">$1</code>');
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-monokai-bg-dark text-monokai-cyan px-1.5 py-0.5 rounded text-xs">$1</code>')
 
     // Headers
-    html = html.replace(/^### (.+)$/gm, '<h3 class="text-monokai-fg text-base font-semibold mt-4 mb-2">$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2 class="text-monokai-fg text-lg font-semibold mt-4 mb-2">$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1 class="text-monokai-fg text-xl font-bold mt-4 mb-2">$1</h1>');
+    html = html.replace(/^### (.+)$/gm, '<h3 class="text-monokai-fg text-base font-semibold mt-4 mb-2">$1</h3>')
+    html = html.replace(/^## (.+)$/gm, '<h2 class="text-monokai-fg text-lg font-semibold mt-4 mb-2">$1</h2>')
+    html = html.replace(/^# (.+)$/gm, '<h1 class="text-monokai-fg text-xl font-bold mt-4 mb-2">$1</h1>')
 
     // Bold and italic
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-monokai-fg font-semibold">$1</strong>');
-    html = html.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-monokai-fg font-semibold">$1</strong>')
+    html = html.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>')
 
     // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-monokai-cyan underline hover:text-monokai-cyan/80">$1</a>');
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-monokai-cyan underline hover:text-monokai-cyan/80">$1</a>')
 
     // Lists
-    html = html.replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-monokai-fg/80">$1</li>');
+    html = html.replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-monokai-fg/80">$1</li>')
 
     // Horizontal rule
-    html = html.replace(/^---$/gm, '<hr class="border-monokai-border/40 my-4">');
+    html = html.replace(/^---$/gm, '<hr class="border-monokai-border/40 my-4">')
 
     // Convert newlines to <br> (after all line-based processing)
-    html = html.replace(/\n/g, '<br>');
+    html = html.replace(/\n/g, '<br>')
 
     // Restore code blocks
     codeBlocks.forEach((block, i) => {
-      html = html.replace(`__CODE_BLOCK_${i}__`, block);
-    });
+      html = html.replace(`__CODE_BLOCK_${i}__`, block)
+    })
 
-    return html;
+    return html
   }
 
   // =========================================================================
   // Message Rendering
   // =========================================================================
 
-  let messageIdCounter = 0;
+  let messageIdCounter = 0
 
   function createMessageHtml(msg) {
-    const isUser = msg.type === 'user';
-    const isError = msg.type === 'error';
-    const isSystem = msg.type === 'system';
-    const msgId = `msg-${messageIdCounter++}`;
+    const isUser = msg.type === 'user'
+    const isError = msg.type === 'error'
+    const isSystem = msg.type === 'system'
+    const msgId = `msg-${messageIdCounter++}`
 
     // Loading indicator - hidden until actual content arrives
     if (msg.content === '...') {
-      return `<div class="hidden"></div>`;
+      return `<div class="hidden"></div>`
     }
 
     // Get preview text (first line or first 100 chars)
-    const previewText = msg.content.split('\n')[0].substring(0, 100) + (msg.content.length > 100 ? '...' : '');
+    const previewText = msg.content.split('\n')[0].substring(0, 100) + (msg.content.length > 100 ? '...' : '')
 
     // User message - right aligned with cyan accent
     if (isUser) {
@@ -353,7 +353,7 @@
           <p class="msg-content text-sm text-monokai-fg leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.content)}</p>
           <p class="msg-preview hidden text-sm text-monokai-fg/60 leading-relaxed whitespace-pre-wrap">${escapeHtml(previewText)}</p>
         </div>
-      </div>`;
+      </div>`
     }
 
     // Error message
@@ -369,20 +369,20 @@
         <button class="collapse-btn flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center cursor-pointer" data-collapse="${msgId}" title="Collapse/Expand" style="background: #727072; color: #fcfcfa;">
           <svg class="collapse-icon" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
         </button>
-      </div>`;
+      </div>`
     }
 
     // System message - subtle italic (no collapse for system messages)
     if (isSystem) {
       return `<div class="text-center py-2">
         <span class="text-xs text-monokai-gray italic">${escapeHtml(msg.content)}</span>
-      </div>`;
+      </div>`
     }
 
     // Assistant message - left aligned with purple accent
-    const renderedContent = renderMarkdown(msg.content);
+    const renderedContent = renderMarkdown(msg.content)
     // Store raw content for TTS (base64 encode to safely embed in HTML attribute)
-    const rawContentForTTS = btoa(encodeURIComponent(msg.content));
+    const rawContentForTTS = btoa(encodeURIComponent(msg.content))
     return `<div class="group flex items-start gap-2" id="${msgId}" data-content="${rawContentForTTS}">
       <div class="flex-shrink-0 w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center">
         <span class="text-white text-xs font-medium">V</span>
@@ -394,85 +394,85 @@
       <div class="flex flex-col gap-1">
         <button class="speak-btn" data-speak="${msgId}" title="Read aloud" style="width: 24px; height: 24px; background: #727072; color: #fcfcfa; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">${getSpeakIcon()}</button>
       </div>
-    </div>`;
+    </div>`
   }
 
   function toggleChatState(hasMessages) {
-    const welcomeState = document.getElementById('welcomeState');
-    const chatState = document.getElementById('chatState');
+    const welcomeState = document.getElementById('welcomeState')
+    const chatState = document.getElementById('chatState')
 
     if (hasMessages) {
-      welcomeState?.classList.add('hidden');
-      chatState?.classList.remove('hidden');
+      welcomeState?.classList.add('hidden')
+      chatState?.classList.remove('hidden')
     } else {
-      welcomeState?.classList.remove('hidden');
-      chatState?.classList.add('hidden');
+      welcomeState?.classList.remove('hidden')
+      chatState?.classList.add('hidden')
     }
   }
 
   function renderMessages(messages) {
-    const container = document.getElementById('messagesContainer');
-    const chatState = document.getElementById('chatState');
-    if (!container) return;
+    const container = document.getElementById('messagesContainer')
+    const chatState = document.getElementById('chatState')
+    if (!container) return
 
-    const messageArray = messages || [];
-    toggleChatState(messageArray.length > 0);
+    const messageArray = messages || []
+    toggleChatState(messageArray.length > 0)
 
-    const shouldAutoScroll = chatState ? isNearBottom(chatState) : true;
+    const shouldAutoScroll = chatState ? isNearBottom(chatState) : true
 
     // Reset if messages were cleared
     if (messageArray.length < renderedCount) {
-      renderedCount = 0;
-      messageElements.clear();
-      messageUpdates.clear();
-      container.innerHTML = '';
+      renderedCount = 0
+      messageElements.clear()
+      messageUpdates.clear()
+      container.innerHTML = ''
     }
 
     // Update existing messages that changed
     for (let i = 0; i < messageArray.length; i++) {
-      const msg = messageArray[i];
-      if (!msg) continue;
-      const existingEl = messageElements.get(i);
-      const lastUpdate = messageUpdates.get(i);
+      const msg = messageArray[i]
+      if (!msg) continue
+      const existingEl = messageElements.get(i)
+      const lastUpdate = messageUpdates.get(i)
       if (existingEl && msg.updated && msg.updated !== lastUpdate) {
-        existingEl.innerHTML = createMessageHtml(msg);
-        messageUpdates.set(i, msg.updated);
+        existingEl.innerHTML = createMessageHtml(msg)
+        messageUpdates.set(i, msg.updated)
       }
     }
 
     // Add new messages
     while (renderedCount < messageArray.length) {
-      const idx = renderedCount;
-      const msg = messageArray[idx];
-      if (!msg) break;
-      const messageDiv = document.createElement('div');
-      messageDiv.className = 'animate-fade-in';
-      messageDiv.innerHTML = createMessageHtml(msg);
-      container.appendChild(messageDiv);
-      messageElements.set(idx, messageDiv);
-      messageUpdates.set(idx, msg.updated || 0);
-      renderedCount++;
+      const idx = renderedCount
+      const msg = messageArray[idx]
+      if (!msg) break
+      const messageDiv = document.createElement('div')
+      messageDiv.className = 'animate-fade-in'
+      messageDiv.innerHTML = createMessageHtml(msg)
+      container.appendChild(messageDiv)
+      messageElements.set(idx, messageDiv)
+      messageUpdates.set(idx, msg.updated || 0)
+      renderedCount++
     }
 
     if (shouldAutoScroll && chatState) {
-      scrollToBottom(chatState);
+      scrollToBottom(chatState)
     }
 
   }
 
   function init() {
-    console.log('[VoideTerminal] Initialized');
+    console.log('[VoideTerminal] Initialized')
 
     // Set up greeting
-    updateGreeting();
+    updateGreeting()
 
     // Respond to prompt from Claude
     function respondToPrompt(response) {
-      if (!chatStore.pendingPrompt) return;
+      if (!chatStore.pendingPrompt) return
 
       // Add user response as message
-      chatStore.addMessage('user', response, 'You');
-      chatStore.clearPendingPrompt();
+      chatStore.addMessage('user', response, 'You')
+      chatStore.clearPendingPrompt()
 
       // Send response to backend
       fetch(API_BASE_URL + '/respond', {
@@ -483,152 +483,152 @@
           response: response
         })
       }).catch(error => {
-        chatStore.addMessage('error', 'Failed to send response: ' + error.message, 'Error');
-      });
+        chatStore.addMessage('error', 'Failed to send response: ' + error.message, 'Error')
+      })
     }
 
     // Render messages
-    chatStore.$subscribe(state => renderMessages(state.messages));
+    chatStore.$subscribe(state => renderMessages(state.messages))
 
     // Event delegation for collapse and speak buttons
-    const container = document.getElementById('messagesContainer');
+    const container = document.getElementById('messagesContainer')
     container?.addEventListener('click', (e) => {
       // Handle collapse button
-      const collapseBtn = e.target.closest('[data-collapse]');
+      const collapseBtn = e.target.closest('[data-collapse]')
       if (collapseBtn) {
-        const msgId = collapseBtn.getAttribute('data-collapse');
-        toggleCollapse(msgId);
-        return;
+        const msgId = collapseBtn.getAttribute('data-collapse')
+        toggleCollapse(msgId)
+        return
       }
 
       // Handle speak button
-      const speakBtn = e.target.closest('[data-speak]');
+      const speakBtn = e.target.closest('[data-speak]')
       if (speakBtn) {
-        const msgId = speakBtn.getAttribute('data-speak');
-        handleSpeak(msgId);
-        return;
+        const msgId = speakBtn.getAttribute('data-speak')
+        handleSpeak(msgId)
+        return
       }
-    });
+    })
 
     // Handle TTS speak/stop
     function handleSpeak(msgId) {
       // If already speaking this message, stop
       if (isSpeaking) {
-        stopSpeaking();
-        return;
+        stopSpeaking()
+        return
       }
 
       // Get the raw content from data attribute
-      const msgEl = document.getElementById(msgId);
-      if (!msgEl) return;
+      const msgEl = document.getElementById(msgId)
+      if (!msgEl) return
 
-      const encodedContent = msgEl.getAttribute('data-content');
-      if (!encodedContent) return;
+      const encodedContent = msgEl.getAttribute('data-content')
+      if (!encodedContent) return
 
       try {
-        const content = decodeURIComponent(atob(encodedContent));
-        speak(content, msgId);
+        const content = decodeURIComponent(atob(encodedContent))
+        speak(content, msgId)
       } catch (e) {
-        console.error('Failed to decode content for TTS:', e);
+        console.error('Failed to decode content for TTS:', e)
       }
     }
 
     // Subscribe to processing state
     appStore.$subscribe(state => {
-      isCurrentlyProcessing = state.isProcessing;
-    });
+      isCurrentlyProcessing = state.isProcessing
+    })
 
     // Handle pending prompts
     chatStore.$subscribe(state => {
-      const overlay = document.getElementById('promptOverlay');
-      const textEl = document.getElementById('promptText');
-      const optionsEl = document.getElementById('promptOptions');
+      const overlay = document.getElementById('promptOverlay')
+      const textEl = document.getElementById('promptText')
+      const optionsEl = document.getElementById('promptOptions')
 
-      if (!overlay || !textEl || !optionsEl) return;
+      if (!overlay || !textEl || !optionsEl) return
 
       if (state.pendingPrompt) {
-        textEl.textContent = state.pendingPrompt.text;
-        optionsEl.innerHTML = '';
+        textEl.textContent = state.pendingPrompt.text
+        optionsEl.innerHTML = ''
 
         state.pendingPrompt.options.forEach((option, i) => {
-          const label = state.pendingPrompt.labels?.[i] || option;
-          const btn = document.createElement('button');
-          btn.className = 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors';
-          btn.textContent = label;
-          btn.onclick = () => respondToPrompt(option);
-          optionsEl.appendChild(btn);
-        });
+          const label = state.pendingPrompt.labels?.[i] || option
+          const btn = document.createElement('button')
+          btn.className = 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors'
+          btn.textContent = label
+          btn.onclick = () => respondToPrompt(option)
+          optionsEl.appendChild(btn)
+        })
 
-        overlay.classList.remove('hidden');
+        overlay.classList.remove('hidden')
       } else {
-        overlay.classList.add('hidden');
+        overlay.classList.add('hidden')
       }
-    });
+    })
 
     // Toggle collapse state for a message
     function toggleCollapse(msgId) {
-      const msgEl = document.getElementById(msgId);
-      if (!msgEl) return;
+      const msgEl = document.getElementById(msgId)
+      if (!msgEl) return
 
-      const content = msgEl.querySelector('.msg-content');
-      const preview = msgEl.querySelector('.msg-preview');
-      const icon = msgEl.querySelector('.collapse-icon');
+      const content = msgEl.querySelector('.msg-content')
+      const preview = msgEl.querySelector('.msg-preview')
+      const icon = msgEl.querySelector('.collapse-icon')
 
       if (content && preview) {
-        const isCollapsed = content.classList.contains('hidden');
+        const isCollapsed = content.classList.contains('hidden')
         if (isCollapsed) {
           // Expand
-          content.classList.remove('hidden');
-          preview.classList.add('hidden');
-          icon?.classList.remove('rotate-180');
+          content.classList.remove('hidden')
+          preview.classList.add('hidden')
+          icon?.classList.remove('rotate-180')
         } else {
           // Collapse
-          content.classList.add('hidden');
-          preview.classList.remove('hidden');
-          icon?.classList.add('rotate-180');
+          content.classList.add('hidden')
+          preview.classList.remove('hidden')
+          icon?.classList.add('rotate-180')
         }
       }
     }
 
     // Copy code block to clipboard
     function copyCode(blockId) {
-      const block = document.getElementById(blockId);
-      if (!block) return;
+      const block = document.getElementById(blockId)
+      if (!block) return
 
-      const code = block.querySelector('code');
-      if (!code) return;
+      const code = block.querySelector('code')
+      if (!code) return
 
       // Get text content (strips HTML tags)
-      const text = code.textContent || code.innerText;
+      const text = code.textContent || code.innerText
 
       navigator.clipboard.writeText(text).then(() => {
         // Find the copy button and update text
-        const btn = block.previousElementSibling?.querySelector('.copy-btn');
+        const btn = block.previousElementSibling?.querySelector('.copy-btn')
         if (btn) {
-          const textSpan = btn.querySelector('.copy-text');
+          const textSpan = btn.querySelector('.copy-text')
           if (textSpan) {
-            textSpan.textContent = 'Copied!';
+            textSpan.textContent = 'Copied!'
             setTimeout(() => {
-              textSpan.textContent = 'Copy';
-            }, 2000);
+              textSpan.textContent = 'Copy'
+            }, 2000)
           }
         }
       }).catch(err => {
-        console.error('Failed to copy:', err);
-      });
+        console.error('Failed to copy:', err)
+      })
     }
 
     // Expose to window.voide
-    window.voide = window.voide || {};
+    window.voide = window.voide || {}
     Object.assign(window.voide, {
       respondToPrompt,
       toggleCollapse,
       copyCode,
       speak,
       stopSpeaking
-    });
+    })
   }
 
-  init();
-})();
+  init()
+})()
 </script>
