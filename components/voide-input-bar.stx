@@ -958,6 +958,8 @@
     let processingTimerInterval = null
     let isThinking = false
     let doneHideTimeout = null
+    // Map to store timer start times per chat ID (backup for store)
+    const timerStartTimes = {}
 
     function formatElapsedTime(ms) {
       const totalSeconds = Math.floor(ms / 1000)
@@ -970,10 +972,15 @@
     }
 
     function startProcessingTimer() {
-      // Timer start time is now stored in appStore.processingStartTime
       isThinking = true
       const timer = $('thinkingTimer')
       if (timer) timer.textContent = '0.0s'
+
+      // Store start time for the current processing chat
+      const chatId = appStore.processingChatId
+      if (chatId && !timerStartTimes[chatId]) {
+        timerStartTimes[chatId] = Date.now()
+      }
 
       // Clear any existing interval
       if (processingTimerInterval) {
@@ -982,7 +989,8 @@
 
       processingTimerInterval = setInterval(() => {
         const timerEl = $('thinkingTimer')
-        const startTime = appStore.$state.processingStartTime
+        const currentChatId = appStore.processingChatId
+        const startTime = timerStartTimes[currentChatId] || appStore.processingStartTime
         if (timerEl && startTime) {
           const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
           timerEl.textContent = `${elapsed}s`
@@ -991,8 +999,15 @@
     }
 
     function stopProcessingTimer() {
-      const startTime = appStore.$state.processingStartTime
+      const chatId = appStore.processingChatId
+      const startTime = timerStartTimes[chatId] || appStore.processingStartTime
       const elapsedMs = startTime ? Date.now() - startTime : 0
+
+      // Clean up the timer start time for this chat
+      if (chatId) {
+        delete timerStartTimes[chatId]
+      }
+
       if (processingTimerInterval) {
         clearInterval(processingTimerInterval)
         processingTimerInterval = null
