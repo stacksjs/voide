@@ -1,6 +1,6 @@
 <!-- GitHub Connection Modal -->
   <div
-    ref="githubModal"
+    @ref="githubModal"
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
     show="{{ $uiStore.modals.github }}"
     @click.self="voide.closeGithubModal()"
@@ -29,12 +29,12 @@
 
         <!-- Modal Body -->
         <div class="p-6">
-          <div ref="githubConnectForm" class="space-y-4" show="{{ !$settingsStore.github.connected }}">
+          <div @ref="githubConnectForm" class="space-y-4" show="{{ !$settingsStore.github.connected }}">
             <div>
               <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Personal Access Token</label>
               <input
                 type="password"
-                ref="githubToken"
+                @ref="githubToken"
                 class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
               />
@@ -47,7 +47,7 @@
               <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Commit Name <span class="text-monokai-gray">(optional)</span></label>
               <input
                 type="text"
-                ref="gitName"
+                @ref="gitName"
                 class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="Your Name"
               />
@@ -57,17 +57,17 @@
               <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Commit Email <span class="text-monokai-gray">(optional)</span></label>
               <input
                 type="email"
-                ref="gitEmail"
+                @ref="gitEmail"
                 class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="you@example.com"
               />
             </div>
           </div>
 
-          <div ref="githubConnectedInfo" class="text-center py-6" show="{{ $settingsStore.github.connected }}">
-            <img ref="connectedAvatar" src="{{ $settingsStore.github.avatarUrl }}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-monokai-green" />
-            <div ref="connectedName" class="text-xl font-semibold text-monokai-fg mb-1" text="{{ $settingsStore.github.name || $settingsStore.github.username }}"></div>
-            <div ref="connectedUsername" class="text-monokai-gray mb-3" text="{{ '@' + $settingsStore.github.username }}"></div>
+          <div @ref="githubConnectedInfo" class="text-center py-6" show="{{ $settingsStore.github.connected }}">
+            <img @ref="connectedAvatar" src="{{ $settingsStore.github.avatarUrl }}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-monokai-green" />
+            <div @ref="connectedName" class="text-xl font-semibold text-monokai-fg mb-1" text="{{ $settingsStore.github.name || $settingsStore.github.username }}"></div>
+            <div @ref="connectedUsername" class="text-monokai-gray mb-3" text="{{ '@' + $settingsStore.github.username }}"></div>
             <div class="inline-flex items-center gap-2 px-3 py-1 bg-monokai-green/20 border border-monokai-green/30 rounded-full text-monokai-green text-xs">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -84,13 +84,13 @@
             @click="voide.closeGithubModal()"
           >Cancel</button>
           <button
-            ref="githubConnectBtn"
+            @ref="githubConnectBtn"
             class="px-4 py-2 text-sm font-medium bg-monokai-purple text-white rounded-lg hover:bg-monokai-purple/90 transition-all"
             show="{{ !$settingsStore.github.connected }}"
             @click="voide.connectGithub()"
           >Connect</button>
           <button
-            ref="githubDisconnectBtn"
+            @ref="githubDisconnectBtn"
             class="px-4 py-2 text-sm font-medium bg-monokai-pink/20 border border-monokai-pink/30 text-monokai-pink rounded-lg hover:bg-monokai-pink/30 transition-all"
             show="{{ $settingsStore.github.connected }}"
             @click="voide.disconnectGithub()"
@@ -102,7 +102,7 @@
 
   <!-- API Settings Modal -->
   <div
-    ref="settingsModal"
+    @ref="settingsModal"
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
     show="{{ $uiStore.modals.settings }}"
     @click.self="voide.closeSettingsModal()"
@@ -138,12 +138,12 @@
             <div class="flex gap-2">
               <input
                 type="text"
-                ref="projectPathInput"
+                @ref="projectPathInput"
                 class="flex-1 bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="/path/to/your/project"
               />
               <button
-                ref="browseBtn"
+                @ref="browseBtn"
                 class="px-4 py-2 text-sm font-medium bg-monokai-bg-dark border border-monokai-border text-monokai-fg rounded-xl hover:border-monokai-gray transition-all"
                 title="Browse for folder"
               >Browse</button>
@@ -157,7 +157,7 @@
             <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Anthropic API Key</label>
             <input
               type="password"
-              ref="anthropicApiKey"
+              @ref="anthropicApiKey"
               class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
               placeholder="sk-ant-api03-xxxxxxxxxxxx"
             />
@@ -170,7 +170,7 @@
             <label class="block text-sm font-medium text-monokai-fg/80 mb-2">OpenAI API Key <span class="text-monokai-gray">(optional)</span></label>
             <input
               type="password"
-              ref="openaiApiKey"
+              @ref="openaiApiKey"
               class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
               placeholder="sk-xxxxxxxxxxxx"
             />
@@ -180,7 +180,7 @@
             <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Claude CLI Host <span class="text-monokai-gray">(optional)</span></label>
             <input
               type="text"
-              ref="claudeCliHost"
+              @ref="claudeCliHost"
               class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
               placeholder="http://your-ec2-instance:3456"
             />
@@ -189,12 +189,12 @@
           <!-- API Status -->
           <div class="p-4 bg-monokai-bg-dark border border-monokai-border rounded-xl space-y-2">
             <div class="flex items-center gap-3">
-              <span ref="anthropicStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
-              <span class="text-sm text-monokai-gray">Anthropic: <span ref="anthropicStatusText" class="text-monokai-fg/80">Not configured</span></span>
+              <span @ref="anthropicStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
+              <span class="text-sm text-monokai-gray">Anthropic: <span @ref="anthropicStatusText" class="text-monokai-fg/80">Not configured</span></span>
             </div>
             <div class="flex items-center gap-3">
-              <span ref="openaiStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
-              <span class="text-sm text-monokai-gray">OpenAI: <span ref="openaiStatusText" class="text-monokai-fg/80">Not configured</span></span>
+              <span @ref="openaiStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
+              <span class="text-sm text-monokai-gray">OpenAI: <span @ref="openaiStatusText" class="text-monokai-fg/80">Not configured</span></span>
             </div>
           </div>
         </div>
