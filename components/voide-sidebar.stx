@@ -2,7 +2,7 @@
     <!-- New Chat Button -->
     <div class="p-3">
       <button
-        id="newChatBtn"
+        ref="newChatBtn"
         class="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-monokai-fg bg-monokai-bg-dark border border-monokai-border hover:border-monokai-gray rounded-xl transition-all"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -15,7 +15,7 @@
     <!-- Search -->
     <div class="px-3 pb-2">
       <input
-        id="chatSearch"
+        ref="chatSearch"
         type="text"
         placeholder="Search chats..."
         class="w-full bg-monokai-bg-dark border border-monokai-border rounded-lg px-3 py-1.5 text-xs text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
@@ -27,7 +27,7 @@
       <div class="px-4 py-2">
         <span class="text-xs text-monokai-gray">Your chats</span>
       </div>
-      <div id="chatList" class="px-2 space-y-0.5">
+      <div ref="chatList" class="px-2 space-y-0.5">
         <!-- Chats will be rendered here -->
       </div>
     </div>
@@ -36,10 +36,10 @@
 <script client>
 (() => {
   const { appStore, chatStore } = window.__STX_STORES__
-  // DOM Elements
-  const chatList = document.getElementById('chatList')
-  const newChatBtn = document.getElementById('newChatBtn')
-  const chatSearch = document.getElementById('chatSearch')
+
+  // Vue-style refs - auto-bound from ref attributes
+  const refs = STX.useRefs()
+  const { chatList, newChatBtn, chatSearch } = refs
 
   let searchQuery = ''
 

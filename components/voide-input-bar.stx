@@ -166,64 +166,13 @@
   function init() {
 
     // =========================================================================
-    // Refs - bound to DOM elements via @ref attributes
+    // Refs - Vue-style auto-binding from ref attributes
     // =========================================================================
-    const refs = {
-      // Thinking indicator
-      thinkingIndicator: { value: null },
-      thinkingState: { value: null },
-      thinkingTimer: { value: null },
-      doneState: { value: null },
-      doneTimer: { value: null },
-      // Audio preview
-      audioPreview: { value: null },
-      audioPlayer: { value: null },
-      audioDeleteBtn: { value: null },
-      transcriptToggle: { value: null },
-      transcriptChevron: { value: null },
-      transcriptContent: { value: null },
-      transcriptText: { value: null },
-      transcriptStatus: { value: null },
-      // Input container
-      inputContainer: { value: null },
-      recordingMode: { value: null },
-      recordingTimer: { value: null },
-      inputRow: { value: null },
-      textInput: { value: null },
-      // Buttons
-      micButton: { value: null },
-      micIcon: { value: null },
-      stopBtn: { value: null },
-      sendBtn: { value: null },
-      driverSelect: { value: null },
-      // Volume indicator
-      volumeIndicator: { value: null },
-      volBar1: { value: null },
-      volBar2: { value: null },
-      volBar3: { value: null },
-      volBar4: { value: null },
-      volBar5: { value: null },
-    }
-
-    // Bind refs to DOM elements
-    if (window.STX?.bindRefs) {
-      window.STX.bindRefs(document, refs)
-    } else {
-      // Fallback: manually bind refs from data-ref attributes
-      document.querySelectorAll('[data-ref]').forEach(el => {
-        const refName = el.getAttribute('data-ref')
-        if (refs[refName]) {
-          refs[refName].value = el
-        }
-      })
-    }
-
-    // Helper to get ref value
-    const $ = (name) => refs[name]?.value
+    const refs = STX.useRefs()
 
     // Volume bars as array for easy iteration
     const volBars = [
-      $('volBar1'), $('volBar2'), $('volBar3'), $('volBar4'), $('volBar5')
+      refs.volBar1, refs.volBar2, refs.volBar3, refs.volBar4, refs.volBar5
     ].filter(Boolean)
 
     console.log('[VoideInputBar] Initialized with refs')
@@ -284,7 +233,7 @@
     // Recording Timer
     // =========================================================================
     function updateRecordingTimer(seconds) {
-      const timer = $('recordingTimer')
+      const timer = refs.recordingTimer
       if (timer) {
         const mins = Math.floor(seconds / 60)
         const secs = seconds % 60
@@ -310,24 +259,24 @@
       handsFreeModeActive = true; // Enable hands-free mode
 
       // Update UI using refs
-      $('recordingMode')?.classList.remove('hidden')
-      $('inputRow')?.classList.add('hidden')
-      $('volumeIndicator')?.classList.remove('hidden')
-      $('audioPreview')?.classList.add('hidden')
+      refs.recordingMode?.classList.remove('hidden')
+      refs.inputRow?.classList.add('hidden')
+      refs.volumeIndicator?.classList.remove('hidden')
+      refs.audioPreview?.classList.add('hidden')
 
-      const container = $('inputContainer')
+      const container = refs.inputContainer
       if (container) {
         container.classList.remove('border-monokai-border')
         container.classList.add('border-monokai-pink')
       }
 
-      const micBtn = $('micButton')
+      const micBtn = refs.micButton
       if (micBtn) {
         micBtn.classList.remove('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg')
         micBtn.classList.add('text-monokai-pink', 'bg-monokai-pink/20')
       }
 
-      $('micIcon')?.setAttribute('stroke', '#ff6188')
+      refs.micIcon?.setAttribute('stroke', '#ff6188')
 
       startBackgroundTranscription()
       sounds.listening()
@@ -344,24 +293,24 @@
         hasRecording = true
         currentAudioUrl = URL.createObjectURL(blob)
 
-        const player = $('audioPlayer')
+        const player = refs.audioPlayer
         if (player) {
           player.src = currentAudioUrl
           player.load()
         }
 
-        $('audioPreview')?.classList.remove('hidden')
+        refs.audioPreview?.classList.remove('hidden')
 
         // Show transcript immediately
-        const transcriptTextEl = $('transcriptText')
+        const transcriptTextEl = refs.transcriptText
         if (transcriptTextEl) {
           transcriptTextEl.textContent = currentTranscript || ''
         }
 
         // Auto-expand transcript section if we have content
         if (currentTranscript) {
-          $('transcriptContent')?.classList.remove('hidden')
-          $('transcriptChevron')?.classList.add('rotate-90')
+          refs.transcriptContent?.classList.remove('hidden')
+          refs.transcriptChevron?.classList.add('rotate-90')
           isTranscriptVisible = true
         }
 
@@ -370,23 +319,23 @@
       }
 
       // Reset UI
-      $('recordingMode')?.classList.add('hidden')
-      $('inputRow')?.classList.remove('hidden')
-      $('volumeIndicator')?.classList.add('hidden')
+      refs.recordingMode?.classList.add('hidden')
+      refs.inputRow?.classList.remove('hidden')
+      refs.volumeIndicator?.classList.add('hidden')
 
-      const container = $('inputContainer')
+      const container = refs.inputContainer
       if (container) {
         container.classList.remove('border-monokai-pink')
         container.classList.add('border-monokai-border')
       }
 
-      const micBtn = $('micButton')
+      const micBtn = refs.micButton
       if (micBtn) {
         micBtn.classList.remove('text-monokai-pink', 'bg-monokai-pink/20')
         micBtn.classList.add('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg')
       }
 
-      $('micIcon')?.setAttribute('stroke', 'currentColor')
+      refs.micIcon?.setAttribute('stroke', 'currentColor')
       updateVolumeIndicator(0)
     }
 
@@ -436,7 +385,7 @@
           lastTranscriptLength = data.transcript.length
           lastTranscriptTime = Date.now()
 
-          const transcriptTextEl = $('transcriptText')
+          const transcriptTextEl = refs.transcriptText
           if (transcriptTextEl) {
             transcriptTextEl.textContent = currentTranscript
           }
@@ -503,7 +452,7 @@
     }
 
     function updateTranscriptStatus() {
-      const status = $('transcriptStatus')
+      const status = refs.transcriptStatus
       if (status) {
         if (currentTranscript) {
           status.textContent = `(${currentTranscript.split(' ').length} words)`
@@ -517,7 +466,7 @@
     // Audio Management
     // =========================================================================
     function deleteRecording(keepHandsFreeMode = false) {
-      const player = $('audioPlayer')
+      const player = refs.audioPlayer
       if (player) {
         player.pause()
         player.src = ''
@@ -532,13 +481,13 @@
         handsFreeModeActive = false
       }
 
-      $('audioPreview')?.classList.add('hidden')
-      const transcriptTextEl = $('transcriptText')
+      refs.audioPreview?.classList.add('hidden')
+      const transcriptTextEl = refs.transcriptText
       if (transcriptTextEl) transcriptTextEl.textContent = ''
 
       // Reset transcript visibility
-      $('transcriptContent')?.classList.add('hidden')
-      $('transcriptChevron')?.classList.remove('rotate-90')
+      refs.transcriptContent?.classList.add('hidden')
+      refs.transcriptChevron?.classList.remove('rotate-90')
       isTranscriptVisible = false
 
       audioRecorder.reset()
@@ -550,12 +499,12 @@
     function toggleTranscript() {
       isTranscriptVisible = !isTranscriptVisible
 
-      const content = $('transcriptContent')
+      const content = refs.transcriptContent
       if (content) {
         content.classList.toggle('hidden', !isTranscriptVisible)
       }
 
-      const chevron = $('transcriptChevron')
+      const chevron = refs.transcriptChevron
       if (chevron) {
         chevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : ''
       }
@@ -859,7 +808,7 @@
 
     async function handleSend() {
       if (hasRecording) {
-        const transcriptTextEl = $('transcriptText')
+        const transcriptTextEl = refs.transcriptText
         const transcript = transcriptTextEl?.textContent?.trim() || currentTranscript
 
         if (!transcript) {
@@ -893,7 +842,7 @@
 
       if (text && !appStore.$state.isProcessing) {
         chatStore.clearInput()
-        const textInputEl = $('textInput')
+        const textInputEl = refs.textInput
         if (textInputEl) {
           textInputEl.value = ''
           textInputEl.style.height = 'auto'
@@ -924,26 +873,26 @@
     // =========================================================================
     // Event Bindings
     // =========================================================================
-    $('micButton')?.addEventListener('click', toggleRecording)
-    $('sendBtn')?.addEventListener('click', handleSend)
-    $('stopBtn')?.addEventListener('click', cancelProcessing)
-    $('textInput')?.addEventListener('input', handleInputChange)
-    $('textInput')?.addEventListener('keydown', handleInputKeydown)
-    $('audioDeleteBtn')?.addEventListener('click', () => deleteRecording())
-    $('transcriptToggle')?.addEventListener('click', toggleTranscript)
+    refs.micButton?.addEventListener('click', toggleRecording)
+    refs.sendBtn?.addEventListener('click', handleSend)
+    refs.stopBtn?.addEventListener('click', cancelProcessing)
+    refs.textInput?.addEventListener('input', handleInputChange)
+    refs.textInput?.addEventListener('keydown', handleInputKeydown)
+    refs.audioDeleteBtn?.addEventListener('click', () => deleteRecording())
+    refs.transcriptToggle?.addEventListener('click', toggleTranscript)
 
     // Driver selector
-    const driverSelectEl = $('driverSelect')
+    const driverSelectEl = refs.driverSelect
     const initialDriver = appStore.$state.currentDriver || 'claude-sdk'
     if (driverSelectEl) driverSelectEl.value = initialDriver
     driverSelectEl?.addEventListener('change', (e) => {
       appStore.setDriver(e.target.value)
     })
 
-    // Global keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !e.repeat) {
-        const active = document.activeElement
+    // Global keyboard shortcuts - Space to toggle recording (when not in input)
+    STX.onKey(' ', (e) => {
+      if (!e.repeat) {
+        const active = STX.activeElement()
         const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')
         if (!isInput) {
           e.preventDefault()
@@ -973,7 +922,7 @@
 
     function startProcessingTimer() {
       isThinking = true
-      const timer = $('thinkingTimer')
+      const timer = refs.thinkingTimer
       if (timer) timer.textContent = '0.0s'
 
       // Store start time for the current processing chat
@@ -988,7 +937,7 @@
       }
 
       processingTimerInterval = setInterval(() => {
-        const timerEl = $('thinkingTimer')
+        const timerEl = refs.thinkingTimer
         const currentChatId = appStore.processingChatId
         const startTime = timerStartTimes[currentChatId] || appStore.processingStartTime
         if (timerEl && startTime) {
@@ -1017,10 +966,10 @@
     }
 
     function showDoneState(elapsedMs) {
-      const indicator = $('thinkingIndicator')
-      const thinkingState = $('thinkingState')
-      const doneState = $('doneState')
-      const doneTimer = $('doneTimer')
+      const indicator = refs.thinkingIndicator
+      const thinkingState = refs.thinkingState
+      const doneState = refs.doneState
+      const doneTimer = refs.doneTimer
 
       if (!indicator || !thinkingState || !doneState) return
 
@@ -1048,9 +997,9 @@
     }
 
     function showThinkingState() {
-      const indicator = $('thinkingIndicator')
-      const thinkingState = $('thinkingState')
-      const doneState = $('doneState')
+      const indicator = refs.thinkingIndicator
+      const thinkingState = refs.thinkingState
+      const doneState = refs.doneState
 
       if (!indicator || !thinkingState || !doneState) return
 
@@ -1067,7 +1016,7 @@
     }
 
     appStore.$subscribe((state) => {
-      const indicator = $('thinkingIndicator')
+      const indicator = refs.thinkingIndicator
       const currentChatId = chatStore.$state.currentChatId
       const isProcessingThisChat = state.isProcessing && state.processingChatId === currentChatId
 
@@ -1087,12 +1036,12 @@
         }
       }
 
-      const stopBtnEl = $('stopBtn')
+      const stopBtnEl = refs.stopBtn
       if (stopBtnEl) {
         stopBtnEl.classList.toggle('hidden', !isProcessingThisChat)
       }
 
-      const driverSelectEl = $('driverSelect')
+      const driverSelectEl = refs.driverSelect
       if (driverSelectEl && state.currentDriver) {
         driverSelectEl.value = state.currentDriver
       }
@@ -1101,8 +1050,8 @@
     // Update indicator when switching chats
     chatStore.$subscribe((chatState) => {
       const appState = appStore.$state
-      const indicator = $('thinkingIndicator')
-      const stopBtnEl = $('stopBtn')
+      const indicator = refs.thinkingIndicator
+      const stopBtnEl = refs.stopBtn
       const isProcessingThisChat = appState.isProcessing && appState.processingChatId === chatState.currentChatId
 
       if (indicator) {

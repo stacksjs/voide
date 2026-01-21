@@ -1,26 +1,26 @@
-<div id="chatContainer" class="flex-1 relative flex flex-col overflow-hidden">
+<div ref="chatContainer" class="flex-1 relative flex flex-col overflow-hidden">
     <!-- Prompt Overlay (shown when Claude CLI asks for input) -->
-    <div id="promptOverlay" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div ref="promptOverlay" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-        <p id="promptText" class="text-sm text-monokai-fg mb-4">Please select an option:</p>
-        <div id="promptOptions" class="flex flex-wrap gap-2"></div>
+        <p ref="promptText" class="text-sm text-monokai-fg mb-4">Please select an option:</p>
+        <div ref="promptOptions" class="flex flex-wrap gap-2"></div>
       </div>
     </div>
 
     <!-- Welcome State (shown when no messages) -->
-    <div id="welcomeState" class="flex-1 flex flex-col items-center justify-center">
+    <div ref="welcomeState" class="flex-1 flex flex-col items-center justify-center">
       <div class="text-center mb-8">
         <div class="flex items-center justify-center gap-3 mb-2">
           <span class="text-3xl text-monokai-yellow">✺</span>
-          <h1 id="greetingText" class="text-4xl font-light text-monokai-fg/90">Hello</h1>
+          <h1 ref="greetingText" class="text-4xl font-light text-monokai-fg/90">Hello</h1>
         </div>
         <p class="text-sm text-monokai-gray mt-4">Type or speak to start a conversation</p>
       </div>
     </div>
 
     <!-- Chat State (shown when has messages) -->
-    <div id="chatState" class="hidden flex-1 overflow-y-auto">
-      <div id="messagesContainer" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div ref="chatState" class="hidden flex-1 overflow-y-auto">
+      <div ref="messagesContainer" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <!-- Messages will be rendered here -->
       </div>
     </div>
@@ -31,6 +31,9 @@
 (() => {
   const { appStore, chatStore } = window.__STX_STORES__
   const API_BASE_URL = 'http://localhost:3008/voide'
+
+  // Vue-style refs - auto-bound from ref attributes
+  const refs = STX.useRefs()
 
   let renderedCount = 0
   const messageElements = new Map()
@@ -61,7 +64,7 @@
   }
 
   function updateGreeting() {
-    const el = document.getElementById('greetingText')
+    const el = refs.greetingText
     if (!el) return
     const name = getUserName()
     el.textContent = name ? `${getGreeting()}, ${name}` : getGreeting()
@@ -81,9 +84,7 @@
   }
 
   function escapeHtml(text) {
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
+    return STX.escapeHtml(text)
   }
 
   // =========================================================================
@@ -163,14 +164,14 @@
     isSpeaking = false
     currentUtterance = null
     // Reset all speak buttons
-    document.querySelectorAll('.speak-btn').forEach(btn => {
+    refs.messagesContainer?.querySelectorAll('.speak-btn').forEach(btn => {
       btn.innerHTML = getSpeakIcon()
       btn.title = 'Read aloud'
     })
   }
 
   function updateSpeakButton(msgId, speaking) {
-    const btn = document.querySelector(`#${msgId} .speak-btn`)
+    const btn = refs.messagesContainer?.querySelector(`[data-msg-id="${msgId}"] .speak-btn`)
     if (btn) {
       btn.innerHTML = speaking ? getStopIcon() : getSpeakIcon()
       btn.title = speaking ? 'Stop reading' : 'Read aloud'
@@ -402,8 +403,8 @@
   }
 
   function toggleChatState(hasMessages) {
-    const welcomeState = document.getElementById('welcomeState')
-    const chatState = document.getElementById('chatState')
+    const welcomeState = refs.welcomeState
+    const chatState = refs.chatState
 
     if (hasMessages) {
       welcomeState?.classList.add('hidden')
@@ -415,8 +416,8 @@
   }
 
   function renderMessages(messages) {
-    const container = document.getElementById('messagesContainer')
-    const chatState = document.getElementById('chatState')
+    const container = refs.messagesContainer
+    const chatState = refs.chatState
     if (!container) return
 
     const messageArray = messages || []
@@ -449,8 +450,7 @@
       const idx = renderedCount
       const msg = messageArray[idx]
       if (!msg) break
-      const messageDiv = document.createElement('div')
-      messageDiv.className = 'animate-fade-in'
+      const messageDiv = STX.el('div', { class: 'animate-fade-in' })
       messageDiv.innerHTML = createMessageHtml(msg)
       container.appendChild(messageDiv)
       messageElements.set(idx, messageDiv)
@@ -495,7 +495,7 @@
     chatStore.$subscribe(state => renderMessages(state.messages))
 
     // Event delegation for collapse and speak buttons
-    const container = document.getElementById('messagesContainer')
+    const container = refs.messagesContainer
     container?.addEventListener('click', (e) => {
       // Handle collapse button
       const collapseBtn = e.target.closest('[data-collapse]')
@@ -523,7 +523,7 @@
       }
 
       // Get the raw content from data attribute
-      const msgEl = document.getElementById(msgId)
+      const msgEl = refs.messagesContainer?.querySelector(`[data-msg-id="${msgId}"]`)
       if (!msgEl) return
 
       const encodedContent = msgEl.getAttribute('data-content')
@@ -544,9 +544,9 @@
 
     // Handle pending prompts
     chatStore.$subscribe(state => {
-      const overlay = document.getElementById('promptOverlay')
-      const textEl = document.getElementById('promptText')
-      const optionsEl = document.getElementById('promptOptions')
+      const overlay = refs.promptOverlay
+      const textEl = refs.promptText
+      const optionsEl = refs.promptOptions
 
       if (!overlay || !textEl || !optionsEl) return
 
@@ -556,10 +556,10 @@
 
         state.pendingPrompt.options.forEach((option, i) => {
           const label = state.pendingPrompt.labels?.[i] || option
-          const btn = document.createElement('button')
-          btn.className = 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors'
-          btn.textContent = label
-          btn.onclick = () => respondToPrompt(option)
+          const btn = STX.el('button', {
+            class: 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors',
+            onclick: () => respondToPrompt(option)
+          }, label)
           optionsEl.appendChild(btn)
         })
 
@@ -571,7 +571,7 @@
 
     // Toggle collapse state for a message
     function toggleCollapse(msgId) {
-      const msgEl = document.getElementById(msgId)
+      const msgEl = refs.messagesContainer?.querySelector(`[data-msg-id="${msgId}"]`)
       if (!msgEl) return
 
       const content = msgEl.querySelector('.msg-content')
@@ -596,7 +596,7 @@
 
     // Copy code block to clipboard
     function copyCode(blockId) {
-      const block = document.getElementById(blockId)
+      const block = refs.messagesContainer?.querySelector(`[data-block-id="${blockId}"]`)
       if (!block) return
 
       const code = block.querySelector('code')

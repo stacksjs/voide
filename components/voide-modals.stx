@@ -1,6 +1,6 @@
 <!-- GitHub Connection Modal -->
   <div
-    id="githubModal"
+    ref="githubModal"
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
     show="{{ $uiStore.modals.github }}"
     @click.self="voide.closeGithubModal()"
@@ -29,12 +29,12 @@
 
         <!-- Modal Body -->
         <div class="p-6">
-          <div id="githubConnectForm" class="space-y-4" show="{{ !$settingsStore.github.connected }}">
+          <div ref="githubConnectForm" class="space-y-4" show="{{ !$settingsStore.github.connected }}">
             <div>
               <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Personal Access Token</label>
               <input
                 type="password"
-                id="githubToken"
+                ref="githubToken"
                 class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
               />
@@ -47,7 +47,7 @@
               <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Commit Name <span class="text-monokai-gray">(optional)</span></label>
               <input
                 type="text"
-                id="gitName"
+                ref="gitName"
                 class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="Your Name"
               />
@@ -57,17 +57,17 @@
               <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Commit Email <span class="text-monokai-gray">(optional)</span></label>
               <input
                 type="email"
-                id="gitEmail"
+                ref="gitEmail"
                 class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="you@example.com"
               />
             </div>
           </div>
 
-          <div id="githubConnectedInfo" class="text-center py-6" show="{{ $settingsStore.github.connected }}">
-            <img id="connectedAvatar" src="{{ $settingsStore.github.avatarUrl }}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-monokai-green" />
-            <div id="connectedName" class="text-xl font-semibold text-monokai-fg mb-1" text="{{ $settingsStore.github.name || $settingsStore.github.username }}"></div>
-            <div id="connectedUsername" class="text-monokai-gray mb-3" text="{{ '@' + $settingsStore.github.username }}"></div>
+          <div ref="githubConnectedInfo" class="text-center py-6" show="{{ $settingsStore.github.connected }}">
+            <img ref="connectedAvatar" src="{{ $settingsStore.github.avatarUrl }}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-monokai-green" />
+            <div ref="connectedName" class="text-xl font-semibold text-monokai-fg mb-1" text="{{ $settingsStore.github.name || $settingsStore.github.username }}"></div>
+            <div ref="connectedUsername" class="text-monokai-gray mb-3" text="{{ '@' + $settingsStore.github.username }}"></div>
             <div class="inline-flex items-center gap-2 px-3 py-1 bg-monokai-green/20 border border-monokai-green/30 rounded-full text-monokai-green text-xs">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -84,13 +84,13 @@
             @click="voide.closeGithubModal()"
           >Cancel</button>
           <button
-            id="githubConnectBtn"
+            ref="githubConnectBtn"
             class="px-4 py-2 text-sm font-medium bg-monokai-purple text-white rounded-lg hover:bg-monokai-purple/90 transition-all"
             show="{{ !$settingsStore.github.connected }}"
             @click="voide.connectGithub()"
           >Connect</button>
           <button
-            id="githubDisconnectBtn"
+            ref="githubDisconnectBtn"
             class="px-4 py-2 text-sm font-medium bg-monokai-pink/20 border border-monokai-pink/30 text-monokai-pink rounded-lg hover:bg-monokai-pink/30 transition-all"
             show="{{ $settingsStore.github.connected }}"
             @click="voide.disconnectGithub()"
@@ -102,7 +102,7 @@
 
   <!-- API Settings Modal -->
   <div
-    id="settingsModal"
+    ref="settingsModal"
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
     show="{{ $uiStore.modals.settings }}"
     @click.self="voide.closeSettingsModal()"
@@ -138,12 +138,12 @@
             <div class="flex gap-2">
               <input
                 type="text"
-                id="projectPathInput"
+                ref="projectPathInput"
                 class="flex-1 bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
                 placeholder="/path/to/your/project"
               />
               <button
-                id="browseBtn"
+                ref="browseBtn"
                 class="px-4 py-2 text-sm font-medium bg-monokai-bg-dark border border-monokai-border text-monokai-fg rounded-xl hover:border-monokai-gray transition-all"
                 title="Browse for folder"
               >Browse</button>
@@ -157,7 +157,7 @@
             <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Anthropic API Key</label>
             <input
               type="password"
-              id="anthropicApiKey"
+              ref="anthropicApiKey"
               class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
               placeholder="sk-ant-api03-xxxxxxxxxxxx"
             />
@@ -170,7 +170,7 @@
             <label class="block text-sm font-medium text-monokai-fg/80 mb-2">OpenAI API Key <span class="text-monokai-gray">(optional)</span></label>
             <input
               type="password"
-              id="openaiApiKey"
+              ref="openaiApiKey"
               class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
               placeholder="sk-xxxxxxxxxxxx"
             />
@@ -180,7 +180,7 @@
             <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Claude CLI Host <span class="text-monokai-gray">(optional)</span></label>
             <input
               type="text"
-              id="claudeCliHost"
+              ref="claudeCliHost"
               class="w-full bg-monokai-bg-dark border border-monokai-border rounded-xl px-4 py-3 text-sm text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
               placeholder="http://your-ec2-instance:3456"
             />
@@ -189,12 +189,12 @@
           <!-- API Status -->
           <div class="p-4 bg-monokai-bg-dark border border-monokai-border rounded-xl space-y-2">
             <div class="flex items-center gap-3">
-              <span id="anthropicStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
-              <span class="text-sm text-monokai-gray">Anthropic: <span id="anthropicStatusText" class="text-monokai-fg/80">Not configured</span></span>
+              <span ref="anthropicStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
+              <span class="text-sm text-monokai-gray">Anthropic: <span ref="anthropicStatusText" class="text-monokai-fg/80">Not configured</span></span>
             </div>
             <div class="flex items-center gap-3">
-              <span id="openaiStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
-              <span class="text-sm text-monokai-gray">OpenAI: <span id="openaiStatusText" class="text-monokai-fg/80">Not configured</span></span>
+              <span ref="openaiStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
+              <span class="text-sm text-monokai-gray">OpenAI: <span ref="openaiStatusText" class="text-monokai-fg/80">Not configured</span></span>
             </div>
           </div>
         </div>
@@ -217,6 +217,10 @@
 <script client>
 (() => {
   const { appStore, settingsStore, uiStore, chatStore } = window.__STX_STORES__
+
+  // Vue-style refs - auto-bound from ref attributes
+  const refs = STX.useRefs()
+
   console.log('[VoideModals] Initialized')
 
   // =========================================================================
@@ -255,7 +259,7 @@
   const API_BASE_URL = 'http://localhost:3008/voide'
 
   function setProjectPath() {
-    const input = document.getElementById('projectPathInput')
+    const input = refs.projectPathInput
     const path = input ? input.value.trim() : ''
 
     if (!path) {
@@ -278,7 +282,7 @@
     .then(res => res.json())
     .then(data => {
       if (data.path) {
-        const input = document.getElementById('projectPathInput')
+        const input = refs.projectPathInput
         if (input) input.value = data.path
       } else if (data.error) {
         addMessage('error', data.error)
@@ -290,8 +294,8 @@
   }
 
   // Bind buttons
-  const browseBtn = document.getElementById('browseBtn')
-  const projectPathInput = document.getElementById('projectPathInput')
+  const browseBtn = refs.browseBtn
+  const projectPathInput = refs.projectPathInput
 
   browseBtn?.addEventListener('click', browseForFolder)
 
@@ -306,7 +310,7 @@
 
   function saveSettings() {
     // Save project path
-    const projectInput = document.getElementById('projectPathInput')
+    const projectInput = refs.projectPathInput
     const path = projectInput ? projectInput.value.trim() : ''
     if (path) {
       appStore.setRepoPath(path)
@@ -314,9 +318,9 @@
     }
 
     // Save API keys
-    const anthropicInput = document.getElementById('anthropicApiKey')
-    const openaiInput = document.getElementById('openaiApiKey')
-    const claudeHostInput = document.getElementById('claudeCliHost')
+    const anthropicInput = refs.anthropicApiKey
+    const openaiInput = refs.openaiApiKey
+    const claudeHostInput = refs.claudeCliHost
 
     settingsStore.setAllApiKeys({
       anthropic: anthropicInput ? anthropicInput.value.trim() || null : null,
@@ -333,9 +337,9 @@
   // =========================================================================
 
   function connectGithub() {
-    const tokenInput = document.getElementById('githubToken')
-    const nameInput = document.getElementById('gitName')
-    const emailInput = document.getElementById('gitEmail')
+    const tokenInput = refs.githubToken
+    const nameInput = refs.gitName
+    const emailInput = refs.gitEmail
 
     const token = tokenInput ? tokenInput.value.trim() : ''
     if (!token) {
@@ -381,8 +385,8 @@
 
   // Update modal visibility based on UI state
   uiStore.$subscribe((state) => {
-    const githubModal = document.getElementById('githubModal')
-    const settingsModal = document.getElementById('settingsModal')
+    const githubModal = refs.githubModal
+    const settingsModal = refs.settingsModal
 
     if (githubModal) {
       githubModal.style.display = state.modals.github ? 'flex' : 'none'
@@ -394,20 +398,20 @@
 
   // Pre-fill settings form with current values
   settingsStore.$subscribe((state) => {
-    const anthropicInput = document.getElementById('anthropicApiKey')
-    const openaiInput = document.getElementById('openaiApiKey')
-    const claudeHostInput = document.getElementById('claudeCliHost')
-    const gitNameInput = document.getElementById('gitName')
-    const gitEmailInput = document.getElementById('gitEmail')
+    const anthropicInput = refs.anthropicApiKey
+    const openaiInput = refs.openaiApiKey
+    const claudeHostInput = refs.claudeCliHost
+    const gitNameInput = refs.gitName
+    const gitEmailInput = refs.gitEmail
 
     // Update connected info
-    const connectedAvatar = document.getElementById('connectedAvatar')
-    const connectedName = document.getElementById('connectedName')
-    const connectedUsername = document.getElementById('connectedUsername')
-    const connectForm = document.getElementById('githubConnectForm')
-    const connectedInfo = document.getElementById('githubConnectedInfo')
-    const connectBtn = document.getElementById('githubConnectBtn')
-    const disconnectBtn = document.getElementById('githubDisconnectBtn')
+    const connectedAvatar = refs.connectedAvatar
+    const connectedName = refs.connectedName
+    const connectedUsername = refs.connectedUsername
+    const connectForm = refs.githubConnectForm
+    const connectedInfo = refs.githubConnectedInfo
+    const connectBtn = refs.githubConnectBtn
+    const disconnectBtn = refs.githubDisconnectBtn
 
     if (anthropicInput && state.apiKeys.anthropic && !anthropicInput.value) {
       anthropicInput.value = state.apiKeys.anthropic
@@ -442,10 +446,10 @@
     }
 
     // Update API status indicators
-    const anthropicStatus = document.getElementById('anthropicStatus')
-    const openaiStatus = document.getElementById('openaiStatus')
-    const anthropicStatusText = document.getElementById('anthropicStatusText')
-    const openaiStatusText = document.getElementById('openaiStatusText')
+    const anthropicStatus = refs.anthropicStatus
+    const openaiStatus = refs.openaiStatus
+    const anthropicStatusText = refs.anthropicStatusText
+    const openaiStatusText = refs.openaiStatusText
 
     if (anthropicStatus) {
       anthropicStatus.className = 'w-2 h-2 rounded-full ' + (state.apiKeys.anthropic ? 'bg-monokai-green' : 'bg-monokai-gray')
@@ -465,10 +469,8 @@
   // Global Escape Key Handler
   // =========================================================================
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      uiStore.closeAllModals()
-    }
+  STX.onKey('Escape', () => {
+    uiStore.closeAllModals()
   })
 
   // =========================================================================
