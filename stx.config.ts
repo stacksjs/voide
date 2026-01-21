@@ -15,6 +15,22 @@ const config: StxConfig = {
   // Debug mode (disabled to silence verbose template logs)
   debug: false,
 
+  // ==========================================================================
+  // SSG Build Configuration (Static Site Generation)
+  // ==========================================================================
+  build: {
+    pagesDir: 'pages',
+    outputDir: 'dist',
+    publicDir: 'public',
+    sitemap: true,
+    minify: process.env.NODE_ENV === 'production',
+    cache: true,
+    concurrency: 10,
+    generate404: true,
+    trailingSlash: false,
+    cleanOutput: true,
+  },
+
   // Accessibility
   a11y: {
     enabled: true,

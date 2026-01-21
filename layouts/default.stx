@@ -90,6 +90,15 @@
   <!-- Load Headwind CSS dynamically to bypass bundler resolution -->
   <script client>
     (() => {
+      // Load monokai color variables first (separate file to avoid headwind overwrites)
+      if (!document.getElementById('monokai-vars-css')) {
+        const varsLink = document.createElement('link')
+        varsLink.id = 'monokai-vars-css'
+        varsLink.rel = 'stylesheet'
+        varsLink.href = '/dist/monokai-vars.css'
+        document.head.appendChild(varsLink)
+      }
+      // Then load main CSS
       if (!document.getElementById('voide-css')) {
         const link = document.createElement('link')
         link.id = 'voide-css'
