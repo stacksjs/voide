@@ -7,6 +7,10 @@ export { editTool } from './edit'
 export { globTool } from './glob'
 export { grepTool } from './grep'
 export { bashTool } from './bash'
+export { webfetchTool } from './webfetch'
+export { websearchTool } from './websearch'
+export { patchTool } from './patch'
+export { multieditTool } from './multiedit'
 
 import type { Tool, ToolDefinitionForLLM, toolToAnthropicFormat as toAnthropicFormat } from './types'
 import { toolToAnthropicFormat } from './types'
@@ -16,6 +20,10 @@ import { editTool } from './edit'
 import { globTool } from './glob'
 import { grepTool } from './grep'
 import { bashTool } from './bash'
+import { webfetchTool } from './webfetch'
+import { websearchTool } from './websearch'
+import { patchTool } from './patch'
+import { multieditTool } from './multiedit'
 
 // Tool registry
 const tools = new Map<string, Tool>()
@@ -28,6 +36,10 @@ function registerDefaultTools(): void {
   registerTool(globTool)
   registerTool(grepTool)
   registerTool(bashTool)
+  registerTool(webfetchTool)
+  registerTool(websearchTool)
+  registerTool(patchTool)
+  registerTool(multieditTool)
 }
 
 // Register a tool
