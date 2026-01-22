@@ -8,6 +8,8 @@ export interface Session {
   title?: string
   messages: Message[]
   metadata?: Record<string, unknown>
+  archived?: boolean
+  parentSessionId?: string // For branched sessions
 }
 
 export interface Message {

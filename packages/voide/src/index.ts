@@ -62,6 +62,23 @@ export {
   websearchTool,
   patchTool,
   multieditTool,
+  lsTool,
+  todoTool,
+  taskTool,
+  questionTool,
+  getTodos,
+  addTodo,
+  updateTodoStatus,
+  getTasks,
+  getTask,
+  createQuestion,
+  answerQuestion,
+  cancelQuestion,
+  getPendingQuestion,
+  hasPendingQuestions,
+  askConfirm,
+  askText,
+  formatChoices,
 } from './tool'
 export type {
   Tool,
@@ -72,6 +89,9 @@ export type {
   PermissionType,
   PermissionResult,
 } from './tool/types'
+export type { TodoItem } from './tool/todo'
+export type { Task } from './tool/task'
+export type { QuestionOptions, QuestionResult } from './tool/question'
 
 // Session management
 export {
@@ -94,6 +114,19 @@ export {
   importSession,
   exportSessionToFile,
   importSessionFromFile,
+  // Resume
+  resumeSession,
+  trackLastSession,
+  getLastSessionId,
+  getLastProjectSession,
+  listSessions,
+  getSessionDetails,
+  formatSessionSummary,
+  formatSessionList,
+  getConversationPreview,
+  cloneSession,
+  mergeSessions,
+  archiveSessions,
 } from './session'
 export type {
   Session,
@@ -110,6 +143,9 @@ export type {
   // Export types
   ExportedSession,
   ExportOptions,
+  // Resume types
+  ResumeOptions,
+  SessionMatch,
 } from './session'
 
 // Agent system
@@ -133,7 +169,17 @@ export {
 } from './permission'
 
 // TUI
-export { createTui, TuiRenderer } from './tui'
+export {
+  createTui,
+  TuiRenderer,
+  AgentSwitcher,
+  createAgentSwitcher,
+  getModeIndicator,
+  getToolsDiff,
+  formatToolsDiff,
+  BUILT_IN_MODES,
+} from './tui'
+export type { AgentMode } from './tui'
 
 // Context (instructions, git, skills)
 export {
@@ -293,6 +339,134 @@ export type {
   CommandMatch,
   VoiceCommandsConfig,
 } from './voice'
+
+// LSP (Language Server Protocol) support
+export {
+  LspClient,
+  LspManager,
+  DEFAULT_LSP_CONFIGS,
+  getLspConfig,
+  formatDiagnostics,
+} from './lsp'
+export type {
+  LspConfig,
+  LspDiagnostic,
+  LspPosition,
+  LspRange,
+  LspLocation,
+  LspHover,
+  LspSymbol,
+  DiagnosticSeverity,
+} from './lsp'
+
+// GitHub integration
+export {
+  GitHubClient,
+  createGitHubClient,
+} from './github'
+export type {
+  PullRequest,
+  Issue,
+  WorkflowRun,
+  Comment,
+  PRDiff,
+  PRStatus,
+} from './github'
+
+// Authentication
+export {
+  AuthManager,
+  getAuthManager,
+  hasApiKey,
+  getApiKey,
+  formatAuthStatus,
+  formatProviderRequirements,
+  PROVIDER_AUTH,
+} from './auth'
+export type { Credentials, ProviderAuth } from './auth'
+
+// Custom Commands
+export {
+  CommandLoader,
+  getCommandLoader,
+  initCommandsDir,
+  createCommandTemplate,
+} from './commands'
+export type { CommandDefinition, CommandArg, CommandResult } from './commands'
+
+// Theme Support
+export {
+  ThemeManager,
+  getThemeManager,
+  getActiveTheme,
+  setTheme,
+  parseColor,
+  BUILT_IN_THEMES,
+} from './theme'
+export type { ThemeColors, ThemeConfig } from './theme'
+
+// Shell Completion
+export {
+  generateBashCompletion,
+  generateZshCompletion,
+  generateFishCompletion,
+  installCompletion,
+  getCompletionScript,
+  printCompletionScript,
+} from './completion'
+export type { CompletionCommand, CompletionOption, CompletionArg } from './completion'
+
+// Updater
+export {
+  checkForUpdate,
+  shouldCheckForUpdate,
+  periodicUpdateCheck,
+  upgrade,
+  uninstall,
+  getInstallInfo,
+  formatVersionInfo,
+  formatInstallInfo,
+  selfUpdate,
+  rollback,
+  recordVersion,
+} from './updater'
+export type { VersionInfo, UpdateOptions, UninstallOptions } from './updater'
+
+// Debug
+export {
+  getDebugInfo,
+  formatDebugInfo,
+  runDoctor,
+  formatDoctorResults,
+  getLogs,
+  log,
+  clearCache,
+  getCacheStats,
+  formatCacheStats,
+  exportDebugDump,
+} from './debug'
+export type { DebugInfo, DoctorCheck } from './debug'
+
+// mDNS Discovery
+export {
+  MdnsDiscovery,
+  discoverServers,
+  announceServer,
+  getLocalAddresses,
+  formatDiscoveredServers,
+  getDiscovery,
+} from './discovery'
+export type { DiscoveredServer, DiscoveryOptions } from './discovery'
+
+// OAuth
+export {
+  OAuthManager,
+  getOAuthManager,
+  performOAuthFlow,
+  formatOAuthStatus,
+  OAUTH_PROVIDERS,
+} from './oauth'
+export type { OAuthConfig, OAuthToken, OAuthState } from './oauth'
 
 // Version
 export const VERSION = '0.0.1'

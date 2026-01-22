@@ -11,6 +11,13 @@ export { webfetchTool } from './webfetch'
 export { websearchTool } from './websearch'
 export { patchTool } from './patch'
 export { multieditTool } from './multiedit'
+export { lsTool } from './ls'
+export { todoTool, getTodos, addTodo, updateTodoStatus } from './todo'
+export { taskTool, getTasks, getTask } from './task'
+export { questionTool, createQuestion, answerQuestion, cancelQuestion, getPendingQuestion, hasPendingQuestions, askConfirm, askText, formatChoices } from './question'
+export type { TodoItem } from './todo'
+export type { Task } from './task'
+export type { QuestionOptions, QuestionResult } from './question'
 
 import type { Tool, ToolDefinitionForLLM, toolToAnthropicFormat as toAnthropicFormat } from './types'
 import { toolToAnthropicFormat } from './types'
@@ -24,6 +31,10 @@ import { webfetchTool } from './webfetch'
 import { websearchTool } from './websearch'
 import { patchTool } from './patch'
 import { multieditTool } from './multiedit'
+import { lsTool } from './ls'
+import { todoTool } from './todo'
+import { taskTool } from './task'
+import { questionTool } from './question'
 
 // Tool registry
 const tools = new Map<string, Tool>()
@@ -40,6 +51,10 @@ function registerDefaultTools(): void {
   registerTool(websearchTool)
   registerTool(patchTool)
   registerTool(multieditTool)
+  registerTool(lsTool)
+  registerTool(todoTool)
+  registerTool(taskTool)
+  registerTool(questionTool)
 }
 
 // Register a tool
@@ -88,16 +103,19 @@ export function getToolsForLLM(names?: string[]): ToolDefinitionForLLM[] {
 // Default tool names for different agent modes
 export const DEFAULT_TOOL_NAMES = {
   // Full access for code editing
-  build: ['read', 'write', 'edit', 'glob', 'grep', 'bash'],
+  build: ['read', 'write', 'edit', 'glob', 'grep', 'bash', 'ls', 'todo', 'task', 'question'],
 
   // Read-only for exploration
-  explore: ['read', 'glob', 'grep'],
+  explore: ['read', 'glob', 'grep', 'ls'],
 
   // Planning mode - read only, no execution
-  plan: ['read', 'glob', 'grep'],
+  plan: ['read', 'glob', 'grep', 'ls', 'todo', 'task'],
 
   // Minimal set
   minimal: ['read', 'bash'],
+
+  // Interactive mode with prompts
+  interactive: ['read', 'write', 'edit', 'glob', 'grep', 'bash', 'ls', 'todo', 'task', 'question'],
 }
 
 // Initialize tools

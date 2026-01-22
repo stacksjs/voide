@@ -272,11 +272,61 @@ export class TuiRenderer {
     console.log(`  ${this.primary('/clear')}    Clear the screen`)
     console.log(`  ${this.primary('/session')}  Show session info`)
     console.log(`  ${this.primary('/new')}      Start a new session`)
+    console.log(`  ${this.primary('/mode')}     List available agent modes`)
+    console.log(`  ${this.primary('/mode <n>')} Switch to agent mode`)
+    console.log(`  ${this.primary('/continue')} Continue last session`)
+    console.log(`  ${this.primary('/sessions')} List recent sessions`)
     console.log(`  ${this.primary('/exit')}     Exit the CLI`)
+    console.log('')
+    console.log(this.bold('Mode Shortcuts:'))
+    console.log(`  ${this.muted('[b]uild')}   Full code editing access`)
+    console.log(`  ${this.muted('[e]xplore')} Read-only exploration`)
+    console.log(`  ${this.muted('[p]lan')}    Planning with task tracking`)
+    console.log(`  ${this.muted('[m]inimal')} Minimal tools`)
     console.log('')
     console.log(this.bold('Shortcuts:'))
     console.log(`  ${this.muted('Ctrl+C')}    Cancel current operation`)
     console.log(`  ${this.muted('Ctrl+D')}    Exit`)
+    console.log('')
+  }
+
+  renderModeList(modes: Array<{ name: string; displayName: string; description: string; shortcut?: string }>, currentMode: string): void {
+    console.log('')
+    console.log(this.bold('Agent Modes:'))
+    for (const mode of modes) {
+      const marker = mode.name === currentMode ? this.success('▸') : ' '
+      const shortcut = mode.shortcut ? this.muted(`[${mode.shortcut}]`) : '   '
+      console.log(`  ${marker} ${shortcut} ${this.primary(mode.displayName.padEnd(12))} ${this.muted(mode.description)}`)
+    }
+    console.log('')
+    console.log(this.muted('Use /mode <name> or shortcut to switch'))
+    console.log('')
+  }
+
+  renderModeSwitch(fromMode: string, toMode: string, toolsDiff: { added: string[]; removed: string[] }): void {
+    console.log('')
+    console.log(this.success(`${this.icon('check')} Switched from ${fromMode} to ${toMode}`))
+    if (toolsDiff.added.length > 0) {
+      console.log(this.success(`  + ${toolsDiff.added.join(', ')}`))
+    }
+    if (toolsDiff.removed.length > 0) {
+      console.log(this.warning(`  - ${toolsDiff.removed.join(', ')}`))
+    }
+    console.log('')
+  }
+
+  renderSessionList(sessions: Array<{ id: string; title: string; updatedAt: number; messageCount: number }>): void {
+    console.log('')
+    console.log(this.bold('Recent Sessions:'))
+    for (let i = 0; i < sessions.length; i++) {
+      const s = sessions[i]
+      const date = new Date(s.updatedAt).toLocaleDateString()
+      const time = new Date(s.updatedAt).toLocaleTimeString()
+      console.log(`  ${this.muted(`${i + 1}.`)} ${this.secondary(`[${s.id.slice(0, 8)}]`)} ${s.title}`)
+      console.log(`     ${this.muted(`${date} ${time} | ${s.messageCount} messages`)}`)
+    }
+    console.log('')
+    console.log(this.muted('Use /session <id> to resume a session'))
     console.log('')
   }
 
@@ -314,3 +364,14 @@ export class TuiRenderer {
 export function createTui(config?: ResolvedVoideConfig): TuiRenderer {
   return new TuiRenderer(config)
 }
+
+// Re-export agent switcher
+export {
+  AgentSwitcher,
+  createAgentSwitcher,
+  getModeIndicator,
+  getToolsDiff,
+  formatToolsDiff,
+  BUILT_IN_MODES,
+} from './agent-switcher'
+export type { AgentMode } from './agent-switcher'
