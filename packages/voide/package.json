@@ -1,0 +1,46 @@
+{
+  "name": "@voide/cli",
+  "version": "0.0.1",
+  "description": "Voice AI Code Assistant CLI",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "import": "./dist/*"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "voide": "./bin/cli.ts"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun run bin/cli.ts",
+    "compile": "bun build ./bin/cli.ts --compile --minify --outfile bin/voide",
+    "compile:all": "bun run compile:linux-x64 && bun run compile:linux-arm64 && bun run compile:darwin-x64 && bun run compile:darwin-arm64",
+    "compile:linux-x64": "bun build ./bin/cli.ts --compile --minify --target=bun-linux-x64 --outfile bin/voide-linux-x64",
+    "compile:linux-arm64": "bun build ./bin/cli.ts --compile --minify --target=bun-linux-arm64 --outfile bin/voide-linux-arm64",
+    "compile:darwin-x64": "bun build ./bin/cli.ts --compile --minify --target=bun-darwin-x64 --outfile bin/voide-darwin-x64",
+    "compile:darwin-arm64": "bun build ./bin/cli.ts --compile --minify --target=bun-darwin-arm64 --outfile bin/voide-darwin-arm64",
+    "test": "bun test",
+    "lint": "bunx --bun pickier run --mode lint",
+    "lint:fix": "bunx --bun pickier run --mode lint --fix"
+  },
+  "dependencies": {
+    "@stacksjs/clapp": "link:@stacksjs/clapp",
+    "bunfig": "link:bunfig",
+    "ts-error-handling": "link:ts-error-handling"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "better-dx": "^0.2.5"
+  }
+}

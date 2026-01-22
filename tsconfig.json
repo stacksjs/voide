@@ -51,9 +51,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@lib/*": ["lib/*"],
-      "@stores/*": ["lib/stores/*"],
-      "@composables/*": ["lib/composables/*"],
+      "@lib/*": ["packages/app/lib/*"],
+      "@stores/*": ["packages/app/lib/stores/*"],
+      "@composables/*": ["packages/app/lib/composables/*"],
       "@components/*": ["components/*"],
       "@partials/*": ["partials/*"]
     }
@@ -62,14 +62,14 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.stx",
-    "lib/**/*.ts",
+    "packages/app/lib/**/*.ts",
     "components/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     ".stx",
-    "public",
+    "packages/app/public",
     "../*"
   ]
 }

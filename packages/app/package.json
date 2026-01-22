@@ -1,7 +1,6 @@
 {
   "name": "voide",
   "version": "0.0.1",
-  "private": true,
   "description": "Voice AI Code Assistant",
   "type": "module",
   "scripts": {
@@ -26,8 +25,5 @@
     "@stacksjs/stx": "link:@stacksjs/stx",
     "better-dx": "^0.2.5",
     "bun-plugin-stx": "link:bun-plugin-stx"
-  },
-  "workspaces": [
-    "packages/*"
-  ]
+  }
 }
