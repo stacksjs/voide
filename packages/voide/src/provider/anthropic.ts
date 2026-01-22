@@ -158,12 +158,12 @@ export class AnthropicProvider implements Provider {
         clearTimeout(timeoutId)
 
         if (!response.ok) {
-          const error = await response.json().catch(() => ({ error: { message: response.statusText } }))
+          const errorData = await response.json().catch(() => ({ error: { message: response.statusText } })) as { error?: { message?: string } }
           yield {
             type: 'error',
             error: {
               type: `http_${response.status}`,
-              message: error.error?.message || `HTTP ${response.status}: ${response.statusText}`,
+              message: errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`,
             },
           }
           return

@@ -1,6 +1,9 @@
 // Provider types for Voide CLI
 
-import type { ToolDefinition } from '../types'
+import type { Tool } from '../tool/types'
+
+// Re-export for convenience
+export type ToolDefinition = Tool
 
 export interface Provider {
   readonly name: string
