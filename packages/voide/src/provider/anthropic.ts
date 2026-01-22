@@ -18,6 +18,38 @@ const API_VERSION = '2023-06-01'
 
 // Model definitions with pricing (per million tokens)
 const ANTHROPIC_MODELS: ModelInfo[] = [
+  // Claude 4.5 series (latest)
+  {
+    id: 'claude-opus-4-5-20250514',
+    name: 'Claude Opus 4.5',
+    contextLength: 200000,
+    inputPrice: 15,
+    outputPrice: 75,
+    supportsTools: true,
+    supportsVision: true,
+    maxOutputTokens: 64000,
+  },
+  {
+    id: 'claude-sonnet-4-5-20250514',
+    name: 'Claude Sonnet 4.5',
+    contextLength: 200000,
+    inputPrice: 3,
+    outputPrice: 15,
+    supportsTools: true,
+    supportsVision: true,
+    maxOutputTokens: 64000,
+  },
+  {
+    id: 'claude-haiku-4-5-20250514',
+    name: 'Claude Haiku 4.5',
+    contextLength: 200000,
+    inputPrice: 1,
+    outputPrice: 5,
+    supportsTools: true,
+    supportsVision: true,
+    maxOutputTokens: 64000,
+  },
+  // Claude 4 series
   {
     id: 'claude-opus-4-20250514',
     name: 'Claude Opus 4',
@@ -38,8 +70,19 @@ const ANTHROPIC_MODELS: ModelInfo[] = [
     supportsVision: true,
     maxOutputTokens: 64000,
   },
+  // Claude 3.5 series
   {
     id: 'claude-3-5-sonnet-20241022',
+    name: 'Claude 3.5 Sonnet v2',
+    contextLength: 200000,
+    inputPrice: 3,
+    outputPrice: 15,
+    supportsTools: true,
+    supportsVision: true,
+    maxOutputTokens: 8192,
+  },
+  {
+    id: 'claude-3-5-sonnet-20240620',
     name: 'Claude 3.5 Sonnet',
     contextLength: 200000,
     inputPrice: 3,
@@ -58,12 +101,33 @@ const ANTHROPIC_MODELS: ModelInfo[] = [
     supportsVision: true,
     maxOutputTokens: 8192,
   },
+  // Claude 3 series
   {
     id: 'claude-3-opus-20240229',
     name: 'Claude 3 Opus',
     contextLength: 200000,
     inputPrice: 15,
     outputPrice: 75,
+    supportsTools: true,
+    supportsVision: true,
+    maxOutputTokens: 4096,
+  },
+  {
+    id: 'claude-3-sonnet-20240229',
+    name: 'Claude 3 Sonnet',
+    contextLength: 200000,
+    inputPrice: 3,
+    outputPrice: 15,
+    supportsTools: true,
+    supportsVision: true,
+    maxOutputTokens: 4096,
+  },
+  {
+    id: 'claude-3-haiku-20240307',
+    name: 'Claude 3 Haiku',
+    contextLength: 200000,
+    inputPrice: 0.25,
+    outputPrice: 1.25,
     supportsTools: true,
     supportsVision: true,
     maxOutputTokens: 4096,
