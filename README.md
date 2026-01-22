@@ -5,12 +5,10 @@ Voice-controlled AI code assistant built with [STX](https://github.com/stacksjs/
 ## Features
 
 - Voice input with Web Speech API
-- Multiple AI drivers (Claude CLI, Claude API, OpenAI, Ollama)
-- Git integration (commit, push)
+- Multiple AI drivers _(Claude CLI, Claude API, OpenAI, Ollama)_
+- Git integration _(commit, push)_
 - GitHub account connection
 - Native desktop support via Craft
-- Reactive state management with stores
-- Vue-like Single File Components (SFC)
 
 ## Getting Started
 
@@ -27,7 +25,7 @@ bun run dev
 
 ## Single File Components (SFC)
 
-Voide uses STX Single File Components with Vue-like syntax.
+Voide uses STX Single File Components.
 
 ### Component Structure
 
