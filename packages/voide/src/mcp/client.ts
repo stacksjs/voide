@@ -291,13 +291,13 @@ class McpServerInstance {
     }
   }
 
-  private async sendRequest<T>(method: string, params: Record<string, unknown>): Promise<T> {
+  private async sendRequest<T>(method: string, params: unknown): Promise<T> {
     const id = ++this.requestId
     const request: JsonRpcRequest = {
       jsonrpc: '2.0',
       id,
       method,
-      params,
+      params: params as Record<string, unknown>,
     }
 
     return new Promise((resolve, reject) => {

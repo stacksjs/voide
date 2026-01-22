@@ -243,3 +243,9 @@ export function toolResultContent(toolUseId: string, output: string, isError = f
     isError,
   }
 }
+
+// Helper to create a new session
+export async function createSession(projectPath: string): Promise<Session> {
+  const sessionStore = getSessionStore()
+  return sessionStore.create(projectPath)
+}

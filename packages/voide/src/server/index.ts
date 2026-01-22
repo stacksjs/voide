@@ -66,73 +66,85 @@ export class VoideServer extends EventEmitter {
 
     const { port, host, websocket, cors, apiKey } = this.options
 
-    this.server = Bun.serve({
-      port,
-      hostname: host,
+    const fetchHandler = async (req: Request, server: { upgrade: (req: Request, options?: unknown) => boolean }) => {
+      const url = new URL(req.url)
 
-      fetch: async (req, server) => {
-        const url = new URL(req.url)
+      // Handle CORS preflight
+      if (req.method === 'OPTIONS') {
+        return this.corsResponse(cors)
+      }
 
-        // Handle CORS preflight
-        if (req.method === 'OPTIONS') {
-          return this.corsResponse(cors)
+      // Check API key if configured
+      if (apiKey) {
+        const authHeader = req.headers.get('Authorization')
+        if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
+          return this.jsonResponse({ error: 'Unauthorized' }, 401)
         }
+      }
 
-        // Check API key if configured
-        if (apiKey) {
-          const authHeader = req.headers.get('Authorization')
-          if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
-            return this.jsonResponse({ error: 'Unauthorized' }, 401)
-          }
+      // WebSocket upgrade
+      if (websocket && url.pathname === '/ws') {
+        const upgraded = server.upgrade(req, {
+          data: { sessionId: url.searchParams.get('session') },
+        })
+        if (upgraded) return undefined
+        return this.jsonResponse({ error: 'WebSocket upgrade failed' }, 400)
+      }
+
+      // Route to handlers
+      return this.handleRequest(req, url)
+    }
+
+    const wsHandler = {
+      open: (ws: unknown) => {
+        const conn = new WebSocketConnection(ws)
+        const sessionId = ((ws as { data?: { sessionId?: string } }).data as { sessionId?: string })?.sessionId
+        if (sessionId) {
+          this.sessions.set(sessionId, conn)
         }
-
-        // WebSocket upgrade
-        if (websocket && url.pathname === '/ws') {
-          const upgraded = server.upgrade(req, {
-            data: { sessionId: url.searchParams.get('session') },
-          })
-          if (upgraded) return undefined
-          return this.jsonResponse({ error: 'WebSocket upgrade failed' }, 400)
-        }
-
-        // Route to handlers
-        return this.handleRequest(req, url)
+        this.emit('ws:connect', { ws, sessionId })
       },
 
-      websocket: websocket ? {
-        open: (ws) => {
-          const conn = new WebSocketConnection(ws)
-          const sessionId = (ws.data as { sessionId?: string })?.sessionId
-          if (sessionId) {
-            this.sessions.set(sessionId, conn)
-          }
-          this.emit('ws:connect', { ws, sessionId })
-        },
+      message: (ws: unknown, message: string | Buffer) => {
+        try {
+          const data = JSON.parse(message.toString())
+          this.emit('ws:message', { ws, data })
+          this.handleWebSocketMessage(ws, data)
+        }
+        catch {
+          (ws as { send: (data: string) => void }).send(JSON.stringify({
+            type: 'error',
+            data: { error: 'Invalid JSON' },
+            timestamp: Date.now(),
+          }))
+        }
+      },
 
-        message: (ws, message) => {
-          try {
-            const data = JSON.parse(message.toString())
-            this.emit('ws:message', { ws, data })
-            this.handleWebSocketMessage(ws, data)
-          }
-          catch (error) {
-            ws.send(JSON.stringify({
-              type: 'error',
-              data: { error: 'Invalid JSON' },
-              timestamp: Date.now(),
-            }))
-          }
-        },
+      close: (ws: unknown) => {
+        const sessionId = ((ws as { data?: { sessionId?: string } }).data as { sessionId?: string })?.sessionId
+        if (sessionId) {
+          this.sessions.delete(sessionId)
+        }
+        this.emit('ws:disconnect', { ws, sessionId })
+      },
+    }
 
-        close: (ws) => {
-          const sessionId = (ws.data as { sessionId?: string })?.sessionId
-          if (sessionId) {
-            this.sessions.delete(sessionId)
-          }
-          this.emit('ws:disconnect', { ws, sessionId })
-        },
-      } : undefined,
-    })
+    // Create server config - type assertion to bypass strict Bun typing
+    if (websocket) {
+      this.server = Bun.serve({
+        port,
+        hostname: host,
+        fetch: fetchHandler as Parameters<typeof Bun.serve>[0]['fetch'],
+        websocket: wsHandler,
+      } as Parameters<typeof Bun.serve>[0])
+    }
+    else {
+      this.server = Bun.serve({
+        port,
+        hostname: host,
+        fetch: fetchHandler as Parameters<typeof Bun.serve>[0]['fetch'],
+      } as Parameters<typeof Bun.serve>[0])
+    }
 
     this.isRunning = true
     this.emit('started', { port, host })
@@ -169,7 +181,7 @@ export class VoideServer extends EventEmitter {
     }
 
     if (path === '/api/sessions' && method === 'POST') {
-      const body = await req.json()
+      const body = await req.json() as { projectPath?: string }
       return this.handleCreateSession(body)
     }
 
@@ -180,12 +192,12 @@ export class VoideServer extends EventEmitter {
 
     if (path.startsWith('/api/sessions/') && path.endsWith('/messages') && method === 'POST') {
       const sessionId = path.split('/')[3]
-      const body = await req.json()
+      const body = await req.json() as { content: string; images?: string[] }
       return this.handleSendMessage(sessionId, body)
     }
 
     if (path === '/api/chat' && method === 'POST') {
-      const body = await req.json()
+      const body = await req.json() as { message: string; sessionId?: string; stream?: boolean }
       return this.handleChat(body, req)
     }
 
@@ -214,7 +226,7 @@ export class VoideServer extends EventEmitter {
         projectPath: s.projectPath,
         createdAt: s.createdAt,
         updatedAt: s.updatedAt,
-        messageCount: s.messages.length,
+        messageCount: s.messageCount,
       })),
     })
   }
