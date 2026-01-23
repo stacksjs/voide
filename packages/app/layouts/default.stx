@@ -104,6 +104,11 @@
     }
   </script>
 
+  <!-- STX Runtime (must load before component scripts) -->
+  <script>
+    document.write('<scr' + 'ipt src="/js/stx-runtime.js"></scr' + 'ipt>')
+  </script>
+
 </head>
 <body class="gradient-bg flex flex-col h-screen text-white overflow-hidden">
   <!-- Floating orbs -->
