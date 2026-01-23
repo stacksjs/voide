@@ -87,8 +87,7 @@
     }
   </style>
 
-  <!-- Load Headwind CSS -->
-  <link rel="stylesheet" href="/dist/monokai-vars.css" />
+  <!-- Load Headwind CSS (includes Monokai color utilities) -->
   <link rel="stylesheet" href="/dist/voide.css" />
 
   <!-- Voide Stores (loaded synchronously before body parses) -->
@@ -102,11 +101,6 @@
     } else {
       console.error('[Voide] Failed to load stores!')
     }
-  </script>
-
-  <!-- STX Runtime (must load before component scripts) -->
-  <script>
-    document.write('<scr' + 'ipt src="/js/stx-runtime.js"></scr' + 'ipt>')
   </script>
 
 </head>

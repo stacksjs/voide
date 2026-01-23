@@ -1,22 +1,22 @@
 {
-  "name": "voide",
+  "name": "voide-monorepo",
   "version": "0.0.1",
   "private": true,
   "description": "Voice AI Code Assistant",
   "type": "module",
   "scripts": {
-    "dev": "bun run build:all && bun run --bun ../stx/packages/stx/bin/cli.ts dev",
-    "build": "bun run build:all && bun run --bun ../stx/packages/stx/bin/cli.ts build",
-    "build:all": "bun run build:stores && bun run build:css",
-    "build:stores": "bun run lib/build.ts",
-    "build:css": "bun run lib/build-css.ts",
-    "server": "bun run lib/server/index.ts",
-    "start": "bun run server & bun run dev",
-    "preview": "bun run --bun ../stx/packages/stx/bin/cli.ts preview",
-    "lint": "bunx --bun pickier run --mode lint",
-    "lint:fix": "bunx --bun pickier run --mode lint --fix",
-    "format": "bunx --bun pickier run --mode format --write",
-    "format:check": "bunx --bun pickier run --mode format --check"
+    "dev": "bun run --cwd packages/app dev",
+    "build": "bun run --cwd packages/app build",
+    "build:all": "bun run --cwd packages/app build:all",
+    "build:stores": "bun run --cwd packages/app build:stores",
+    "build:css": "bun run --cwd packages/app build:css",
+    "server": "bun run --cwd packages/app server",
+    "start": "bun run --cwd packages/app start",
+    "preview": "bun run --cwd packages/app preview",
+    "lint": "bun run --cwd packages/app lint",
+    "lint:fix": "bun run --cwd packages/app lint:fix",
+    "format": "bun run --cwd packages/app format",
+    "format:check": "bun run --cwd packages/app format:check"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.76"
