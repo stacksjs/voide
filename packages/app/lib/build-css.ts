@@ -108,6 +108,12 @@ try {
 .bg-monokai-purple\\/10 { background-color: rgba(171, 157, 242, 0.1); }
 .bg-monokai-bg-dark\\/80 { background-color: rgba(34, 31, 34, 0.8); }
 
+/* Black background utilities for modal overlays */
+.bg-black { background-color: #000; }
+.bg-black\\/50 { background-color: rgba(0, 0, 0, 0.5); }
+.bg-black\\/70 { background-color: rgba(0, 0, 0, 0.7); }
+.bg-black\\/80 { background-color: rgba(0, 0, 0, 0.8); }
+
 /* Text colors */
 .text-monokai-bg { color: var(--monokai-bg); }
 .text-monokai-bg-dark { color: var(--monokai-bg-dark); }
