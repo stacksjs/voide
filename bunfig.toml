@@ -1,2 +1,5 @@
 # STX plugin preload for .stx file processing
 preload = ["bun-plugin-stx"]
+
+[install]
+linker = "hoisted"

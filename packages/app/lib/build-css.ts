@@ -2,7 +2,8 @@
 /**
  * Build CSS with Headwind
  */
-import { build, defaultConfig } from '@stacksjs/headwind'
+// @ts-ignore - headwind package.json exports are misconfigured
+import { build, defaultConfig } from '../node_modules/@stacksjs/headwind/dist/index.js'
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 
@@ -74,17 +75,17 @@ try {
   const monokaiUtilities = `
 /* Monokai Pro Color Utilities */
 :root {
-  --monokai-bg: #2d2a2e
-  --monokai-bg-dark: #221f22
-  --monokai-fg: #fcfcfa
-  --monokai-pink: #ff6188
-  --monokai-orange: #fc9867
-  --monokai-yellow: #ffd866
-  --monokai-green: #a9dc76
-  --monokai-cyan: #78dce8
-  --monokai-purple: #ab9df2
-  --monokai-gray: #727072
-  --monokai-border: #403e41
+  --monokai-bg: #2d2a2e;
+  --monokai-bg-dark: #221f22;
+  --monokai-fg: #fcfcfa;
+  --monokai-pink: #ff6188;
+  --monokai-orange: #fc9867;
+  --monokai-yellow: #ffd866;
+  --monokai-green: #a9dc76;
+  --monokai-cyan: #78dce8;
+  --monokai-purple: #ab9df2;
+  --monokai-gray: #727072;
+  --monokai-border: #403e41;
 }
 
 /* Background colors */

@@ -21,9 +21,7 @@
     "@anthropic-ai/claude-agent-sdk": "^0.1.76"
   },
   "devDependencies": {
-    "@stacksjs/headwind": "link:@stacksjs/headwind",
-    "@stacksjs/stx": "link:@stacksjs/stx",
-    "better-dx": "^0.2.5",
-    "bun-plugin-stx": "link:bun-plugin-stx"
+    "@stacksjs/headwind": "^0.1.3",
+    "better-dx": "^0.2.5"
   }
 }
