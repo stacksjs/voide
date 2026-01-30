@@ -74,7 +74,7 @@
     })()
   </script>
 
-  <!-- Headwind CSS -->
+  <!-- Crosswind CSS -->
   <link rel="stylesheet" href="/dist/voide.css">
 
   <style>
