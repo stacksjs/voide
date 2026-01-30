@@ -6,9 +6,8 @@
   "scripts": {
     "dev": "bun run build:all && bun run --bun ../../../stx/packages/stx/bin/cli.ts dev",
     "build": "bun run build:all && bun run --bun ../../../stx/packages/stx/bin/cli.ts build",
-    "build:all": "bun run build:stores && bun run build:css",
+    "build:all": "bun run build:stores",
     "build:stores": "bun run lib/build.ts",
-    "build:css": "bun run lib/build-css.ts",
     "server": "bun run lib/server/index.ts",
     "start": "bun run server & bun run dev",
     "preview": "bun run --bun ../../../stx/packages/stx/bin/cli.ts preview",

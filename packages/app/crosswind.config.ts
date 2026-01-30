@@ -3,9 +3,9 @@ export default {
     './pages/**/*.stx',
     './components/**/*.stx',
   ],
-  // Don't output to file - let STX inject CSS inline
-  // The build-css.ts script outputs to public/dist/voide.css with custom utilities
+  // Don't output to file - STX injects CSS inline
   output: '',
+  cssVariables: true,
   minify: false,
   preflight: true,
   safelist: [

@@ -87,9 +87,6 @@
     }
   </style>
 
-  <!-- Load Crosswind CSS (includes Monokai color utilities) -->
-  <link rel="stylesheet" href="/dist/voide.css" />
-
   <!-- Voide Stores (loaded synchronously before body parses) -->
   <script>
     // Use document.write to load synchronously and bypass bundler resolution

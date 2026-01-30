@@ -74,9 +74,6 @@
     })()
   </script>
 
-  <!-- Crosswind CSS -->
-  <link rel="stylesheet" href="/dist/voide.css">
-
   <style>
     /* Base body styles */
     body {

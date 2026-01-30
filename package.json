@@ -9,7 +9,6 @@
     "build": "bun run --cwd packages/app build",
     "build:all": "bun run --cwd packages/app build:all",
     "build:stores": "bun run --cwd packages/app build:stores",
-    "build:css": "bun run --cwd packages/app build:css",
     "server": "bun run --cwd packages/app server",
     "start": "bun run --cwd packages/app start",
     "preview": "bun run --cwd packages/app preview",

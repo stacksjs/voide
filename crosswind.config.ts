@@ -3,7 +3,7 @@ export default {
     './pages/**/*.stx',
     './components/**/*.stx',
   ],
-  output: './public/dist/voide.css',
+  output: '',
   minify: false,
   preflight: true,
   safelist: [
@@ -29,6 +29,7 @@ export default {
     'transition-colors',
     'transition-opacity',
   ],
+  cssVariables: true,
   theme: {
     extend: {
       colors: {
