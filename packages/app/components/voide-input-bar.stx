@@ -36,7 +36,7 @@
 
           <!-- Delete audio -->
           <button
-            @ref="audioDeleteBtn"
+            @click="deleteRecording()"
             class="w-8 h-8 rounded-lg text-monokai-gray hover:text-monokai-pink hover:bg-monokai-pink/10 flex items-center justify-center transition-colors"
             title="Delete recording"
           >
@@ -49,7 +49,7 @@
         <!-- Transcription toggle -->
         <div class="mt-2 pt-2 border-t border-monokai-border/30">
           <button
-            @ref="transcriptToggle"
+            @click="toggleTranscript()"
             class="flex items-center gap-2 text-xs text-monokai-gray hover:text-monokai-fg transition-colors"
           >
             <svg @ref="transcriptChevron" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -88,6 +88,8 @@
       <div @ref="inputRow" class="flex items-end gap-3">
         <textarea
           @ref="textInput"
+          @input="handleInputChange($event)"
+          @keydown="handleInputKeydown($event)"
           class="flex-1 bg-transparent text-sm text-monokai-fg border-none outline-none resize-none min-h-[24px] max-h-[160px] leading-6 placeholder-monokai-gray"
           placeholder="Type or click mic to record"
           rows="1"
@@ -108,6 +110,7 @@
           <!-- Voice/Mic button -->
           <button
             @ref="micButton"
+            @click="toggleRecording()"
             class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
             title="Record voice message"
           >
@@ -126,6 +129,7 @@
           <!-- Stop button (shown when processing) -->
           <button
             @ref="stopBtn"
+            @click="cancelProcessing()"
             class="hidden w-8 h-8 rounded-lg flex items-center justify-center bg-monokai-pink/20 text-monokai-pink hover:bg-monokai-pink/30 transition-colors"
             title="Stop"
           >
@@ -137,6 +141,7 @@
           <!-- Driver selector -->
           <select
             @ref="driverSelect"
+            @change="appStore.setDriver($event.target.value)"
             class="bg-transparent text-sm text-monokai-fg/70 border-none outline-none cursor-pointer"
           >
             <option value="claude-sdk">Claude</option>
@@ -146,7 +151,7 @@
 
           <!-- Send button -->
           <button
-            @ref="sendBtn"
+            @click="handleSend()"
             class="w-8 h-8 rounded-lg bg-monokai-yellow flex items-center justify-center cursor-pointer hover:bg-monokai-yellow/90 transition-colors"
             title="Send (Enter)"
           >
@@ -158,17 +163,12 @@
 </div>
 
 <script client>
-(() => {
-  const { appStore, chatStore, settingsStore } = window.__STX_STORES__
-  const stores = window.VoideStores; // For composables
-  const API_BASE_URL = 'http://localhost:3008/voide'
+import { appStore, chatStore, settingsStore } from '@stores'
 
-  function init() {
+const stores = window.VoideStores
+const API_BASE_URL = 'http://localhost:3008/voide'
 
-    // =========================================================================
-    // Refs - Vue-style auto-binding from ref attributes
-    // =========================================================================
-    const refs = STX.useRefs()
+const refs = STX.useRefs()
 
     // Volume bars as array for easy iteration
     const volBars = [
@@ -870,24 +870,9 @@
       })
     }
 
-    // =========================================================================
-    // Event Bindings
-    // =========================================================================
-    refs.micButton?.addEventListener('click', toggleRecording)
-    refs.sendBtn?.addEventListener('click', handleSend)
-    refs.stopBtn?.addEventListener('click', cancelProcessing)
-    refs.textInput?.addEventListener('input', handleInputChange)
-    refs.textInput?.addEventListener('keydown', handleInputKeydown)
-    refs.audioDeleteBtn?.addEventListener('click', () => deleteRecording())
-    refs.transcriptToggle?.addEventListener('click', toggleTranscript)
-
-    // Driver selector
-    const driverSelectEl = refs.driverSelect
+    // Set initial driver value
     const initialDriver = appStore.$state.currentDriver || 'claude-sdk'
-    if (driverSelectEl) driverSelectEl.value = initialDriver
-    driverSelectEl?.addEventListener('change', (e) => {
-      appStore.setDriver(e.target.value)
-    })
+    if (refs.driverSelect) refs.driverSelect.value = initialDriver
 
     // Global keyboard shortcuts - Space to toggle recording (when not in input)
     STX.onKey(' ', (e) => {
@@ -1088,8 +1073,4 @@
       audioRecorder,
       audioStorage
     })
-  }
-
-  init()
-})()
 </script>

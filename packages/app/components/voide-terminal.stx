@@ -20,7 +20,7 @@
 
     <!-- Chat State (shown when has messages) -->
     <div @ref="chatState" class="hidden flex-1 overflow-y-auto">
-      <div @ref="messagesContainer" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <div @ref="messagesContainer" @click="handleContainerClick($event)" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <!-- Messages will be rendered here -->
       </div>
     </div>
@@ -28,12 +28,10 @@
 </div>
 
 <script client>
-(() => {
-  const { appStore, chatStore } = window.__STX_STORES__
-  const API_BASE_URL = 'http://localhost:3008/voide'
+import { appStore, chatStore } from '@stores'
 
-  // Vue-style refs - auto-bound from ref attributes
-  const refs = STX.useRefs()
+const API_BASE_URL = 'http://localhost:3008/voide'
+const refs = STX.useRefs()
 
   let renderedCount = 0
   const messageElements = new Map()
@@ -464,175 +462,169 @@
 
   }
 
-  function init() {
-    console.log('[VoideTerminal] Initialized')
+  console.log('[VoideTerminal] Initialized')
 
-    // Set up greeting
-    updateGreeting()
+  // Set up greeting
+  updateGreeting()
 
-    // Respond to prompt from Claude
-    function respondToPrompt(response) {
-      if (!chatStore.pendingPrompt) return
+  // Respond to prompt from Claude
+  function respondToPrompt(response) {
+    if (!chatStore.pendingPrompt) return
 
-      // Add user response as message
-      chatStore.addMessage('user', response, 'You')
-      chatStore.clearPendingPrompt()
+    // Add user response as message
+    chatStore.addMessage('user', response, 'You')
+    chatStore.clearPendingPrompt()
 
-      // Send response to backend
-      fetch(API_BASE_URL + '/respond', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          promptId: chatStore.pendingPrompt?.id,
-          response: response
-        })
-      }).catch(error => {
-        chatStore.addMessage('error', 'Failed to send response: ' + error.message, 'Error')
+    // Send response to backend
+    fetch(API_BASE_URL + '/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        promptId: chatStore.pendingPrompt?.id,
+        response: response
       })
-    }
-
-    // Render messages
-    chatStore.$subscribe(state => renderMessages(state.messages))
-
-    // Event delegation for collapse and speak buttons
-    const container = refs.messagesContainer
-    container?.addEventListener('click', (e) => {
-      // Handle collapse button
-      const collapseBtn = e.target.closest('[data-collapse]')
-      if (collapseBtn) {
-        const msgId = collapseBtn.getAttribute('data-collapse')
-        toggleCollapse(msgId)
-        return
-      }
-
-      // Handle speak button
-      const speakBtn = e.target.closest('[data-speak]')
-      if (speakBtn) {
-        const msgId = speakBtn.getAttribute('data-speak')
-        handleSpeak(msgId)
-        return
-      }
-    })
-
-    // Handle TTS speak/stop
-    function handleSpeak(msgId) {
-      // If already speaking this message, stop
-      if (isSpeaking) {
-        stopSpeaking()
-        return
-      }
-
-      // Get the raw content from data attribute
-      const msgEl = refs.messagesContainer?.querySelector(`[data-msg-id="${msgId}"]`)
-      if (!msgEl) return
-
-      const encodedContent = msgEl.getAttribute('data-content')
-      if (!encodedContent) return
-
-      try {
-        const content = decodeURIComponent(atob(encodedContent))
-        speak(content, msgId)
-      } catch (e) {
-        console.error('Failed to decode content for TTS:', e)
-      }
-    }
-
-    // Subscribe to processing state
-    appStore.$subscribe(state => {
-      isCurrentlyProcessing = state.isProcessing
-    })
-
-    // Handle pending prompts
-    chatStore.$subscribe(state => {
-      const overlay = refs.promptOverlay
-      const textEl = refs.promptText
-      const optionsEl = refs.promptOptions
-
-      if (!overlay || !textEl || !optionsEl) return
-
-      if (state.pendingPrompt) {
-        textEl.textContent = state.pendingPrompt.text
-        optionsEl.innerHTML = ''
-
-        state.pendingPrompt.options.forEach((option, i) => {
-          const label = state.pendingPrompt.labels?.[i] || option
-          const btn = STX.el('button', {
-            class: 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors',
-            onclick: () => respondToPrompt(option)
-          }, label)
-          optionsEl.appendChild(btn)
-        })
-
-        overlay.classList.remove('hidden')
-      } else {
-        overlay.classList.add('hidden')
-      }
-    })
-
-    // Toggle collapse state for a message
-    function toggleCollapse(msgId) {
-      const msgEl = refs.messagesContainer?.querySelector(`[data-msg-id="${msgId}"]`)
-      if (!msgEl) return
-
-      const content = msgEl.querySelector('.msg-content')
-      const preview = msgEl.querySelector('.msg-preview')
-      const icon = msgEl.querySelector('.collapse-icon')
-
-      if (content && preview) {
-        const isCollapsed = content.classList.contains('hidden')
-        if (isCollapsed) {
-          // Expand
-          content.classList.remove('hidden')
-          preview.classList.add('hidden')
-          icon?.classList.remove('rotate-180')
-        } else {
-          // Collapse
-          content.classList.add('hidden')
-          preview.classList.remove('hidden')
-          icon?.classList.add('rotate-180')
-        }
-      }
-    }
-
-    // Copy code block to clipboard
-    function copyCode(blockId) {
-      const block = refs.messagesContainer?.querySelector(`[data-block-id="${blockId}"]`)
-      if (!block) return
-
-      const code = block.querySelector('code')
-      if (!code) return
-
-      // Get text content (strips HTML tags)
-      const text = code.textContent || code.innerText
-
-      navigator.clipboard.writeText(text).then(() => {
-        // Find the copy button and update text
-        const btn = block.previousElementSibling?.querySelector('.copy-btn')
-        if (btn) {
-          const textSpan = btn.querySelector('.copy-text')
-          if (textSpan) {
-            textSpan.textContent = 'Copied!'
-            setTimeout(() => {
-              textSpan.textContent = 'Copy'
-            }, 2000)
-          }
-        }
-      }).catch(err => {
-        console.error('Failed to copy:', err)
-      })
-    }
-
-    // Expose to window.voide
-    window.voide = window.voide || {}
-    Object.assign(window.voide, {
-      respondToPrompt,
-      toggleCollapse,
-      copyCode,
-      speak,
-      stopSpeaking
+    }).catch(error => {
+      chatStore.addMessage('error', 'Failed to send response: ' + error.message, 'Error')
     })
   }
 
-  init()
-})()
+  // Render messages
+  chatStore.$subscribe(state => renderMessages(state.messages))
+
+  // Event delegation for collapse and speak buttons
+  function handleContainerClick(e) {
+    // Handle collapse button
+    const collapseBtn = e.target.closest('[data-collapse]')
+    if (collapseBtn) {
+      const msgId = collapseBtn.getAttribute('data-collapse')
+      toggleCollapse(msgId)
+      return
+    }
+
+    // Handle speak button
+    const speakBtn = e.target.closest('[data-speak]')
+    if (speakBtn) {
+      const msgId = speakBtn.getAttribute('data-speak')
+      handleSpeak(msgId)
+      return
+    }
+  }
+
+  // Handle TTS speak/stop
+  function handleSpeak(msgId) {
+    // If already speaking this message, stop
+    if (isSpeaking) {
+      stopSpeaking()
+      return
+    }
+
+    // Get the raw content from data attribute
+    const msgEl = refs.messagesContainer?.querySelector(`[data-msg-id="${msgId}"]`)
+    if (!msgEl) return
+
+    const encodedContent = msgEl.getAttribute('data-content')
+    if (!encodedContent) return
+
+    try {
+      const content = decodeURIComponent(atob(encodedContent))
+      speak(content, msgId)
+    } catch (e) {
+      console.error('Failed to decode content for TTS:', e)
+    }
+  }
+
+  // Subscribe to processing state
+  appStore.$subscribe(state => {
+    isCurrentlyProcessing = state.isProcessing
+  })
+
+  // Handle pending prompts
+  chatStore.$subscribe(state => {
+    const overlay = refs.promptOverlay
+    const textEl = refs.promptText
+    const optionsEl = refs.promptOptions
+
+    if (!overlay || !textEl || !optionsEl) return
+
+    if (state.pendingPrompt) {
+      textEl.textContent = state.pendingPrompt.text
+      optionsEl.innerHTML = ''
+
+      state.pendingPrompt.options.forEach((option, i) => {
+        const label = state.pendingPrompt.labels?.[i] || option
+        const btn = STX.el('button', {
+          class: 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors',
+          onclick: () => respondToPrompt(option)
+        }, label)
+        optionsEl.appendChild(btn)
+      })
+
+      overlay.classList.remove('hidden')
+    } else {
+      overlay.classList.add('hidden')
+    }
+  })
+
+  // Toggle collapse state for a message
+  function toggleCollapse(msgId) {
+    const msgEl = refs.messagesContainer?.querySelector(`[data-msg-id="${msgId}"]`)
+    if (!msgEl) return
+
+    const content = msgEl.querySelector('.msg-content')
+    const preview = msgEl.querySelector('.msg-preview')
+    const icon = msgEl.querySelector('.collapse-icon')
+
+    if (content && preview) {
+      const isCollapsed = content.classList.contains('hidden')
+      if (isCollapsed) {
+        // Expand
+        content.classList.remove('hidden')
+        preview.classList.add('hidden')
+        icon?.classList.remove('rotate-180')
+      } else {
+        // Collapse
+        content.classList.add('hidden')
+        preview.classList.remove('hidden')
+        icon?.classList.add('rotate-180')
+      }
+    }
+  }
+
+  // Copy code block to clipboard
+  function copyCode(blockId) {
+    const block = refs.messagesContainer?.querySelector(`[data-block-id="${blockId}"]`)
+    if (!block) return
+
+    const code = block.querySelector('code')
+    if (!code) return
+
+    // Get text content (strips HTML tags)
+    const text = code.textContent || code.innerText
+
+    navigator.clipboard.writeText(text).then(() => {
+      // Find the copy button and update text
+      const btn = block.previousElementSibling?.querySelector('.copy-btn')
+      if (btn) {
+        const textSpan = btn.querySelector('.copy-text')
+        if (textSpan) {
+          textSpan.textContent = 'Copied!'
+          setTimeout(() => {
+            textSpan.textContent = 'Copy'
+          }, 2000)
+        }
+      }
+    }).catch(err => {
+      console.error('Failed to copy:', err)
+    })
+  }
+
+  // Expose to window.voide
+  window.voide = window.voide || {}
+  Object.assign(window.voide, {
+    respondToPrompt,
+    toggleCollapse,
+    copyCode,
+    speak,
+    stopSpeaking
+  })
 </script>

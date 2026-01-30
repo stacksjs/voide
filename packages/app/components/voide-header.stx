@@ -5,7 +5,7 @@
 
       <!-- Center: Repo path (clickable to change) -->
       <button
-        @ref="repoBtn"
+        @click="openProjectPicker()"
         class="flex items-center gap-2 px-3 py-1.5 text-sm text-monokai-gray hover:text-monokai-fg transition-colors rounded-lg hover:bg-monokai-bg-dark"
         title="Change working directory"
       >
@@ -17,7 +17,7 @@
       <!-- Right: Settings only -->
       <div class="w-24 flex justify-end">
         <button
-          @ref="settingsBtn"
+          @click="openSettingsModal()"
           class="w-8 h-8 flex items-center justify-center text-monokai-gray hover:text-monokai-fg rounded-lg hover:bg-monokai-bg-dark transition-colors"
           title="Settings"
         >
@@ -31,74 +31,59 @@
 </header>
 
 <script client>
-(() => {
-  const { appStore, settingsStore, uiStore } = window.__STX_STORES__
+import { appStore, settingsStore, uiStore } from '@stores'
 
-  // Vue-style refs - auto-bound from ref attributes
-  const refs = STX.useRefs()
-  const { repoBtn, repoName, settingsBtn } = refs
+const refs = STX.useRefs()
+const { repoName } = refs
 
-  console.log('[VoideHeader] Initialized')
+console.log('[VoideHeader] Initialized')
 
-  // =========================================================================
-  // Helper Functions
-  // =========================================================================
+// =========================================================================
+// Helper Functions
+// =========================================================================
 
-  function getProjectName(path) {
-    if (!path) return 'No project selected'
-    return path.split('/').pop() || path
+function getProjectName(path) {
+  if (!path) return 'No project selected'
+  return path.split('/').pop() || path
+}
+
+function updateRepoDisplay(path) {
+  if (repoName) {
+    repoName.textContent = getProjectName(path)
   }
+}
 
-  function updateRepoDisplay(path) {
-    if (repoName) {
-      repoName.textContent = getProjectName(path)
-    }
+// =========================================================================
+// Modal Openers
+// =========================================================================
+
+function openSettingsModal() {
+  uiStore.openModal('settings')
+}
+
+function openProjectPicker() {
+  uiStore.openModal('settings')
+}
+
+// =========================================================================
+// State Subscriptions
+// =========================================================================
+
+appStore.$subscribe((state) => {
+  updateRepoDisplay(state.repoPath)
+})
+
+updateRepoDisplay(appStore.repoPath)
+
+if (!appStore.repoPath) {
+  if (settingsStore.lastRepoPath) {
+    appStore.setRepoPath(settingsStore.lastRepoPath)
   }
+}
 
-  // =========================================================================
-  // Modal Openers
-  // =========================================================================
-
-  function openSettingsModal() {
-    uiStore.openModal('settings')
-  }
-
-  function openProjectPicker() {
-    // Open settings modal to the project/repo section
-    uiStore.openModal('settings')
-  }
-
-  // =========================================================================
-  // Event Bindings
-  // =========================================================================
-
-  repoBtn?.addEventListener('click', openProjectPicker)
-  settingsBtn?.addEventListener('click', openSettingsModal)
-
-  // =========================================================================
-  // State Subscriptions
-  // =========================================================================
-
-  // Update repo name display
-  appStore.$subscribe((state) => {
-    updateRepoDisplay(state.repoPath)
-  })
-
-  // Initial display
-  updateRepoDisplay(appStore.repoPath)
-
-  // Restore repo path from settings on init
-  if (!appStore.repoPath) {
-    if (settingsStore.lastRepoPath) {
-      appStore.setRepoPath(settingsStore.lastRepoPath)
-    }
-  }
-
-  // Expose to window.voide (for onclick handlers in templates)
-  window.voide = window.voide || {}
-  Object.assign(window.voide, {
-    openSettingsModal,
-    openProjectPicker
-  })
-})()
+window.voide = window.voide || {}
+Object.assign(window.voide, {
+  openSettingsModal,
+  openProjectPicker
+})
 </script>

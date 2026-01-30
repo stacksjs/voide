@@ -2,7 +2,7 @@
     <!-- New Chat Button -->
     <div class="p-3">
       <button
-        @ref="newChatBtn"
+        @click="newChat()"
         class="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-monokai-fg bg-monokai-bg-dark border border-monokai-border hover:border-monokai-gray rounded-xl transition-all"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -15,7 +15,7 @@
     <!-- Search -->
     <div class="px-3 pb-2">
       <input
-        @ref="chatSearch"
+        @input="handleSearch($event)"
         type="text"
         placeholder="Search chats..."
         class="w-full bg-monokai-bg-dark border border-monokai-border rounded-lg px-3 py-1.5 text-xs text-monokai-fg placeholder-monokai-gray focus:border-monokai-purple focus:outline-none transition-all"
@@ -34,16 +34,14 @@
 </aside>
 
 <script client>
-(() => {
-  const { appStore, chatStore } = window.__STX_STORES__
+import { appStore, chatStore } from '@stores'
 
-  // Vue-style refs - auto-bound from ref attributes
-  const refs = STX.useRefs()
-  const { chatList, newChatBtn, chatSearch } = refs
+const refs = STX.useRefs()
+const { chatList } = refs
 
-  let searchQuery = ''
+let searchQuery = ''
 
-  console.log('[VoideSidebar] Initialized')
+console.log('[VoideSidebar] Initialized')
 
   // =========================================================================
   // Helper Functions
@@ -206,16 +204,13 @@
   }
 
   // =========================================================================
-  // Event Bindings
+  // Event Handlers
   // =========================================================================
 
-  newChatBtn?.addEventListener('click', newChat)
-
-  // Search input handler
-  chatSearch?.addEventListener('input', (e) => {
+  function handleSearch(e) {
     searchQuery = e.target.value.trim()
     renderChatList()
-  })
+  }
 
   chatStore.$subscribe(() => {
     renderChatList()
@@ -238,5 +233,4 @@
     newChat,
     deleteChat
   })
-})()
 </script>

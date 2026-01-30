@@ -1,6 +1,7 @@
 <!-- GitHub Connection Modal -->
   <div
     @ref="githubModal"
+    @click.self="uiStore.closeModal('github')"
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
     style="display: none"
   >
@@ -17,7 +18,7 @@
             <h2 class="text-lg font-semibold text-monokai-fg">GitHub Connection</h2>
           </div>
           <button
-            @ref="githubCloseBtn"
+            @click="uiStore.closeModal('github')"
             class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg-dark transition-all"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,16 +80,18 @@
         <!-- Modal Footer -->
         <div class="flex justify-end gap-3 px-6 py-4 border-t border-monokai-border bg-monokai-bg-dark">
           <button
-            @ref="githubCancelBtn"
+            @click="uiStore.closeModal('github')"
             class="px-4 py-2 text-sm text-monokai-gray hover:text-monokai-fg transition-colors"
           >Cancel</button>
           <button
             @ref="githubConnectBtn"
+            @click="connectGithub()"
             class="px-4 py-2 text-sm font-medium bg-monokai-purple text-white rounded-lg hover:bg-monokai-purple/90 transition-all"
             style="display: inline-flex"
           >Connect</button>
           <button
             @ref="githubDisconnectBtn"
+            @click="disconnectGithub()"
             class="px-4 py-2 text-sm font-medium bg-monokai-pink/20 border border-monokai-pink/30 text-monokai-pink rounded-lg hover:bg-monokai-pink/30 transition-all"
             style="display: none"
           >Disconnect</button>
@@ -100,6 +103,7 @@
   <!-- API Settings Modal -->
   <div
     @ref="settingsModal"
+    @click.self="uiStore.closeModal('settings')"
     class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
     style="display: none"
   >
@@ -117,7 +121,7 @@
             <h2 class="text-lg font-semibold text-monokai-fg">Settings</h2>
           </div>
           <button
-            @ref="settingsCloseBtn"
+            @click="uiStore.closeModal('settings')"
             class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg-dark transition-all"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,7 +143,7 @@
                 placeholder="/path/to/your/project"
               />
               <button
-                @ref="browseBtn"
+                @click="browseForFolder()"
                 class="px-4 py-2 text-sm font-medium bg-monokai-bg-dark border border-monokai-border text-monokai-fg rounded-xl hover:border-monokai-gray transition-all"
                 title="Browse for folder"
               >Browse</button>
@@ -198,11 +202,11 @@
         <!-- Modal Footer -->
         <div class="flex justify-end gap-3 px-6 py-4 border-t border-monokai-border bg-monokai-bg-dark">
           <button
-            @ref="settingsCancelBtn"
+            @click="uiStore.closeModal('settings')"
             class="px-4 py-2 text-sm text-monokai-gray hover:text-monokai-fg transition-colors"
           >Cancel</button>
           <button
-            @ref="settingsSaveBtn"
+            @click="saveSettings()"
             class="px-4 py-2 text-sm font-medium bg-monokai-purple text-white rounded-lg hover:bg-monokai-purple/90 transition-all"
           >Save Settings</button>
         </div>
@@ -211,37 +215,11 @@
   </div>
 
 <script client>
-(() => {
-  const { appStore, settingsStore, uiStore, chatStore } = window.__STX_STORES__
+import { appStore, settingsStore, uiStore, chatStore } from '@stores'
 
-  // Vue-style refs - auto-bound from ref attributes
-  const refs = STX.useRefs()
+const refs = STX.useRefs()
 
-  console.log('[VoideModals] Initialized, refs:', Object.keys(refs))
-
-  // Bind backdrop click handlers (close modal when clicking outside)
-  refs.githubModal?.addEventListener('click', (e) => {
-    if (e.target === refs.githubModal) {
-      uiStore.closeModal('github')
-    }
-  })
-
-  refs.settingsModal?.addEventListener('click', (e) => {
-    if (e.target === refs.settingsModal) {
-      uiStore.closeModal('settings')
-    }
-  })
-
-  // GitHub modal buttons
-  refs.githubCloseBtn?.addEventListener('click', () => uiStore.closeModal('github'))
-  refs.githubCancelBtn?.addEventListener('click', () => uiStore.closeModal('github'))
-  refs.githubConnectBtn?.addEventListener('click', connectGithub)
-  refs.githubDisconnectBtn?.addEventListener('click', disconnectGithub)
-
-  // Settings modal buttons
-  refs.settingsCloseBtn?.addEventListener('click', () => uiStore.closeModal('settings'))
-  refs.settingsCancelBtn?.addEventListener('click', () => uiStore.closeModal('settings'))
-  refs.settingsSaveBtn?.addEventListener('click', saveSettings)
+console.log('[VoideModals] Initialized, refs:', Object.keys(refs))
 
   // =========================================================================
   // Helper Functions
@@ -313,15 +291,9 @@
     })
   }
 
-  // Bind buttons
-  const browseBtn = refs.browseBtn
-  const projectPathInput = refs.projectPathInput
-
-  browseBtn?.addEventListener('click', browseForFolder)
-
   // Pre-fill project path
-  if (projectPathInput && appStore.repoPath) {
-    projectPathInput.value = appStore.repoPath
+  if (refs.projectPathInput && appStore.repoPath) {
+    refs.projectPathInput.value = appStore.repoPath
   }
 
   // =========================================================================
@@ -508,5 +480,4 @@
     connectGithub,
     disconnectGithub
   })
-})()
 </script>
