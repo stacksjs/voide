@@ -1,6 +1,6 @@
 <div @ref="chatContainer" class="flex-1 relative flex flex-col overflow-hidden">
     <!-- Prompt Overlay (shown when Claude CLI asks for input) -->
-    <div @ref="promptOverlay" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50" @class="{ 'hidden': !hasPendingPrompt() }">
       <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
         <p @ref="promptText" class="text-sm text-monokai-fg mb-4">Please select an option:</p>
         <div @ref="promptOptions" class="flex flex-wrap gap-2"></div>
@@ -8,7 +8,7 @@
     </div>
 
     <!-- Welcome State (shown when no messages) -->
-    <div @ref="welcomeState" class="flex-1 flex flex-col items-center justify-center">
+    <div class="flex-1 flex flex-col items-center justify-center" @class="{ 'hidden': hasMessages() }">
       <div class="text-center mb-8">
         <div class="flex items-center justify-center gap-3 mb-2">
           <span class="text-3xl text-monokai-yellow">✺</span>
@@ -19,7 +19,7 @@
     </div>
 
     <!-- Chat State (shown when has messages) -->
-    <div @ref="chatState" class="hidden flex-1 overflow-y-auto">
+    <div @ref="chatState" class="hidden flex-1 overflow-y-auto" @class="{ 'hidden': !hasMessages() }">
       <div @ref="messagesContainer" @click="handleContainerClick($event)" class="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <!-- Messages will be rendered here -->
       </div>
@@ -29,6 +29,10 @@
 
 <script client>
 import { appStore, chatStore } from '@stores'
+
+const { state } = window.stx
+const hasMessages = state(false)
+const hasPendingPrompt = state(false)
 
 const API_BASE_URL = 'http://localhost:3008/voide'
 const refs = STX.useRefs()
@@ -400,26 +404,13 @@ const refs = STX.useRefs()
     </div>`
   }
 
-  function toggleChatState(hasMessages) {
-    const welcomeState = refs.welcomeState
-    const chatState = refs.chatState
-
-    if (hasMessages) {
-      welcomeState?.classList.add('hidden')
-      chatState?.classList.remove('hidden')
-    } else {
-      welcomeState?.classList.remove('hidden')
-      chatState?.classList.add('hidden')
-    }
-  }
-
   function renderMessages(messages) {
     const container = refs.messagesContainer
     const chatState = refs.chatState
     if (!container) return
 
     const messageArray = messages || []
-    toggleChatState(messageArray.length > 0)
+    hasMessages.set(messageArray.length > 0)
 
     const shouldAutoScroll = chatState ? isNearBottom(chatState) : true
 
@@ -539,29 +530,24 @@ const refs = STX.useRefs()
   })
 
   // Handle pending prompts
-  chatStore.$subscribe(state => {
-    const overlay = refs.promptOverlay
+  chatStore.$subscribe(s => {
     const textEl = refs.promptText
     const optionsEl = refs.promptOptions
 
-    if (!overlay || !textEl || !optionsEl) return
+    hasPendingPrompt.set(!!s.pendingPrompt)
 
-    if (state.pendingPrompt) {
-      textEl.textContent = state.pendingPrompt.text
+    if (s.pendingPrompt && textEl && optionsEl) {
+      textEl.textContent = s.pendingPrompt.text
       optionsEl.innerHTML = ''
 
-      state.pendingPrompt.options.forEach((option, i) => {
-        const label = state.pendingPrompt.labels?.[i] || option
+      s.pendingPrompt.options.forEach((option, i) => {
+        const label = s.pendingPrompt.labels?.[i] || option
         const btn = STX.el('button', {
           class: 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors',
           onclick: () => respondToPrompt(option)
         }, label)
         optionsEl.appendChild(btn)
       })
-
-      overlay.classList.remove('hidden')
-    } else {
-      overlay.classList.add('hidden')
     }
   })
 

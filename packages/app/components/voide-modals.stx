@@ -1,9 +1,8 @@
 <!-- GitHub Connection Modal -->
   <div
-    @ref="githubModal"
     @click.self="uiStore.closeModal('github')"
-    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-    style="display: none"
+    class="fixed inset-0 bg-black/70 items-center justify-center z-50 hidden"
+    @class="{ 'hidden': !githubModalOpen(), 'flex': githubModalOpen() }"
   >
     <div class="w-full max-w-md m-4 animate-fade-in">
       <div class="bg-monokai-bg border border-monokai-border rounded-2xl shadow-2xl overflow-hidden">
@@ -29,7 +28,7 @@
 
         <!-- Modal Body -->
         <div class="p-6">
-          <div @ref="githubConnectForm" class="space-y-4">
+          <div @ref="githubConnectForm" class="space-y-4" @class="{ 'hidden': githubConnected() }">
             <div>
               <label class="block text-sm font-medium text-monokai-fg/80 mb-2">Personal Access Token</label>
               <input
@@ -64,7 +63,7 @@
             </div>
           </div>
 
-          <div @ref="githubConnectedInfo" class="text-center py-6" style="display: none">
+          <div @ref="githubConnectedInfo" class="text-center py-6 hidden" @class="{ 'hidden': !githubConnected() }">
             <img @ref="connectedAvatar" src="" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-monokai-green" />
             <div @ref="connectedName" class="text-xl font-semibold text-monokai-fg mb-1"></div>
             <div @ref="connectedUsername" class="text-monokai-gray mb-3"></div>
@@ -84,16 +83,14 @@
             class="px-4 py-2 text-sm text-monokai-gray hover:text-monokai-fg transition-colors"
           >Cancel</button>
           <button
-            @ref="githubConnectBtn"
             @click="connectGithub()"
-            class="px-4 py-2 text-sm font-medium bg-monokai-purple text-white rounded-lg hover:bg-monokai-purple/90 transition-all"
-            style="display: inline-flex"
+            class="px-4 py-2 text-sm font-medium bg-monokai-purple text-white rounded-lg hover:bg-monokai-purple/90 transition-all inline-flex"
+            @class="{ 'hidden': githubConnected() }"
           >Connect</button>
           <button
-            @ref="githubDisconnectBtn"
             @click="disconnectGithub()"
-            class="px-4 py-2 text-sm font-medium bg-monokai-pink/20 border border-monokai-pink/30 text-monokai-pink rounded-lg hover:bg-monokai-pink/30 transition-all"
-            style="display: none"
+            class="px-4 py-2 text-sm font-medium bg-monokai-pink/20 border border-monokai-pink/30 text-monokai-pink rounded-lg hover:bg-monokai-pink/30 transition-all inline-flex hidden"
+            @class="{ 'hidden': !githubConnected() }"
           >Disconnect</button>
         </div>
       </div>
@@ -102,10 +99,9 @@
 
   <!-- API Settings Modal -->
   <div
-    @ref="settingsModal"
     @click.self="uiStore.closeModal('settings')"
-    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-    style="display: none"
+    class="fixed inset-0 bg-black/70 items-center justify-center z-50 hidden"
+    @class="{ 'hidden': !settingsModalOpen(), 'flex': settingsModalOpen() }"
   >
     <div class="w-full max-w-md m-4 animate-fade-in">
       <div class="bg-monokai-bg border border-monokai-border rounded-2xl shadow-2xl overflow-hidden">
@@ -189,11 +185,11 @@
           <!-- API Status -->
           <div class="p-4 bg-monokai-bg-dark border border-monokai-border rounded-xl space-y-2">
             <div class="flex items-center gap-3">
-              <span @ref="anthropicStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
+              <span @ref="anthropicStatus" class="w-2 h-2 rounded-full" @class="{ 'bg-monokai-green': anthropicConfigured(), 'bg-monokai-gray': !anthropicConfigured() }"></span>
               <span class="text-sm text-monokai-gray">Anthropic: <span @ref="anthropicStatusText" class="text-monokai-fg/80">Not configured</span></span>
             </div>
             <div class="flex items-center gap-3">
-              <span @ref="openaiStatus" class="w-2 h-2 rounded-full bg-monokai-gray"></span>
+              <span @ref="openaiStatus" class="w-2 h-2 rounded-full" @class="{ 'bg-monokai-green': openaiConfigured(), 'bg-monokai-gray': !openaiConfigured() }"></span>
               <span class="text-sm text-monokai-gray">OpenAI: <span @ref="openaiStatusText" class="text-monokai-fg/80">Not configured</span></span>
             </div>
           </div>
@@ -216,6 +212,13 @@
 
 <script client>
 import { appStore, settingsStore, uiStore, chatStore } from '@stores'
+
+const { state } = window.stx
+const githubModalOpen = state(false)
+const settingsModalOpen = state(false)
+const githubConnected = state(false)
+const anthropicConfigured = state(false)
+const openaiConfigured = state(false)
 
 const refs = STX.useRefs()
 
@@ -376,84 +379,58 @@ console.log('[VoideModals] Initialized, refs:', Object.keys(refs))
   // =========================================================================
 
   // Update modal visibility based on UI state
-  uiStore.$subscribe((state) => {
-    const githubModal = refs.githubModal
-    const settingsModal = refs.settingsModal
-
-    if (githubModal) {
-      githubModal.style.display = state.modals.github ? 'flex' : 'none'
-    }
-    if (settingsModal) {
-      settingsModal.style.display = state.modals.settings ? 'flex' : 'none'
-    }
+  uiStore.$subscribe((s) => {
+    githubModalOpen.set(s.modals.github)
+    settingsModalOpen.set(s.modals.settings)
   })
 
   // Pre-fill settings form with current values
-  settingsStore.$subscribe((state) => {
+  settingsStore.$subscribe((s) => {
     const anthropicInput = refs.anthropicApiKey
     const openaiInput = refs.openaiApiKey
     const claudeHostInput = refs.claudeCliHost
     const gitNameInput = refs.gitName
     const gitEmailInput = refs.gitEmail
 
-    // Update connected info
-    const connectedAvatar = refs.connectedAvatar
-    const connectedName = refs.connectedName
-    const connectedUsername = refs.connectedUsername
-    const connectForm = refs.githubConnectForm
-    const connectedInfo = refs.githubConnectedInfo
-    const connectBtn = refs.githubConnectBtn
-    const disconnectBtn = refs.githubDisconnectBtn
-
-    if (anthropicInput && state.apiKeys.anthropic && !anthropicInput.value) {
-      anthropicInput.value = state.apiKeys.anthropic
+    if (anthropicInput && s.apiKeys.anthropic && !anthropicInput.value) {
+      anthropicInput.value = s.apiKeys.anthropic
     }
-    if (openaiInput && state.apiKeys.openai && !openaiInput.value) {
-      openaiInput.value = state.apiKeys.openai
+    if (openaiInput && s.apiKeys.openai && !openaiInput.value) {
+      openaiInput.value = s.apiKeys.openai
     }
-    if (claudeHostInput && state.apiKeys.claudeCliHost && !claudeHostInput.value) {
-      claudeHostInput.value = state.apiKeys.claudeCliHost
+    if (claudeHostInput && s.apiKeys.claudeCliHost && !claudeHostInput.value) {
+      claudeHostInput.value = s.apiKeys.claudeCliHost
     }
-    if (gitNameInput && state.github.name && !gitNameInput.value) {
-      gitNameInput.value = state.github.name
+    if (gitNameInput && s.github.name && !gitNameInput.value) {
+      gitNameInput.value = s.github.name
     }
-    if (gitEmailInput && state.github.email && !gitEmailInput.value) {
-      gitEmailInput.value = state.github.email
+    if (gitEmailInput && s.github.email && !gitEmailInput.value) {
+      gitEmailInput.value = s.github.email
     }
 
-    // Update GitHub connected state UI
-    if (state.github.connected) {
-      if (connectedAvatar) connectedAvatar.src = state.github.avatarUrl || ''
-      if (connectedName) connectedName.textContent = state.github.name || state.github.username
-      if (connectedUsername) connectedUsername.textContent = '@' + state.github.username
-      if (connectForm) connectForm.style.display = 'none'
-      if (connectedInfo) connectedInfo.style.display = 'block'
-      if (connectBtn) connectBtn.style.display = 'none'
-      if (disconnectBtn) disconnectBtn.style.display = 'inline-flex'
-    } else {
-      if (connectForm) connectForm.style.display = 'block'
-      if (connectedInfo) connectedInfo.style.display = 'none'
-      if (connectBtn) connectBtn.style.display = 'inline-flex'
-      if (disconnectBtn) disconnectBtn.style.display = 'none'
+    // Update GitHub connected state via signals
+    githubConnected.set(s.github.connected)
+
+    if (s.github.connected) {
+      const connectedAvatar = refs.connectedAvatar
+      const connectedName = refs.connectedName
+      const connectedUsername = refs.connectedUsername
+      if (connectedAvatar) connectedAvatar.src = s.github.avatarUrl || ''
+      if (connectedName) connectedName.textContent = s.github.name || s.github.username
+      if (connectedUsername) connectedUsername.textContent = '@' + s.github.username
     }
 
-    // Update API status indicators
-    const anthropicStatus = refs.anthropicStatus
-    const openaiStatus = refs.openaiStatus
+    // Update API status via signals
+    anthropicConfigured.set(!!s.apiKeys.anthropic)
+    openaiConfigured.set(!!s.apiKeys.openai)
+
     const anthropicStatusText = refs.anthropicStatusText
     const openaiStatusText = refs.openaiStatusText
-
-    if (anthropicStatus) {
-      anthropicStatus.className = 'w-2 h-2 rounded-full ' + (state.apiKeys.anthropic ? 'bg-monokai-green' : 'bg-monokai-gray')
-    }
-    if (openaiStatus) {
-      openaiStatus.className = 'w-2 h-2 rounded-full ' + (state.apiKeys.openai ? 'bg-monokai-green' : 'bg-monokai-gray')
-    }
     if (anthropicStatusText) {
-      anthropicStatusText.textContent = state.apiKeys.anthropic ? 'Configured' : 'Not configured'
+      anthropicStatusText.textContent = s.apiKeys.anthropic ? 'Configured' : 'Not configured'
     }
     if (openaiStatusText) {
-      openaiStatusText.textContent = state.apiKeys.openai ? 'Configured' : 'Not configured'
+      openaiStatusText.textContent = s.apiKeys.openai ? 'Configured' : 'Not configured'
     }
   })
 

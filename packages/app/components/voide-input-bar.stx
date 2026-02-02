@@ -1,8 +1,8 @@
 <div class="max-w-3xl mx-auto w-full">
     <!-- Thinking/Done indicator - shown above input when processing or just completed -->
-    <div @ref="thinkingIndicator" class="hidden mb-3 px-4">
+    <div @ref="thinkingIndicator" class="hidden mb-3 px-4" @class="{ 'hidden': !indicatorVisible() }">
       <!-- Thinking state -->
-      <div @ref="thinkingState" class="flex items-center gap-2 text-monokai-gray/70">
+      <div @ref="thinkingState" class="flex items-center gap-2 text-monokai-gray/70" @class="{ 'hidden': showDone() }">
         <div class="flex gap-1">
           <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 0ms"></span>
           <span class="w-1.5 h-1.5 bg-monokai-purple rounded-full animate-bounce" style="animation-delay: 150ms"></span>
@@ -12,7 +12,7 @@
         <span @ref="thinkingTimer" class="opacity-40 font-mono" style="font-size: 10px">0.0s</span>
       </div>
       <!-- Done state -->
-      <div @ref="doneState" class="hidden flex items-center gap-2 text-monokai-green/80">
+      <div @ref="doneState" class="hidden flex items-center gap-2 text-monokai-green/80" @class="{ 'hidden': !showDone() }">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
         </svg>
@@ -22,7 +22,7 @@
     </div>
 
     <!-- Audio Preview (shown after recording stops) -->
-    <div @ref="audioPreview" class="hidden mb-3">
+    <div class="hidden mb-3" @class="{ 'hidden': !showAudioPreview() }">
       <div class="bg-monokai-bg-dark border border-monokai-cyan rounded-xl p-3">
         <!-- Audio player row -->
         <div class="flex items-center gap-3">
@@ -52,7 +52,7 @@
             @click="toggleTranscript()"
             class="flex items-center gap-2 text-xs text-monokai-gray hover:text-monokai-fg transition-colors"
           >
-            <svg @ref="transcriptChevron" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 transition-transform" @class="{ 'rotate-90': showTranscript() }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
             <span>View transcription</span>
@@ -60,7 +60,7 @@
           </button>
 
           <!-- Transcription text (collapsible) -->
-          <div @ref="transcriptContent" class="hidden mt-2">
+          <div class="hidden mt-2" @class="{ 'hidden': !showTranscript() }">
             <div
               @ref="transcriptText"
               class="w-full bg-monokai-bg text-sm text-monokai-fg border border-monokai-border/50 rounded-lg p-3 min-h-[60px] max-h-[120px] overflow-y-auto whitespace-pre-wrap"
@@ -72,10 +72,11 @@
 
     <div
       @ref="inputContainer"
-      class="bg-monokai-bg-dark border border-monokai-border rounded-2xl px-4 py-3"
+      class="bg-monokai-bg-dark border rounded-2xl px-4 py-3"
+      @class="{ 'border-monokai-pink': isRecording(), 'border-monokai-border': !isRecording() }"
     >
       <!-- Recording mode indicator (replaces textarea when recording) -->
-      <div @ref="recordingMode" class="hidden">
+      <div class="hidden" @class="{ 'hidden': !isRecording() }">
         <div class="flex items-center justify-center gap-4 py-2">
           <!-- Recording pulse -->
           <div class="w-3 h-3 bg-monokai-pink rounded-full animate-pulse"></div>
@@ -85,7 +86,7 @@
       </div>
 
       <!-- Input row (hidden when recording) -->
-      <div @ref="inputRow" class="flex items-end gap-3">
+      <div class="flex items-end gap-3" @class="{ 'hidden': isRecording() }">
         <textarea
           @ref="textInput"
           @input="handleInputChange($event)"
@@ -111,14 +112,15 @@
           <button
             @ref="micButton"
             @click="toggleRecording()"
-            class="w-8 h-8 rounded-lg flex items-center justify-center text-monokai-gray hover:text-monokai-fg hover:bg-monokai-bg transition-colors"
+            class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+            @class="{ 'text-monokai-pink': isRecording(), 'bg-monokai-pink/20': isRecording(), 'text-monokai-gray': !isRecording(), 'hover:text-monokai-fg': !isRecording(), 'hover:bg-monokai-bg': !isRecording() }"
             title="Record voice message"
           >
             <svg @ref="micIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"></path></svg>
           </button>
 
           <!-- Volume Level Indicator (5 bars) - shows mic input level -->
-          <div @ref="volumeIndicator" class="hidden flex items-end gap-1 h-6 px-2 py-1 bg-monokai-bg rounded-lg">
+          <div class="hidden flex items-end gap-1 h-6 px-2 py-1 bg-monokai-bg rounded-lg" @class="{ 'hidden': !isRecording() }">
             <div @ref="volBar1" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 20%"></div>
             <div @ref="volBar2" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 40%"></div>
             <div @ref="volBar3" class="w-1.5 bg-monokai-gray/40 rounded-full transition-all duration-75" style="height: 60%"></div>
@@ -128,9 +130,9 @@
 
           <!-- Stop button (shown when processing) -->
           <button
-            @ref="stopBtn"
             @click="cancelProcessing()"
             class="hidden w-8 h-8 rounded-lg flex items-center justify-center bg-monokai-pink/20 text-monokai-pink hover:bg-monokai-pink/30 transition-colors"
+            @class="{ 'hidden': !processingThisChat() }"
             title="Stop"
           >
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
@@ -164,6 +166,14 @@
 
 <script client>
 import { appStore, chatStore, settingsStore } from '@stores'
+
+const { state: signal } = window.stx
+const isRecording = signal(false)
+const showAudioPreview = signal(false)
+const showTranscript = signal(false)
+const processingThisChat = signal(false)
+const indicatorVisible = signal(false)
+const showDone = signal(false)
 
 const stores = window.VoideStores
 const API_BASE_URL = 'http://localhost:3008/voide'
@@ -201,12 +211,10 @@ const refs = STX.useRefs()
     // =========================================================================
     // State
     // =========================================================================
-    let isRecording = false
     let hasRecording = false
     let currentAudioUrl = null
     let currentTranscript = ''
-    let isTranscriptVisible = false
-    let handsFreeModeActive = false; // Track if we're in continuous voice mode
+    let handsFreeModeActive = false
 
     // =========================================================================
     // Volume Indicator
@@ -245,7 +253,7 @@ const refs = STX.useRefs()
     // Recording Flow
     // =========================================================================
     async function startRecording() {
-      if (isRecording) return
+      if (isRecording()) return
 
       const success = await audioRecorder.start()
       if (!success) {
@@ -253,28 +261,11 @@ const refs = STX.useRefs()
         return
       }
 
-      isRecording = true
+      isRecording.set(true)
       hasRecording = false
       currentTranscript = ''
-      handsFreeModeActive = true; // Enable hands-free mode
-
-      // Update UI using refs
-      refs.recordingMode?.classList.remove('hidden')
-      refs.inputRow?.classList.add('hidden')
-      refs.volumeIndicator?.classList.remove('hidden')
-      refs.audioPreview?.classList.add('hidden')
-
-      const container = refs.inputContainer
-      if (container) {
-        container.classList.remove('border-monokai-border')
-        container.classList.add('border-monokai-pink')
-      }
-
-      const micBtn = refs.micButton
-      if (micBtn) {
-        micBtn.classList.remove('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg')
-        micBtn.classList.add('text-monokai-pink', 'bg-monokai-pink/20')
-      }
+      handsFreeModeActive = true
+      showAudioPreview.set(false)
 
       refs.micIcon?.setAttribute('stroke', '#ff6188')
 
@@ -283,10 +274,10 @@ const refs = STX.useRefs()
     }
 
     async function stopRecording() {
-      if (!isRecording) return
+      if (!isRecording()) return
 
       const blob = await audioRecorder.stop()
-      isRecording = false
+      isRecording.set(false)
       stopBackgroundTranscription()
 
       if (blob) {
@@ -299,7 +290,7 @@ const refs = STX.useRefs()
           player.load()
         }
 
-        refs.audioPreview?.classList.remove('hidden')
+        showAudioPreview.set(true)
 
         // Show transcript immediately
         const transcriptTextEl = refs.transcriptText
@@ -309,30 +300,11 @@ const refs = STX.useRefs()
 
         // Auto-expand transcript section if we have content
         if (currentTranscript) {
-          refs.transcriptContent?.classList.remove('hidden')
-          refs.transcriptChevron?.classList.add('rotate-90')
-          isTranscriptVisible = true
+          showTranscript.set(true)
         }
 
         updateTranscriptStatus()
         sounds.done()
-      }
-
-      // Reset UI
-      refs.recordingMode?.classList.add('hidden')
-      refs.inputRow?.classList.remove('hidden')
-      refs.volumeIndicator?.classList.add('hidden')
-
-      const container = refs.inputContainer
-      if (container) {
-        container.classList.remove('border-monokai-pink')
-        container.classList.add('border-monokai-border')
-      }
-
-      const micBtn = refs.micButton
-      if (micBtn) {
-        micBtn.classList.remove('text-monokai-pink', 'bg-monokai-pink/20')
-        micBtn.classList.add('text-monokai-gray', 'hover:text-monokai-fg', 'hover:bg-monokai-bg')
       }
 
       refs.micIcon?.setAttribute('stroke', 'currentColor')
@@ -340,12 +312,10 @@ const refs = STX.useRefs()
     }
 
     function toggleRecording() {
-      if (isRecording) {
-        // Manual stop - turn off hands-free mode
+      if (isRecording()) {
         handsFreeModeActive = false
         stopRecording()
       } else if (hasRecording) {
-        // If we have a recording preview, clicking mic again cancels it
         handsFreeModeActive = false
         deleteRecording()
       } else {
@@ -379,7 +349,7 @@ const refs = STX.useRefs()
       }
 
       transcriptResultHandler = (data) => {
-        if (!isRecording) return
+        if (!isRecording()) return
         if (data.transcript && data.transcript.length > lastTranscriptLength) {
           currentTranscript = voiceCommands.convertPunctuation(data.transcript)
           lastTranscriptLength = data.transcript.length
@@ -395,10 +365,10 @@ const refs = STX.useRefs()
       }
 
       transcriptEndHandler = () => {
-        if (isRecording) {
+        if (isRecording()) {
           // Restart recognition to keep listening
           setTimeout(() => {
-            if (isRecording) {
+            if (isRecording()) {
               try { speechRecognition.start(); } catch (e) {}
             }
           }, 100)
@@ -423,7 +393,7 @@ const refs = STX.useRefs()
       stopSilenceDetection(); // Clear any existing
 
       silenceCheckInterval = setInterval(() => {
-        if (!isRecording || !handsFreeModeActive) return
+        if (!isRecording() || !handsFreeModeActive) return
 
         const silenceDuration = Date.now() - lastTranscriptTime
         const hasContent = currentTranscript.trim().length > 0
@@ -457,7 +427,7 @@ const refs = STX.useRefs()
         if (currentTranscript) {
           status.textContent = `(${currentTranscript.split(' ').length} words)`
         } else {
-          status.textContent = isRecording ? '(transcribing...)' : ''
+          status.textContent = isRecording() ? '(transcribing...)' : ''
         }
       }
     }
@@ -481,14 +451,12 @@ const refs = STX.useRefs()
         handsFreeModeActive = false
       }
 
-      refs.audioPreview?.classList.add('hidden')
+      showAudioPreview.set(false)
       const transcriptTextEl = refs.transcriptText
       if (transcriptTextEl) transcriptTextEl.textContent = ''
 
       // Reset transcript visibility
-      refs.transcriptContent?.classList.add('hidden')
-      refs.transcriptChevron?.classList.remove('rotate-90')
-      isTranscriptVisible = false
+      showTranscript.set(false)
 
       audioRecorder.reset()
     }
@@ -497,17 +465,7 @@ const refs = STX.useRefs()
     // Transcript Toggle
     // =========================================================================
     function toggleTranscript() {
-      isTranscriptVisible = !isTranscriptVisible
-
-      const content = refs.transcriptContent
-      if (content) {
-        content.classList.toggle('hidden', !isTranscriptVisible)
-      }
-
-      const chevron = refs.transcriptChevron
-      if (chevron) {
-        chevron.style.transform = isTranscriptVisible ? 'rotate(90deg)' : ''
-      }
+      showTranscript.set(!showTranscript())
     }
 
     // =========================================================================
@@ -950,23 +908,15 @@ const refs = STX.useRefs()
       return elapsedMs
     }
 
-    function showDoneState(elapsedMs) {
-      const indicator = refs.thinkingIndicator
-      const thinkingState = refs.thinkingState
-      const doneState = refs.doneState
+    function showDoneIndicator(elapsedMs) {
+      // Set the elapsed time text
       const doneTimer = refs.doneTimer
-
-      if (!indicator || !thinkingState || !doneState) return
-
-      // Show done state, hide thinking state
-      thinkingState.classList.add('hidden')
-      doneState.classList.remove('hidden')
-      indicator.classList.remove('hidden')
-
-      // Set the elapsed time
       if (doneTimer) {
         doneTimer.textContent = formatElapsedTime(elapsedMs)
       }
+
+      showDone.set(true)
+      indicatorVisible.set(true)
 
       // Clear any existing timeout
       if (doneHideTimeout) {
@@ -975,85 +925,60 @@ const refs = STX.useRefs()
 
       // Hide after 3 seconds
       doneHideTimeout = setTimeout(() => {
-        indicator.classList.add('hidden')
-        doneState.classList.add('hidden')
-        thinkingState.classList.remove('hidden')
+        indicatorVisible.set(false)
+        showDone.set(false)
       }, 3000)
     }
 
-    function showThinkingState() {
-      const indicator = refs.thinkingIndicator
-      const thinkingState = refs.thinkingState
-      const doneState = refs.doneState
-
-      if (!indicator || !thinkingState || !doneState) return
-
+    function showThinkingIndicator() {
       // Clear any done timeout
       if (doneHideTimeout) {
         clearTimeout(doneHideTimeout)
         doneHideTimeout = null
       }
 
-      // Show thinking state, hide done state
-      thinkingState.classList.remove('hidden')
-      doneState.classList.add('hidden')
-      indicator.classList.remove('hidden')
+      showDone.set(false)
+      indicatorVisible.set(true)
     }
 
-    appStore.$subscribe((state) => {
-      const indicator = refs.thinkingIndicator
+    appStore.$subscribe((s) => {
       const currentChatId = chatStore.$state.currentChatId
-      const isProcessingThisChat = state.isProcessing && state.processingChatId === currentChatId
+      const isActive = s.isProcessing && s.processingChatId === currentChatId
+      processingThisChat.set(isActive)
 
-      if (indicator) {
-        if (isProcessingThisChat) {
-          showThinkingState()
-          if (!processingTimerInterval) startProcessingTimer()
-        } else if (isThinking || state.processingStartTime) {
-          // Was processing, now done - show done state
-          const elapsedMs = stopProcessingTimer()
-          if (elapsedMs > 500) {
-            // Only show done state if processing took more than 0.5s
-            showDoneState(elapsedMs)
-          } else {
-            indicator.classList.add('hidden')
-          }
+      if (isActive) {
+        showThinkingIndicator()
+        if (!processingTimerInterval) startProcessingTimer()
+      } else if (isThinking || s.processingStartTime) {
+        const elapsedMs = stopProcessingTimer()
+        if (elapsedMs > 500) {
+          showDoneIndicator(elapsedMs)
+        } else {
+          indicatorVisible.set(false)
         }
       }
 
-      const stopBtnEl = refs.stopBtn
-      if (stopBtnEl) {
-        stopBtnEl.classList.toggle('hidden', !isProcessingThisChat)
-      }
-
       const driverSelectEl = refs.driverSelect
-      if (driverSelectEl && state.currentDriver) {
-        driverSelectEl.value = state.currentDriver
+      if (driverSelectEl && s.currentDriver) {
+        driverSelectEl.value = s.currentDriver
       }
     })
 
     // Update indicator when switching chats
     chatStore.$subscribe((chatState) => {
       const appState = appStore.$state
-      const indicator = refs.thinkingIndicator
-      const stopBtnEl = refs.stopBtn
-      const isProcessingThisChat = appState.isProcessing && appState.processingChatId === chatState.currentChatId
+      const isActive = appState.isProcessing && appState.processingChatId === chatState.currentChatId
+      processingThisChat.set(isActive)
 
-      if (indicator) {
-        if (isProcessingThisChat) {
-          showThinkingState()
-          if (!processingTimerInterval) startProcessingTimer()
-        } else {
-          indicator.classList.add('hidden')
-          if (processingTimerInterval) {
-            clearInterval(processingTimerInterval)
-            processingTimerInterval = null
-          }
+      if (isActive) {
+        showThinkingIndicator()
+        if (!processingTimerInterval) startProcessingTimer()
+      } else {
+        indicatorVisible.set(false)
+        if (processingTimerInterval) {
+          clearInterval(processingTimerInterval)
+          processingTimerInterval = null
         }
-      }
-
-      if (stopBtnEl) {
-        stopBtnEl.classList.toggle('hidden', !isProcessingThisChat)
       }
     })
 
