@@ -210,15 +210,15 @@
     </div>
   </div>
 
-<script client>
+<script client ts>
 import { appStore, settingsStore, uiStore, chatStore } from '@stores'
 
 const { state } = window.stx
-const githubModalOpen = state(false)
-const settingsModalOpen = state(false)
-const githubConnected = state(false)
-const anthropicConfigured = state(false)
-const openaiConfigured = state(false)
+const githubModalOpen = state<boolean>(false)
+const settingsModalOpen = state<boolean>(false)
+const githubConnected = state<boolean>(false)
+const anthropicConfigured = state<boolean>(false)
+const openaiConfigured = state<boolean>(false)
 
 const refs = STX.useRefs()
 
