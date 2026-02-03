@@ -167,13 +167,13 @@
 <script client>
 import { appStore, chatStore, settingsStore } from '@stores'
 
-const { state: signal } = window.stx
-const isRecording = signal(false)
-const showAudioPreview = signal(false)
-const showTranscript = signal(false)
-const processingThisChat = signal(false)
-const indicatorVisible = signal(false)
-const showDone = signal(false)
+const { state } = window.stx
+const isRecording = state(false)
+const showAudioPreview = state(false)
+const showTranscript = state(false)
+const processingThisChat = state(false)
+const indicatorVisible = state(false)
+const showDone = state(false)
 
 const stores = window.VoideStores
 const API_BASE_URL = 'http://localhost:3008/voide'

@@ -1,6 +1,6 @@
 <div @ref="chatContainer" class="flex-1 relative flex flex-col overflow-hidden">
     <!-- Prompt Overlay (shown when Claude CLI asks for input) -->
-    <div class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50" @class="{ 'hidden': !hasPendingPrompt() }">
+    <div class="hidden fixed inset-0 bg-black/50 items-center justify-center z-50" @class="{ 'hidden': !hasPendingPrompt(), 'flex': hasPendingPrompt() }">
       <div class="bg-monokai-bg border border-monokai-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
         <p @ref="promptText" class="text-sm text-monokai-fg mb-4">Please select an option:</p>
         <div @ref="promptOptions" class="flex flex-wrap gap-2"></div>
