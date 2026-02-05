@@ -286,7 +286,7 @@ const refs = STX.useRefs()
         <div class="relative group my-3">
           <div class="flex items-center justify-between bg-monokai-border/40 rounded-t-lg px-3 py-1.5">
             ${langLabel}
-            <button onclick="window.voide.copyCode('${blockId}')" class="copy-btn text-xs text-monokai-gray hover:text-monokai-fg transition-colors flex items-center gap-1">
+            <button data-copy="${blockId}" class="copy-btn text-xs text-monokai-gray hover:text-monokai-fg transition-colors flex items-center gap-1">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
               <span class="copy-text">Copy</span>
             </button>
@@ -499,6 +499,14 @@ const refs = STX.useRefs()
       handleSpeak(msgId)
       return
     }
+
+    // Handle copy code button
+    const copyBtn = e.target.closest('[data-copy]')
+    if (copyBtn) {
+      const blockId = copyBtn.getAttribute('data-copy')
+      copyCode(blockId, copyBtn)
+      return
+    }
   }
 
   // Handle TTS speak/stop
@@ -577,21 +585,19 @@ const refs = STX.useRefs()
   }
 
   // Copy code block to clipboard
-  function copyCode(blockId) {
-    const block = refs.messagesContainer?.querySelector(`[data-block-id="${blockId}"]`)
+  function copyCode(blockId: string, btn?: HTMLElement) {
+    const block = document.getElementById(blockId)
     if (!block) return
 
     const code = block.querySelector('code')
     if (!code) return
 
-    // Get text content (strips HTML tags)
     const text = code.textContent || code.innerText
 
     navigator.clipboard.writeText(text).then(() => {
-      // Find the copy button and update text
-      const btn = block.previousElementSibling?.querySelector('.copy-btn')
-      if (btn) {
-        const textSpan = btn.querySelector('.copy-text')
+      const copyBtn = btn || block.previousElementSibling?.querySelector('.copy-btn')
+      if (copyBtn) {
+        const textSpan = copyBtn.querySelector('.copy-text')
         if (textSpan) {
           textSpan.textContent = 'Copied!'
           setTimeout(() => {
@@ -604,13 +610,9 @@ const refs = STX.useRefs()
     })
   }
 
-  // Expose to window.voide
-  window.voide = window.voide || {}
-  Object.assign(window.voide, {
-    respondToPrompt,
-    toggleCollapse,
-    copyCode,
-    speak,
-    stopSpeaking
-  })
+  // Listen for cross-component TTS requests (e.g. from VoideInputBar)
+  document.addEventListener('voide:speak', ((e: CustomEvent) => {
+    const { text, id, onComplete } = e.detail
+    speak(text, id, onComplete)
+  }) as EventListener)
 </script>

@@ -1,18 +1,17 @@
 /**
  * Voide Core - Minimal shared functionality
  *
- * This is a minimal core that handles:
- * - Store exports to window.voide
+ * Handles:
  * - URL routing and chat loading
  * - Native tray features (when running in native app)
- * - Global keyboard shortcuts
  * - Browser history navigation
  *
- * Most functionality has been moved to individual SFC components:
- * - voide-input-bar.stx: Input, recording, commands, streaming, git actions
- * - voide-terminal.stx: Message rendering, prompt handling
- * - voide-header.stx: Repo handling, driver selection
- * - voide-modals.stx: GitHub & Settings modals
+ * All UI functionality lives in SFC components:
+ * - VoideInputBar.stx: Input, recording, commands, streaming
+ * - VoideTerminal.stx: Message rendering, prompt handling
+ * - VoideHeader.stx: Repo display, settings access
+ * - VoideModals.stx: GitHub & Settings modals
+ * - VoideSidebar.stx: Chat list, navigation
  */
 (() => {
   const API_BASE_URL = 'http://localhost:3008/voide';
@@ -193,81 +192,13 @@
     }
 
     // =========================================================================
-    // Global Keyboard Shortcuts
-    // =========================================================================
-
-    function initKeyboardShortcuts() {
-      document.addEventListener('keydown', (e) => {
-        // Space to toggle recording (when not in input field)
-        if (e.code === 'Space' && !e.repeat) {
-          const active = document.activeElement;
-          const isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
-          if (!isInput && window.voide && window.voide.toggleRecording) {
-            e.preventDefault();
-            window.voide.toggleRecording();
-          }
-        }
-      });
-    }
-
-    // =========================================================================
     // Initialize
     // =========================================================================
 
     initNativeFeatures();
     initUrlRouting();
-    initKeyboardShortcuts();
-
-    // =========================================================================
-    // Expose Stores and Core Methods to window.voide
-    // =========================================================================
-
-    const stores = window.VoideStores || {};
-
-    window.voide = window.voide || {};
-    Object.assign(window.voide, {
-      // Stores (using new pattern)
-      stores: window.__STX_STORES__,
-      appStore: appStore,
-      chatStore: chatStore,
-      settingsStore: settingsStore,
-      uiStore: uiStore,
-
-      // Composables (from bundled stores)
-      useStorage: stores.useStorage,
-      useLocalStorage: stores.useLocalStorage,
-      useSessionStorage: stores.useSessionStorage,
-      useCookie: stores.useCookie,
-      useClipboard: stores.useClipboard,
-      useMediaQuery: stores.useMediaQuery,
-      usePreferredDark: stores.usePreferredDark,
-      useNetwork: stores.useNetwork,
-      useOnline: stores.useOnline,
-      useWindowSize: stores.useWindowSize,
-      useScroll: stores.useScroll,
-      useVisibility: stores.useVisibility,
-      useTitle: stores.useTitle,
-      useFavicon: stores.useFavicon,
-      useIsMobile: stores.useIsMobile,
-      useIsDesktop: stores.useIsDesktop,
-      copyToClipboard: stores.copyToClipboard,
-
-      // State getters
-      get state() { return appStore.$state; },
-      get messages() { return chatStore.messages; },
-      get charCount() { return chatStore.charCount; },
-
-      // Core methods
-      loadChat: loadChat,
-      newChat: () => chatStore.newChat(),
-      getAllChats: () => chatStore.getAllChats(),
-      deleteChat: (id) => chatStore.deleteChat(id),
-      updateTrayStatus: updateTrayStatus,
-      sendNotification: sendNotification
-    });
 
     console.log('[VoideCore] Initialized');
-    console.log('[VoideCore] window.voide methods:', Object.keys(window.voide).join(', '));
   }
 
   if (document.readyState === 'loading') {

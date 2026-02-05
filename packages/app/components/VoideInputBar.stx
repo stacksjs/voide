@@ -716,14 +716,19 @@ const refs = STX.useRefs()
         // Auto-play response if voice message was sent
         if (wasVoiceMessage) {
           setTimeout(() => {
-            if (response.message && window.voide?.speak) {
-              window.voide.speak(response.message, 'auto-tts', () => {
-                // Restart recording after TTS finishes (hands-free mode)
-                if (handsFreeModeActive) {
-                  console.log('[Voide] TTS finished, restarting recording')
-                  setTimeout(() => startRecording(), 500)
+            if (response.message) {
+              document.dispatchEvent(new CustomEvent('voide:speak', {
+                detail: {
+                  text: response.message,
+                  id: 'auto-tts',
+                  onComplete: () => {
+                    if (handsFreeModeActive) {
+                      console.log('[Voide] TTS finished, restarting recording')
+                      setTimeout(() => startRecording(), 500)
+                    }
+                  }
                 }
-              })
+              }))
             } else if (handsFreeModeActive) {
               // No message to speak, restart recording anyway
               setTimeout(() => startRecording(), 500)
@@ -982,20 +987,4 @@ const refs = STX.useRefs()
       }
     })
 
-    // =========================================================================
-    // Expose to window.voide
-    // =========================================================================
-    window.voide = window.voide || {}
-    Object.assign(window.voide, {
-      toggleRecording,
-      startRecording,
-      stopRecording,
-      handleSend,
-      cancelProcessing,
-      processCommand,
-      addMessage,
-      sounds,
-      audioRecorder,
-      audioStorage
-    })
 </script>

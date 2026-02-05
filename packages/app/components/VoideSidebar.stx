@@ -223,14 +223,4 @@ console.log('[VoideSidebar] Initialized')
 
   renderChatList()
 
-  // =========================================================================
-  // Expose to window.voide
-  // =========================================================================
-
-  window.voide = window.voide || {}
-  Object.assign(window.voide, {
-    renderChatList,
-    newChat,
-    deleteChat
-  })
 </script>

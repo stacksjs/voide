@@ -442,19 +442,4 @@ console.log('[VoideModals] Initialized, refs:', Object.keys(refs))
     uiStore.closeAllModals()
   })
 
-  // =========================================================================
-  // Expose to window.voide
-  // =========================================================================
-
-  window.voide = window.voide || {}
-  Object.assign(window.voide, {
-    openGithubModal,
-    closeGithubModal,
-    openSettingsModal,
-    closeSettingsModal,
-    setProjectPath,
-    saveSettings,
-    connectGithub,
-    disconnectGithub
-  })
 </script>
