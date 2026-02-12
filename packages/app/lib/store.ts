@@ -150,9 +150,12 @@ export interface DefineStoreOptions<S, G extends Record<string, (state: S) => an
   } | boolean
 }
 
+export type WatchCallback<R> = (newVal: R, oldVal: R | undefined) => void
+
 export interface DefinedStore<S> {
   $state: S
   $subscribe: (callback: Subscriber<S>) => Unsubscribe
+  $watch: <R>(getter: (state: S) => R, callback: WatchCallback<R>) => Unsubscribe
   $reset: () => void
   $patch: (partial: Partial<S> | ((state: S) => void)) => void
   $id: string
@@ -205,6 +208,24 @@ export function defineStore<
       // Handle special $ properties
       if (propStr === '$state') return store.get()
       if (propStr === '$subscribe') return store.subscribe
+      if (propStr === '$watch') {
+        return <R>(getter: (state: S) => R, callback: WatchCallback<R>) => {
+          let oldVal = getter(store.get())
+          let initialized = false
+          return store.subscribe((state) => {
+            if (!initialized) {
+              initialized = true
+              return
+            }
+            const newVal = getter(state)
+            if (newVal !== oldVal) {
+              const prev = oldVal
+              oldVal = newVal
+              callback(newVal, prev)
+            }
+          })
+        }
+      }
       if (propStr === '$reset') return store.reset
       if (propStr === '$patch') {
         return (partial: Partial<S> | ((state: S) => void)) => {
@@ -279,7 +300,7 @@ export function defineStore<
         ...stateKeys,
         ...Object.keys(getters),
         ...Object.keys(actions),
-        '$state', '$subscribe', '$reset', '$patch', '$id',
+        '$state', '$subscribe', '$watch', '$reset', '$patch', '$id',
       ]
     },
   })

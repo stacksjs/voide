@@ -66,11 +66,11 @@ function openProjectPicker() {
 }
 
 // =========================================================================
-// State Subscriptions
+// State Watchers
 // =========================================================================
 
-appStore.$subscribe((state) => {
-  updateRepoDisplay(state.repoPath)
+appStore.$watch(s => s.repoPath, (repoPath) => {
+  updateRepoDisplay(repoPath)
 })
 
 updateRepoDisplay(appStore.repoPath)

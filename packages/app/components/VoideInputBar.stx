@@ -946,7 +946,9 @@ const refs = STX.useRefs()
       indicatorVisible.set(true)
     }
 
-    appStore.$subscribe((s) => {
+    // Watch processing state changes
+    appStore.$watch(s => s.isProcessing, () => {
+      const s = appStore.$state
       const currentChatId = chatStore.$state.currentChatId
       const isActive = s.isProcessing && s.processingChatId === currentChatId
       processingThisChat.set(isActive)
@@ -962,17 +964,27 @@ const refs = STX.useRefs()
           indicatorVisible.set(false)
         }
       }
-
-      const driverSelectEl = refs.driverSelect
-      if (driverSelectEl && s.currentDriver) {
-        driverSelectEl.value = s.currentDriver
-      }
     })
 
+    // Watch driver changes
+    appStore.$watch(s => s.currentDriver, (driver) => {
+      const driverSelectEl = refs.driverSelect
+      if (driverSelectEl && driver) {
+        driverSelectEl.value = driver
+      }
+    })
+    // Initialize driver select
+    const initDriver = appStore.currentDriver
+    const driverSelectEl = refs.driverSelect
+    if (driverSelectEl && initDriver) {
+      driverSelectEl.value = initDriver
+    }
+
     // Update indicator when switching chats
-    chatStore.$subscribe((chatState) => {
+    chatStore.$watch(s => s.currentChatId, () => {
       const appState = appStore.$state
-      const isActive = appState.isProcessing && appState.processingChatId === chatState.currentChatId
+      const currentChatId = chatStore.$state.currentChatId
+      const isActive = appState.isProcessing && appState.processingChatId === currentChatId
       processingThisChat.set(isActive)
 
       if (isActive) {

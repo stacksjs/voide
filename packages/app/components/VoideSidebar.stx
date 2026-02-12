@@ -212,7 +212,7 @@ console.log('[VoideSidebar] Initialized')
     renderChatList()
   }
 
-  chatStore.$subscribe(() => {
+  chatStore.$watch(s => s.currentChatId, () => {
     renderChatList()
   })
 

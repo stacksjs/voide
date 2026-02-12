@@ -379,60 +379,69 @@ console.log('[VoideModals] Initialized, refs:', Object.keys(refs))
   // =========================================================================
 
   // Update modal visibility based on UI state
-  uiStore.$subscribe((s) => {
-    githubModalOpen.set(s.modals.github)
-    settingsModalOpen.set(s.modals.settings)
+  uiStore.$watch(s => s.modals, (modals) => {
+    githubModalOpen.set(modals.github)
+    settingsModalOpen.set(modals.settings)
   })
 
-  // Pre-fill settings form with current values
-  settingsStore.$subscribe((s) => {
-    const anthropicInput = refs.anthropicApiKey
-    const openaiInput = refs.openaiApiKey
-    const claudeHostInput = refs.claudeCliHost
-    const gitNameInput = refs.gitName
-    const gitEmailInput = refs.gitEmail
+  // Watch GitHub connection state
+  settingsStore.$watch(s => s.github, (github) => {
+    githubConnected.set(github.connected)
 
-    if (anthropicInput && s.apiKeys.anthropic && !anthropicInput.value) {
-      anthropicInput.value = s.apiKeys.anthropic
-    }
-    if (openaiInput && s.apiKeys.openai && !openaiInput.value) {
-      openaiInput.value = s.apiKeys.openai
-    }
-    if (claudeHostInput && s.apiKeys.claudeCliHost && !claudeHostInput.value) {
-      claudeHostInput.value = s.apiKeys.claudeCliHost
-    }
-    if (gitNameInput && s.github.name && !gitNameInput.value) {
-      gitNameInput.value = s.github.name
-    }
-    if (gitEmailInput && s.github.email && !gitEmailInput.value) {
-      gitEmailInput.value = s.github.email
-    }
-
-    // Update GitHub connected state via signals
-    githubConnected.set(s.github.connected)
-
-    if (s.github.connected) {
+    if (github.connected) {
       const connectedAvatar = refs.connectedAvatar
       const connectedName = refs.connectedName
       const connectedUsername = refs.connectedUsername
-      if (connectedAvatar) connectedAvatar.src = s.github.avatarUrl || ''
-      if (connectedName) connectedName.textContent = s.github.name || s.github.username
-      if (connectedUsername) connectedUsername.textContent = '@' + s.github.username
+      if (connectedAvatar) connectedAvatar.src = github.avatarUrl || ''
+      if (connectedName) connectedName.textContent = github.name || github.username
+      if (connectedUsername) connectedUsername.textContent = '@' + github.username
     }
 
-    // Update API status via signals
-    anthropicConfigured.set(!!s.apiKeys.anthropic)
-    openaiConfigured.set(!!s.apiKeys.openai)
+    // Pre-fill git inputs
+    const gitNameInput = refs.gitName
+    const gitEmailInput = refs.gitEmail
+    if (gitNameInput && github.name && !gitNameInput.value) {
+      gitNameInput.value = github.name
+    }
+    if (gitEmailInput && github.email && !gitEmailInput.value) {
+      gitEmailInput.value = github.email
+    }
+  })
+
+  // Watch API key changes
+  settingsStore.$watch(s => s.apiKeys, (apiKeys) => {
+    const anthropicInput = refs.anthropicApiKey
+    const openaiInput = refs.openaiApiKey
+    const claudeHostInput = refs.claudeCliHost
+
+    if (anthropicInput && apiKeys.anthropic && !anthropicInput.value) {
+      anthropicInput.value = apiKeys.anthropic
+    }
+    if (openaiInput && apiKeys.openai && !openaiInput.value) {
+      openaiInput.value = apiKeys.openai
+    }
+    if (claudeHostInput && apiKeys.claudeCliHost && !claudeHostInput.value) {
+      claudeHostInput.value = apiKeys.claudeCliHost
+    }
+
+    anthropicConfigured.set(!!apiKeys.anthropic)
+    openaiConfigured.set(!!apiKeys.openai)
 
     const anthropicStatusText = refs.anthropicStatusText
     const openaiStatusText = refs.openaiStatusText
     if (anthropicStatusText) {
-      anthropicStatusText.textContent = s.apiKeys.anthropic ? 'Configured' : 'Not configured'
+      anthropicStatusText.textContent = apiKeys.anthropic ? 'Configured' : 'Not configured'
     }
     if (openaiStatusText) {
-      openaiStatusText.textContent = s.apiKeys.openai ? 'Configured' : 'Not configured'
+      openaiStatusText.textContent = apiKeys.openai ? 'Configured' : 'Not configured'
     }
   })
+
+  // Initialize settings from persisted state
+  const initSettings = settingsStore.$state
+  githubConnected.set(initSettings.github.connected)
+  anthropicConfigured.set(!!initSettings.apiKeys.anthropic)
+  openaiConfigured.set(!!initSettings.apiKeys.openai)
 
   // =========================================================================
   // Global Escape Key Handler

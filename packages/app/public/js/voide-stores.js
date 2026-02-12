@@ -269,6 +269,24 @@ window.VoideStores = (function() {
           return store.get();
         if (propStr === "$subscribe")
           return store.subscribe;
+        if (propStr === "$watch") {
+          return (getter, callback) => {
+            let oldVal = getter(store.get());
+            let initialized = false;
+            return store.subscribe((state2) => {
+              if (!initialized) {
+                initialized = true;
+                return;
+              }
+              const newVal = getter(state2);
+              if (newVal !== oldVal) {
+                const prev = oldVal;
+                oldVal = newVal;
+                callback(newVal, prev);
+              }
+            });
+          };
+        }
         if (propStr === "$reset")
           return store.reset;
         if (propStr === "$patch") {
@@ -327,6 +345,7 @@ window.VoideStores = (function() {
           ...Object.keys(actions),
           "$state",
           "$subscribe",
+          "$watch",
           "$reset",
           "$patch",
           "$id"

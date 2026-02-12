@@ -479,8 +479,9 @@ const refs = STX.useRefs()
     })
   }
 
-  // Render messages
-  chatStore.$subscribe(state => renderMessages(state.messages))
+  // Render messages when they change
+  chatStore.$watch(s => s.messages, (messages) => renderMessages(messages))
+  renderMessages(chatStore.$state.messages)
 
   // Event delegation for collapse and speak buttons
   function handleContainerClick(e) {
@@ -532,24 +533,24 @@ const refs = STX.useRefs()
     }
   }
 
-  // Subscribe to processing state
-  appStore.$subscribe(state => {
-    isCurrentlyProcessing = state.isProcessing
+  // Watch processing state
+  appStore.$watch(s => s.isProcessing, (val) => {
+    isCurrentlyProcessing = val
   })
 
   // Handle pending prompts
-  chatStore.$subscribe(s => {
+  chatStore.$watch(s => s.pendingPrompt, (prompt) => {
     const textEl = refs.promptText
     const optionsEl = refs.promptOptions
 
-    hasPendingPrompt.set(!!s.pendingPrompt)
+    hasPendingPrompt.set(!!prompt)
 
-    if (s.pendingPrompt && textEl && optionsEl) {
-      textEl.textContent = s.pendingPrompt.text
+    if (prompt && textEl && optionsEl) {
+      textEl.textContent = prompt.text
       optionsEl.innerHTML = ''
 
-      s.pendingPrompt.options.forEach((option, i) => {
-        const label = s.pendingPrompt.labels?.[i] || option
+      prompt.options.forEach((option, i) => {
+        const label = prompt.labels?.[i] || option
         const btn = STX.el('button', {
           class: 'px-4 py-2 text-sm font-medium bg-monokai-cyan text-monokai-bg rounded-lg cursor-pointer hover:bg-monokai-cyan/90 transition-colors',
           onclick: () => respondToPrompt(option)
