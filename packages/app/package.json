@@ -21,6 +21,6 @@
   },
   "devDependencies": {
     "@cwcss/crosswind": "^0.1.3",
-    "better-dx": "^0.2.5"
+    "better-dx": "^0.2.6"
   }
 }

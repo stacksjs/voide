@@ -23,7 +23,7 @@
   "devDependencies": {
     "@cwcss/crosswind": "^0.1.3",
     "@stacksjs/stx": "link:@stacksjs/stx",
-    "better-dx": "^0.2.5",
+    "better-dx": "^0.2.6",
     "bun-plugin-stx": "link:bun-plugin-stx"
   },
   "workspaces": [
