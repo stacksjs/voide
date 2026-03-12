@@ -28,3 +28,23 @@
 - Each chat has its own `repoPath` and `sessionId`
 - Processing state is tracked per-chat via `processingChatId`
 - When switching chats, restore the chat's `repoPath` to `appStore`
+
+---
+
+## Linting
+
+- Use **pickier** for linting — never use eslint directly
+- Run `bunx --bun pickier .` to lint, `bunx --bun pickier . --fix` to auto-fix
+- When fixing unused variable warnings, prefer `// eslint-disable-next-line` comments over prefixing with `_`
+
+## Frontend
+
+- Use **stx** for templating — never write vanilla JS (`var`, `document.*`, `window.*`) in stx templates
+- Use **crosswind** as the default CSS framework
+- stx `<script>` tags should only contain stx-compatible code (signals, composables, directives)
+
+## Dependencies
+
+- **buddy-bot** handles dependency updates — not renovatebot
+- **better-dx** provides shared dev tooling as peer dependencies — do not install its peers (e.g., `typescript`, `pickier`, `bun-plugin-dtsx`) separately if `better-dx` is already in `package.json`
+- If `better-dx` is in `package.json`, ensure `bunfig.toml` includes `linker = "hoisted"`
