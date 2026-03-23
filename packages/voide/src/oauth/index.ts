@@ -31,6 +31,7 @@ export interface OAuthToken {
 
 export interface OAuthState {
   state: string
+  // eslint-disable-next-line pickier/no-unused-vars
   codeVerifier?: string
   provider: string
   createdAt: number
@@ -145,6 +146,7 @@ export class OAuthManager {
     }
 
     const state = generateState()
+    // eslint-disable-next-line pickier/no-unused-vars
     let codeVerifier: string | undefined
     let codeChallenge: string | undefined
 
@@ -463,10 +465,13 @@ export async function performOAuthFlow(
   const callbackPromise = manager.startCallbackServer()
 
   // Get authorization URL
+  // eslint-disable-next-line pickier/no-unused-vars
   const { url, state, codeVerifier } = manager.getAuthorizationUrl(provider, config)
 
   // Open browser
+  // eslint-disable-next-line no-console
   console.log(`\nPlease open this URL in your browser to authenticate:`)
+  // eslint-disable-next-line no-console
   console.log(`\n${url}\n`)
 
   // Try to open browser automatically

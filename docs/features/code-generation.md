@@ -8,11 +8,12 @@ voide excels at generating code from natural language descriptions. This guide c
 
 Describe what you want in plain language:
 
-```
+```text
 "Create a function that reverses a string"
 ```
 
 Claude responds:
+
 ```typescript
 function reverseString(str: string): string {
   return str.split('').reverse().join('')
@@ -23,7 +24,7 @@ function reverseString(str: string): string {
 
 Be explicit about the language:
 
-```
+```text
 "Write a Python function to calculate factorial"
 ```
 
@@ -38,7 +39,7 @@ def factorial(n: int) -> int:
 
 Include specific requirements:
 
-```
+```text
 "Create a TypeScript function to validate email addresses
 using regex with proper error messages"
 ```
@@ -68,7 +69,7 @@ function validateEmail(email: string): ValidationResult {
 
 ### Components and Classes
 
-```
+```text
 "Create a React component for a toggle switch
 with on and off states
 that accepts a label and onChange callback"
@@ -98,7 +99,7 @@ function ToggleSwitch({ label, checked, onChange }: ToggleSwitchProps) {
 
 ### API Endpoints
 
-```
+```text
 "Create an Express route for user registration
 that validates email and password
 and returns a JWT token"
@@ -106,7 +107,7 @@ and returns a JWT token"
 
 ### Database Models
 
-```
+```text
 "Create a Prisma schema for a blog
 with users posts and comments
 where users can have many posts
@@ -119,7 +120,7 @@ and posts can have many comments"
 
 Start simple and add complexity:
 
-```
+```text
 Step 1: "Create a basic todo item interface"
 Step 2: "Add a priority field with high medium and low values"
 Step 3: "Add a due date field that's optional"
@@ -130,7 +131,7 @@ Step 4: "Add a tags array"
 
 Build on previous responses:
 
-```
+```text
 You: "Create a function to fetch user data"
 Claude: [provides fetch function]
 
@@ -148,7 +149,7 @@ Claude: [adds types]
 
 Ask for improvements:
 
-```
+```text
 "Refactor this to use async await instead of promises"
 "Make this more readable by extracting helper functions"
 "Optimize this for better performance"
@@ -160,7 +161,7 @@ Ask for improvements:
 
 Request specific patterns:
 
-```
+```text
 "Create a singleton pattern for database connection"
 "Write a factory function for creating user objects"
 "Implement the observer pattern for event handling"
@@ -170,7 +171,7 @@ Request specific patterns:
 
 Mention frameworks for idiomatic code:
 
-```
+```text
 "Create a Vue 3 composable for form validation"
 "Write a Next.js API route with middleware"
 "Create a NestJS service with dependency injection"
@@ -180,7 +181,7 @@ Mention frameworks for idiomatic code:
 
 Generate tests alongside code:
 
-```
+```text
 "Create a function to calculate discounts
 and include unit tests using Jest"
 ```
@@ -190,12 +191,14 @@ and include unit tests using Jest"
 ### Be Specific
 
 Instead of:
-```
+
+```text
 "Create a login function"
 ```
 
 Say:
-```
+
+```text
 "Create a login function that takes email and password
 validates both fields
 calls the auth API
@@ -205,7 +208,7 @@ and handles errors with specific messages"
 
 ### Provide Context
 
-```
+```text
 "In my React app with TypeScript and Tailwind
 create a dropdown menu component
 that supports keyboard navigation
@@ -214,7 +217,7 @@ and closes when clicking outside"
 
 ### Specify Quality
 
-```
+```text
 "Create a production-ready function
 with proper error handling
 TypeScript types
@@ -227,7 +230,7 @@ and JSDoc comments"
 
 Use natural phrases for code structure:
 
-```
+```text
 "Create a function called calculate total
 that takes an array of items
 each item has a price and quantity
@@ -236,7 +239,7 @@ return the sum of price times quantity for all items"
 
 ### Describing Types
 
-```
+```text
 "Create an interface called user
 with string name
 string email
@@ -245,6 +248,7 @@ and an array of strings called roles"
 ```
 
 Result:
+
 ```typescript
 interface User {
   name: string
@@ -256,7 +260,7 @@ interface User {
 
 ### Describing Logic
 
-```
+```text
 "If the user is logged in
 and has admin role
 show the admin panel
@@ -267,7 +271,7 @@ otherwise show the login prompt"
 
 ### Multi-File Generation
 
-```
+```text
 "Create a full CRUD API for products
 including the model
 routes
@@ -277,7 +281,7 @@ and service layer"
 
 ### With Configuration
 
-```
+```text
 "Create an ESLint configuration
 for TypeScript React projects
 with Prettier integration
@@ -286,7 +290,7 @@ and strict type checking"
 
 ### Documentation
 
-```
+```text
 "Create README documentation
 for a REST API
 with installation instructions
@@ -300,13 +304,13 @@ and endpoint examples"
 
 Save frequently used code:
 
-```
+```text
 Voice: "Save this as email validation snippet"
 ```
 
 ### Using Snippets
 
-```
+```text
 Voice: "Insert the email validation snippet"
 ```
 
@@ -331,7 +335,7 @@ const snippets = listSnippets()
 
 When using voide with VS Code:
 
-```
+```text
 "Insert a new function after line 25"
 "Replace the selected code with a better implementation"
 "Add imports at the top of the file"
@@ -339,7 +343,7 @@ When using voide with VS Code:
 
 ### Cursor Position
 
-```
+```text
 "Create a helper function and insert it here"
 "Add this interface above the component"
 ```
@@ -348,7 +352,7 @@ When using voide with VS Code:
 
 ### Requesting Error Handling
 
-```
+```text
 "Add comprehensive error handling
 with specific error types
 and meaningful error messages"
@@ -356,7 +360,7 @@ and meaningful error messages"
 
 ### Validation
 
-```
+```text
 "Add input validation
 that checks for null undefined and empty strings
 and throws descriptive errors"
@@ -366,7 +370,7 @@ and throws descriptive errors"
 
 ### Optimized Code
 
-```
+```text
 "Generate a performant implementation
 that minimizes memory allocation
 and avoids unnecessary iterations"
@@ -374,7 +378,7 @@ and avoids unnecessary iterations"
 
 ### Big O Complexity
 
-```
+```text
 "Create a search function
 with O log n time complexity
 using binary search"

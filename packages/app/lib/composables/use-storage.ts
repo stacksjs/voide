@@ -65,6 +65,7 @@ export function useStorage<T>(
         store.setItem(key, JSON.stringify(value))
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.warn(`[useStorage] Failed to write key "${key}":`, e)
     }
   }

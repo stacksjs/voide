@@ -91,7 +91,8 @@ export function getTools(names: string[]): Tool[] {
   if (tools.size === 0) {
     registerDefaultTools()
   }
-  return names.map(name => tools.get(name)).filter((t): t is Tool => t !== undefined)
+  return names.map(name => tools.get(name))// eslint-disable-next-line pickier/no-unused-vars
+  .filter((t): t is Tool => t !== undefined)
 }
 
 // Get tools formatted for Anthropic API

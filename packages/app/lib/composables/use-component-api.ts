@@ -76,6 +76,7 @@ export function defineProps<T extends Record<string, unknown>>(
 
     // Check required
     if (def.required && value === undefined) {
+      // eslint-disable-next-line no-console
       console.warn(`[Props] Missing required prop: "${key}"`)
     }
 
@@ -91,6 +92,7 @@ export function defineProps<T extends Record<string, unknown>>(
     // Run validator
     if (def.validator && result[key] !== undefined) {
       if (!def.validator(result[key])) {
+        // eslint-disable-next-line no-console
         console.warn(`[Props] Validation failed for prop: "${key}"`)
       }
     }
@@ -375,8 +377,8 @@ function isConstructor(fn: unknown): boolean {
   if (typeof fn !== 'function') return false
   try {
     // Native constructors like String, Number, Array have special behavior
-    return fn === String || fn === Number || fn === Boolean || fn === Array || fn === Object ||
-           fn.prototype?.constructor === fn
+    return fn === String || fn === Number || fn === Boolean || fn === Array || fn === Object
+      || fn.prototype?.constructor === fn
   } catch {
     return false
   }

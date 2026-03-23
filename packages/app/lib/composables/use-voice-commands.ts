@@ -41,8 +41,8 @@ const punctuationMap: PunctuationRule[] = [
   { pattern: /\bend quote\b/gi, replacement: '"' },
   { pattern: /\bopen quote\b/gi, replacement: '"' },
   { pattern: /\bclose quote\b/gi, replacement: '"' },
-  { pattern: /\bsingle quote\b/gi, replacement: "'" },
-  { pattern: /\bapostrophe\b/gi, replacement: "'" },
+  { pattern: /\bsingle quote\b/gi, replacement: '\'' },
+  { pattern: /\bapostrophe\b/gi, replacement: '\'' },
   // Brackets
   { pattern: /\bopen paren\b/gi, replacement: '(' },
   { pattern: /\bclose paren\b/gi, replacement: ')' },

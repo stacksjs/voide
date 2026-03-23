@@ -20,6 +20,7 @@ async function main(): Promise<void> {
 
   // Handle signals for graceful shutdown
   voide.handleSignals(async () => {
+    // eslint-disable-next-line no-console
     console.log('\nCleaning up...')
   })
 
@@ -32,6 +33,7 @@ async function main(): Promise<void> {
 
 // Run
 main().catch((error) => {
+  // eslint-disable-next-line no-console
   console.error('Fatal error:', error)
   process.exit(1)
 })

@@ -36,6 +36,7 @@ export async function readFileContent(path: string): Promise<string> {
 }
 
 // Create a mock project directory structure
+// eslint-disable-next-line pickier/no-unused-vars
 export async function createMockProject(baseDir: string): Promise<{
   root: string
   srcDir: string
@@ -138,7 +139,7 @@ export interface MockToolContext {
 export function createMockToolContext(overrides: Partial<MockToolContext> = {}): MockToolContext {
   return {
     projectPath: process.cwd(),
-    sessionId: 'test-session-' + randomBytes(4).toString('hex'),
+    sessionId: `test-session-${randomBytes(4).toString('hex')}`,
     askCallback: async () => true,
     permissionChecker: async () => true,
     ...overrides,
@@ -286,10 +287,12 @@ export function captureConsole(): {
   const originalLog = console.log
   const originalError = console.error
 
+  // eslint-disable-next-line no-console
   console.log = (...args: unknown[]) => {
     logs.push(args.map(a => String(a)).join(' '))
   }
 
+  // eslint-disable-next-line no-console
   console.error = (...args: unknown[]) => {
     errors.push(args.map(a => String(a)).join(' '))
   }
@@ -298,7 +301,9 @@ export function captureConsole(): {
     logs,
     errors,
     restore: () => {
+      // eslint-disable-next-line no-console
       console.log = originalLog
+      // eslint-disable-next-line no-console
       console.error = originalError
     },
   }

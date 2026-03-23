@@ -205,6 +205,7 @@ window.VoideStores = (function() {
         try {
           subscriber(newValue, prevValue);
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error("[voide-store] Subscriber error:", error);
         }
       }
@@ -741,6 +742,7 @@ window.VoideStores = (function() {
           store.setItem(key, JSON.stringify(value));
         }
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn(`[useStorage] Failed to write key "${key}":`, e);
       }
     };
@@ -750,6 +752,7 @@ window.VoideStores = (function() {
         try {
           callback(newValue, prevValue);
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error("[useStorage]", e);
         }
       }
@@ -879,6 +882,7 @@ window.VoideStores = (function() {
         try {
           callback(newValue, prevValue);
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error("[useCookie]", e);
         }
       }
@@ -2438,6 +2442,7 @@ window.VoideStores = (function() {
       oscillator.start();
       oscillator.stop(ctx.currentTime + duration);
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.log("[useAudioCues] Could not play tone:", e);
     }
   }
@@ -2635,6 +2640,7 @@ window.VoideStores = (function() {
         try {
           fn({ ...state });
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.error("[useAudioRecorder]", e);
         }
       }
@@ -3348,6 +3354,7 @@ window.VoideStores = (function() {
     for (const name of middlewareNames) {
       const fn = middlewareRegistry.get(name);
       if (!fn) {
+        // eslint-disable-next-line no-console
         console.warn(`Middleware "${name}" not found`);
         continue;
       }
@@ -3363,6 +3370,7 @@ window.VoideStores = (function() {
           return { redirect: result.redirect };
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error(`Middleware "${name}" error:`, err);
         return { blocked: true };
       }
@@ -3426,6 +3434,7 @@ window.VoideStores = (function() {
       const def = normalizeDefinition(definition);
       const value = props[key];
       if (def.required && value === undefined) {
+        // eslint-disable-next-line no-console
         console.warn(`[Props] Missing required prop: "${key}"`);
       }
       if (value === undefined && def.default !== undefined) {
@@ -3435,6 +3444,7 @@ window.VoideStores = (function() {
       }
       if (def.validator && result[key] !== undefined) {
         if (!def.validator(result[key])) {
+          // eslint-disable-next-line no-console
           console.warn(`[Props] Validation failed for prop: "${key}"`);
         }
       }
@@ -3459,6 +3469,7 @@ window.VoideStores = (function() {
         const msg = `Missing required prop: "${key}"`;
         errors.push({ prop: key, message: msg });
         if (logWarnings)
+          // eslint-disable-next-line no-console
           console.warn(`[${componentName}] ${msg}`);
         if (throwOnError)
           throw new Error(`[${componentName}] ${msg}`);
@@ -3471,6 +3482,7 @@ window.VoideStores = (function() {
           const msg = `Invalid type for prop "${key}". Expected ${typeNames}, got ${typeof value}`;
           warnings.push({ prop: key, message: msg });
           if (logWarnings)
+            // eslint-disable-next-line no-console
             console.warn(`[${componentName}] ${msg}`);
         }
       }
@@ -3484,6 +3496,7 @@ window.VoideStores = (function() {
           const msg = `Validation failed for prop: "${key}"`;
           errors.push({ prop: key, message: msg });
           if (logWarnings)
+            // eslint-disable-next-line no-console
             console.warn(`[${componentName}] ${msg}`);
           if (throwOnError)
             throw new Error(`[${componentName}] ${msg}`);

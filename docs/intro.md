@@ -2,7 +2,7 @@
 
 voide is a Voice AI Code Assistant that enables developers to interact with AI-powered coding tools using natural voice commands. Built with Claude integration, voide transforms how you write, edit, and navigate code.
 
-## What is voide?
+## What is voide
 
 voide is a hands-free coding assistant that combines:
 
@@ -19,7 +19,7 @@ Whether you're debugging, writing documentation, or exploring new codebases, voi
 
 Speak naturally to your AI assistant without remembering complex commands:
 
-```
+```text
 "Create a function that validates email addresses"
 "Explain what this code does"
 "Add error handling to the fetch request"
@@ -53,7 +53,7 @@ Built-in commands for common operations:
 
 Powered by Anthropic's Claude for intelligent code assistance:
 
-```
+```text
 You: "Write a TypeScript function to debounce API calls"
 
 Claude: Here's a TypeScript debounce function:
@@ -71,7 +71,7 @@ const debounce = <T extends (...args: any[]) => any>(
 }
 ```
 
-## Why Voice Coding?
+## Why Voice Coding
 
 ### Reduce Physical Strain
 
@@ -106,7 +106,7 @@ bun run voide
 
 Once running, simply speak to interact:
 
-```
+```text
 "Hello, voide"
 > Hello! I'm ready to help you code. What would you like to work on?
 
@@ -118,7 +118,7 @@ Once running, simply speak to interact:
 
 voide consists of several integrated components:
 
-```
+```text
                     +------------------+
                     |   Microphone     |
                     +--------+---------+

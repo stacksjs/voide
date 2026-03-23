@@ -57,6 +57,7 @@ function playTone(
     oscillator.start()
     oscillator.stop(ctx.currentTime + duration)
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.log('[useAudioCues] Could not play tone:', e)
   }
 }
@@ -89,6 +90,7 @@ const defaultSounds = {
   },
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 export function useAudioCues(options: AudioCueOptions = {}): AudioCuesRef {
   const isSupported = typeof window !== 'undefined' &&
     (!!window.AudioContext || !!(window as any).webkitAudioContext)

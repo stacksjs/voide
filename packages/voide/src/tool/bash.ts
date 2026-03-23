@@ -103,7 +103,7 @@ export const bashTool: Tool = {
       // Truncate output if too long
       let output = result.stdout
       if (result.stderr) {
-        output += output ? '\n\n[stderr]\n' + result.stderr : result.stderr
+        output += output ? `\n\n[stderr]\n${result.stderr}` : result.stderr
       }
 
       if (output.length > 30000) {

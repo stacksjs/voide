@@ -451,5 +451,6 @@ export function getCompletionScript(shell: 'bash' | 'zsh' | 'fish'): string {
 
 // Print completion script to stdout
 export function printCompletionScript(shell: 'bash' | 'zsh' | 'fish'): void {
+  // eslint-disable-next-line no-console
   console.log(getCompletionScript(shell))
 }

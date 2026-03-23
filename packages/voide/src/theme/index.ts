@@ -581,7 +581,7 @@ export class ThemeManager {
     ]
 
     const reset = '\x1b[0m'
-    const blocks = colors.map(c => parseColor(c) + '██' + reset)
+    const blocks = colors.map(c => `${parseColor(c)}██${reset}`)
 
     return blocks.join(' ')
   }

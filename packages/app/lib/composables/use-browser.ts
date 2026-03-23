@@ -1069,7 +1069,7 @@ export function usePermission(name: PermissionName) {
 export function usePermissions(names: PermissionName[]) {
   const refs = Object.fromEntries(names.map(n => [n, usePermission(n)]))
   const subscribers = new Set<(states: Record<string, PermissionStatus>) => void>()
-  let states: Record<string, PermissionStatus> = Object.fromEntries(names.map(n => [n, createPermissionStatus('prompt')]))
+  const states: Record<string, PermissionStatus> = Object.fromEntries(names.map(n => [n, createPermissionStatus('prompt')]))
 
   const notify = () => subscribers.forEach(fn => fn(states))
 

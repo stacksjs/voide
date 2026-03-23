@@ -186,7 +186,7 @@ Key behaviors:
 
   // Add custom instructions from config
   if (config.instructions) {
-    parts.push('\n\n## Custom Instructions\n' + config.instructions)
+    parts.push(`\n\n## Custom Instructions\n${config.instructions}`)
   }
 
   // Add agent-specific context

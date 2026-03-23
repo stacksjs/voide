@@ -154,6 +154,7 @@ export function parseImageReferences(text: string): string[] {
 /**
  * Process text and extract/load images
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function processTextWithImages(
   text: string,
   basePath: string = process.cwd(),
@@ -165,7 +166,7 @@ export async function processTextWithImages(
   const images: ImageInput[] = []
 
   // Clean the text of image references
-  let cleanText = text
+  const cleanText = text
     .replace(/@([^\s]+\.(?:jpg|jpeg|png|gif|webp))/gi, '')
     .replace(/!\[[^\]]*\]\(([^)]+\.(?:jpg|jpeg|png|gif|webp))\)/gi, '')
     .replace(/<image:([^>]+\.(?:jpg|jpeg|png|gif|webp))>/gi, '')
@@ -188,6 +189,7 @@ export async function processTextWithImages(
     }
     catch (error) {
       // Skip images that can't be loaded
+      // eslint-disable-next-line no-console
       console.error(`Failed to load image ${ref}:`, (error as Error).message)
     }
   }

@@ -156,23 +156,33 @@ export class TuiRenderer {
 
   // Message rendering
   renderUserMessage(text: string): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.muted(`${this.icon('user')} You`))
+    // eslint-disable-next-line no-console
     console.log(text)
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderAssistantMessage(text: string): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.primary(`${this.icon('assistant')} Voide`))
+    // eslint-disable-next-line no-console
     console.log(text)
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderToolCall(name: string, input: Record<string, unknown>): void {
     const inputStr = JSON.stringify(input, null, 2)
-    const truncated = inputStr.length > 200 ? inputStr.slice(0, 197) + '...' : inputStr
+    const truncated = inputStr.length > 200 ? `${inputStr.slice(0, 197)}...` : inputStr
+    // eslint-disable-next-line no-console
     console.log(this.secondary(`${this.icon('tool')} ${name}`))
+    // eslint-disable-next-line no-console
     console.log(this.muted(truncated))
   }
 
@@ -182,11 +192,14 @@ export class TuiRenderer {
     const truncated = lines.length > 5 ? preview + `\n${this.muted(`... (${lines.length - 5} more lines)`)}` : preview
 
     if (isError) {
+      // eslint-disable-next-line no-console
       console.log(this.error(`${this.icon('cross')} ${name} failed`))
     }
     else {
+      // eslint-disable-next-line no-console
       console.log(this.success(`${this.icon('check')} ${name}`))
     }
+    // eslint-disable-next-line no-console
     console.log(truncated)
   }
 
@@ -205,8 +218,9 @@ export class TuiRenderer {
     if (this.spinnerInterval) {
       clearInterval(this.spinnerInterval)
       this.spinnerInterval = null
-      process.stdout.write('\r' + ' '.repeat(80) + '\r')
+      process.stdout.write(`\r${' '.repeat(80)}\r`)
       if (finalMessage) {
+        // eslint-disable-next-line no-console
         console.log(finalMessage)
       }
     }
@@ -225,6 +239,7 @@ export class TuiRenderer {
         break
 
       case 'text:done':
+        // eslint-disable-next-line no-console
         console.log('')
         break
 
@@ -249,6 +264,7 @@ export class TuiRenderer {
 
       case 'error':
         this.stopSpinner()
+        // eslint-disable-next-line no-console
         console.log(this.error(`${this.icon('cross')} Error: ${event.error}`))
         break
     }
@@ -256,104 +272,166 @@ export class TuiRenderer {
 
   // Headers and banners
   renderHeader(): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.bold(this.primary('╭───────────────────────────────────────╮')))
-    console.log(this.bold(this.primary('│')) + '         ' + this.bold('VOIDE') + ' - AI Code Assistant     ' + this.bold(this.primary('│')))
+    // eslint-disable-next-line no-console
+    console.log(`${this.bold(this.primary('│'))}         ${this.bold('VOIDE')} - AI Code Assistant     ${this.bold(this.primary('│'))}`)
+    // eslint-disable-next-line no-console
     console.log(this.bold(this.primary('╰───────────────────────────────────────╯')))
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.muted('Type your message or use /help for commands'))
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderHelp(): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.bold('Commands:'))
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/help')}     Show this help message`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/clear')}    Clear the screen`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/session')}  Show session info`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/new')}      Start a new session`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/mode')}     List available agent modes`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/mode <n>')} Switch to agent mode`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/continue')} Continue last session`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/sessions')} List recent sessions`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.primary('/exit')}     Exit the CLI`)
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.bold('Mode Shortcuts:'))
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('[b]uild')}   Full code editing access`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('[e]xplore')} Read-only exploration`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('[p]lan')}    Planning with task tracking`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('[m]inimal')} Minimal tools`)
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.bold('Shortcuts:'))
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('Ctrl+C')}    Cancel current operation`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('Ctrl+D')}    Exit`)
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderModeList(modes: Array<{ name: string; displayName: string; description: string; shortcut?: string }>, currentMode: string): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.bold('Agent Modes:'))
     for (const mode of modes) {
       const marker = mode.name === currentMode ? this.success('▸') : ' '
       const shortcut = mode.shortcut ? this.muted(`[${mode.shortcut}]`) : '   '
+      // eslint-disable-next-line no-console
       console.log(`  ${marker} ${shortcut} ${this.primary(mode.displayName.padEnd(12))} ${this.muted(mode.description)}`)
     }
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.muted('Use /mode <name> or shortcut to switch'))
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderModeSwitch(fromMode: string, toMode: string, toolsDiff: { added: string[]; removed: string[] }): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.success(`${this.icon('check')} Switched from ${fromMode} to ${toMode}`))
     if (toolsDiff.added.length > 0) {
+      // eslint-disable-next-line no-console
       console.log(this.success(`  + ${toolsDiff.added.join(', ')}`))
     }
     if (toolsDiff.removed.length > 0) {
+      // eslint-disable-next-line no-console
       console.log(this.warning(`  - ${toolsDiff.removed.join(', ')}`))
     }
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderSessionList(sessions: Array<{ id: string; title: string; updatedAt: number; messageCount: number }>): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.bold('Recent Sessions:'))
     for (let i = 0; i < sessions.length; i++) {
       const s = sessions[i]
       const date = new Date(s.updatedAt).toLocaleDateString()
       const time = new Date(s.updatedAt).toLocaleTimeString()
+      // eslint-disable-next-line no-console
       console.log(`  ${this.muted(`${i + 1}.`)} ${this.secondary(`[${s.id.slice(0, 8)}]`)} ${s.title}`)
+      // eslint-disable-next-line no-console
       console.log(`     ${this.muted(`${date} ${time} | ${s.messageCount} messages`)}`)
     }
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.muted('Use /session <id> to resume a session'))
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderSessionInfo(sessionId: string, projectPath: string, messageCount: number): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.bold('Session Info:'))
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('ID:')} ${sessionId}`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('Project:')} ${projectPath}`)
+    // eslint-disable-next-line no-console
     console.log(`  ${this.muted('Messages:')} ${messageCount}`)
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderError(message: string): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.error(`${this.icon('cross')} ${message}`))
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderSuccess(message: string): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.success(`${this.icon('check')} ${message}`))
+    // eslint-disable-next-line no-console
     console.log('')
   }
 
   renderInfo(message: string): void {
+    // eslint-disable-next-line no-console
     console.log('')
+    // eslint-disable-next-line no-console
     console.log(this.info(`${this.icon('info')} ${message}`))
+    // eslint-disable-next-line no-console
     console.log('')
   }
 }

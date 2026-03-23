@@ -164,6 +164,7 @@ class McpServerInstance {
       })
 
       this.process.stderr?.on('data', (data) => {
+        // eslint-disable-next-line no-console
         console.error(`[MCP ${this.name}] stderr:`, data.toString())
       })
 

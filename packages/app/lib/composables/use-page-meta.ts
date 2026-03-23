@@ -23,11 +23,13 @@ export interface PageMeta {
   // Route options
   path?: string
   alias?: string | string[]
+  // eslint-disable-next-line pickier/no-unused-vars
   redirect?: string | { name: string } | ((to: { path: string }) => string)
   name?: string
 
   // Component behavior
   keepAlive?: boolean | { include?: string | RegExp | Array<string | RegExp>; exclude?: string | RegExp | Array<string | RegExp>; max?: number }
+  // eslint-disable-next-line pickier/no-unused-vars
   scrollToTop?: boolean | ((to: { path: string }, from: { path: string }) => boolean)
 
   // Page transitions
@@ -117,6 +119,7 @@ export function resetPageMeta(): void {
 // Middleware helpers
 // ============================================================================
 
+// eslint-disable-next-line pickier/no-unused-vars
 export type MiddlewareFn = (context: PageMetaContext) => void | boolean | Promise<void | boolean> | string | { redirect: string }
 
 const middlewareRegistry = new Map<string, MiddlewareFn>()
@@ -151,6 +154,7 @@ export async function executeMiddleware(context: PageMetaContext): Promise<{ red
   for (const name of middlewareNames) {
     const fn = middlewareRegistry.get(name)
     if (!fn) {
+      // eslint-disable-next-line no-console
       console.warn(`Middleware "${name}" not found`)
       continue
     }
@@ -170,6 +174,7 @@ export async function executeMiddleware(context: PageMetaContext): Promise<{ red
         return { redirect: result.redirect }
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error(`Middleware "${name}" error:`, err)
       return { blocked: true }
     }

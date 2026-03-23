@@ -122,6 +122,7 @@ export async function periodicUpdateCheck(): Promise<string | null> {
 }
 
 // Upgrade voide
+// eslint-disable-next-line pickier/no-unused-vars
 export async function upgrade(options: UpdateOptions = {}): Promise<{
   success: boolean
   message: string
@@ -201,6 +202,7 @@ function detectPackageManager(): 'bun' | 'npm' | 'yarn' | 'pnpm' {
 }
 
 // Uninstall voide
+// eslint-disable-next-line pickier/no-unused-vars
 export async function uninstall(options: UninstallOptions = {}): Promise<{
   success: boolean
   message: string

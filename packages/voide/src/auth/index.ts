@@ -1,12 +1,14 @@
 // Authentication System for Voide CLI
 // Manages API keys and credentials for various providers
 
+// eslint-disable-next-line pickier/no-unused-vars
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { mkdir, readFile, writeFile, unlink, chmod } from 'node:fs/promises'
 
 const VOIDE_DIR = join(homedir(), '.voide')
 const CREDENTIALS_FILE = join(VOIDE_DIR, 'credentials.json')
+// eslint-disable-next-line pickier/no-unused-vars
 const ENV_FILE = join(VOIDE_DIR, '.env')
 
 export interface Credentials {
@@ -440,7 +442,7 @@ export class AuthManager {
   // Mask a credential value for display
   maskValue(value: string): string {
     if (value.length <= 8) return '****'
-    return value.slice(0, 4) + '****' + value.slice(-4)
+    return `${value.slice(0, 4)}****${value.slice(-4)}`
   }
 
   // Get all credentials (masked for display)

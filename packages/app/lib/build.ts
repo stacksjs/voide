@@ -17,6 +17,7 @@ const result = await build({
 })
 
 if (!result.success) {
+  // eslint-disable-next-line no-console
   console.error('Build failed:', result.logs)
   process.exit(1)
 }
@@ -93,4 +94,5 @@ window.VoideStores = ${bundle}
 `
 
 writeFileSync(bundlePath, wrapped)
+// eslint-disable-next-line no-console
 console.log('Stores built successfully to public/js/voide-stores.js')

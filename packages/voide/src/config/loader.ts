@@ -188,6 +188,7 @@ async function loadConfigFile(filePath: string): Promise<VoideConfig> {
     return (module.default || module) as VoideConfig
   }
   catch (error) {
+    // eslint-disable-next-line no-console
     console.warn(`Warning: Could not load config from ${filePath}:`, (error as Error).message)
     return {}
   }

@@ -40,6 +40,7 @@ export interface HeadStyle {
 
 export interface HeadConfig {
   title?: string
+  // eslint-disable-next-line pickier/no-unused-vars
   titleTemplate?: string | ((title: string) => string)
   meta?: HeadMeta[]
   link?: HeadLink[]
@@ -397,9 +398,9 @@ export function setTitle(title: string, template?: string | ((title: string) => 
  * Add meta tag (for @meta directive)
  */
 export function setMeta(nameOrProperty: string, content: string): void {
-  const isProperty = nameOrProperty.startsWith('og:') ||
-                     nameOrProperty.startsWith('article:') ||
-                     nameOrProperty.startsWith('fb:')
+  const isProperty = nameOrProperty.startsWith('og:')
+    || nameOrProperty.startsWith('article:')
+    || nameOrProperty.startsWith('fb:')
 
   const meta: HeadMeta = isProperty
     ? { property: nameOrProperty, content }

@@ -250,7 +250,7 @@ export class FileWatcher extends EventEmitter {
       // Wildcard pattern
       if (ignore.includes('*')) {
         const regex = new RegExp(
-          '^' + ignore.replace(/\*/g, '.*').replace(/\?/g, '.') + '$',
+          `^${ignore.replace(/\*/g, '.*').replace(/\?/g, '.')}$`,
         )
         if (regex.test(relativePath) || parts.some(p => regex.test(p))) {
           return true

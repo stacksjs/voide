@@ -23,7 +23,7 @@ function htmlToText(html: string): string {
   text = text.replace(/&lt;/g, '<')
   text = text.replace(/&gt;/g, '>')
   text = text.replace(/&quot;/g, '"')
-  text = text.replace(/&#39;/g, "'")
+  text = text.replace(/&#39;/g, '\'')
   text = text.replace(/&mdash;/g, '—')
   text = text.replace(/&ndash;/g, '–')
 
@@ -115,7 +115,7 @@ export const webfetchTool: Tool = {
 
     // Normalize URL
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://' + url
+      url = `https://${url}`
     }
 
     // Upgrade HTTP to HTTPS
@@ -176,7 +176,7 @@ export const webfetchTool: Tool = {
       const description = extractDescription(html)
 
       // Convert to text
-      let text = htmlToText(html)
+      const text = htmlToText(html)
 
       // Add metadata header
       let output = ''

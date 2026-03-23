@@ -9,6 +9,7 @@ const SRC = join(ROOT, 'src')
 const DIST = join(ROOT, 'dist')
 
 async function build() {
+  // eslint-disable-next-line no-console
   console.log('Building Voide CLI...')
 
   // Clean dist
@@ -37,19 +38,24 @@ async function build() {
   })
 
   if (!result.success) {
+    // eslint-disable-next-line no-console
     console.error('Build failed:')
     for (const log of result.logs) {
+      // eslint-disable-next-line no-console
       console.error(log)
     }
     process.exit(1)
   }
 
+  // eslint-disable-next-line no-console
   console.log('Build output:')
   for (const output of result.outputs) {
+    // eslint-disable-next-line no-console
     console.log(`  ${output.path}`)
   }
 
   // Generate type declarations
+  // eslint-disable-next-line no-console
   console.log('\nGenerating type declarations...')
 
   const proc = Bun.spawn(['bun', 'x', 'tsc', '--emitDeclarationOnly', '--declaration', '--outDir', DIST], {
@@ -61,13 +67,16 @@ async function build() {
   await proc.exited
 
   if (proc.exitCode !== 0) {
+    // eslint-disable-next-line no-console
     console.warn('Warning: Type generation had issues, but build continues.')
   }
 
+  // eslint-disable-next-line no-console
   console.log('\nBuild complete!')
 }
 
 build().catch((error) => {
+  // eslint-disable-next-line no-console
   console.error('Build error:', error)
   process.exit(1)
 })

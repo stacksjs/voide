@@ -60,10 +60,12 @@ function parsePatch(patch: string): FilePatch[] {
             i++
 
             // Collect hunk lines
-            while (i < lines.length &&
-                   !lines[i].startsWith('@@ ') &&
-                   !lines[i].startsWith('--- ') &&
-                   !lines[i].startsWith('diff ')) {
+            while (
+              i < lines.length
+              && !lines[i].startsWith('@@ ')
+              && !lines[i].startsWith('--- ')
+              && !lines[i].startsWith('diff ')
+            ) {
               hunk.lines.push(lines[i])
               i++
             }

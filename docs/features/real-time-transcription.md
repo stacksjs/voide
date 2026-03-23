@@ -6,7 +6,7 @@ voide uses the Web Speech API to provide real-time speech-to-text transcription.
 
 ### Speech Recognition Flow
 
-```
+```text
 Microphone → Audio Stream → Speech Recognition → Text → Processing
      ↓             ↓              ↓                ↓         ↓
   Hardware     Browser      Web Speech API     Transcript  Commands
@@ -19,7 +19,7 @@ voide shows results in two stages:
 1. **Interim Results**: Text appears as you speak (may change)
 2. **Final Results**: Confirmed text (won't change)
 
-```
+```text
 Speaking: "Create a function"
 
 Interim:  "Create a fun..."
@@ -198,7 +198,7 @@ export default {
 
 voide converts spoken punctuation:
 
-```
+```text
 Input:  "function add open paren a comma b close paren"
 Output: "function add(a, b)"
 ```

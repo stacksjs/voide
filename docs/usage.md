@@ -14,7 +14,7 @@ bun run dev
 bun run start
 ```
 
-Open your browser to `http://localhost:3000` to access the voide interface.
+Open your browser to `<http://localhost:3000>` to access the voide interface.
 
 ### Interface Overview
 
@@ -35,6 +35,7 @@ Click the microphone button or use the keyboard shortcut:
 - **Windows/Linux**: `Ctrl + Shift + M`
 
 The microphone indicator shows recording status:
+
 - Grey: Microphone off
 - Red: Recording active
 - Pulsing: Processing speech
@@ -43,7 +44,7 @@ The microphone indicator shows recording status:
 
 voide uses continuous speech recognition. Speak naturally as you would to a colleague:
 
-```
+```text
 "Create a function that takes an array of numbers
 and returns the sum of all even numbers"
 ```
@@ -69,11 +70,14 @@ voide automatically converts spoken punctuation:
 | "new line" | line break |
 
 Example:
-```
+
+```text
 "function add open paren a comma b close paren return a plus b"
 ```
+
 Becomes:
-```
+
+```text
 function add(a, b) return a + b
 ```
 
@@ -83,7 +87,7 @@ function add(a, b) return a + b
 
 Say "send", "go", or "submit" to send your prompt to Claude:
 
-```
+```text
 "Write a hello world function in Python send"
 ```
 
@@ -91,44 +95,53 @@ This sends: "Write a hello world function in Python"
 
 ### Editing Input
 
-**Undo last word:**
-```
+#### Undo last word
+
+```text
 "Create a function that oops method that validates email"
 ```
+
 Result: "Create a method that validates email"
 
-**Clear input:**
-```
+#### Clear input
+
+```text
 "Reset"
 ```
+
 Clears the entire input field.
 
 ### Controlling Responses
 
-**Stop Claude mid-response:**
-```
+#### Stop Claude mid-response
+
+```text
 "Cancel"
 ```
 
-**Repeat last response:**
-```
+#### Repeat last response
+
+```text
 "Repeat"
 ```
 
-**Stop text-to-speech:**
-```
+#### Stop text-to-speech
+
+```text
 "Quiet" or "Shut up"
 ```
 
 ### Managing Conversations
 
-**Start new conversation:**
-```
+#### Start new conversation
+
+```text
 "Clear chat" or "New chat"
 ```
 
-**Pause voice input:**
-```
+#### Pause voice input
+
+```text
 "Stop" or "Pause"
 ```
 
@@ -138,12 +151,13 @@ Clears the entire input field.
 
 Ask Claude to generate code naturally:
 
-```
+```text
 "Create a TypeScript interface for a user with
 name, email, and optional phone number"
 ```
 
 Claude responds:
+
 ```typescript
 interface User {
   name: string
@@ -156,7 +170,7 @@ interface User {
 
 Ask about existing code:
 
-```
+```text
 "Explain what this regex does: slash caret
 open bracket a dash z close bracket plus dollar slash"
 ```
@@ -165,7 +179,7 @@ open bracket a dash z close bracket plus dollar slash"
 
 Request code improvements:
 
-```
+```text
 "Refactor this callback-based function to use async await"
 ```
 
@@ -173,7 +187,7 @@ Request code improvements:
 
 Describe issues for debugging help:
 
-```
+```text
 "My fetch request returns undefined even though
 the API returns data. What might be wrong?"
 ```
@@ -184,7 +198,7 @@ the API returns data. What might be wrong?"
 
 Give Claude context about your project:
 
-```
+```text
 "I'm working on a React app with TypeScript.
 Create a custom hook for form validation"
 ```
@@ -193,7 +207,7 @@ Create a custom hook for form validation"
 
 Build on previous responses:
 
-```
+```text
 You: "Create a function to validate passwords"
 Claude: [provides function]
 You: "Add a check for special characters"
@@ -206,7 +220,7 @@ Claude: [adds types]
 
 Reference code by describing it:
 
-```
+```text
 "In the function we just created, add error handling
 for null inputs"
 ```
@@ -266,12 +280,14 @@ voide can read Claude's responses aloud:
 ### Be Specific
 
 Instead of:
-```
+
+```text
 "Make it better"
 ```
 
 Say:
-```
+
+```text
 "Improve the error handling by catching
 specific exceptions and logging them"
 ```
@@ -280,18 +296,20 @@ specific exceptions and logging them"
 
 Break complex tasks into steps:
 
-```
+```text
+
 1. "Create a basic Express server"
 2. "Add a route for user registration"
 3. "Add validation for the registration data"
 4. "Add error handling middleware"
+
 ```
 
 ### Review Before Sending
 
 Watch the transcription before saying "send" to catch errors:
 
-```
+```text
 "Create a function to parse JSON send"
                                    ↑
             Wait for transcription before "send"
@@ -302,6 +320,7 @@ Watch the transcription before saying "send" to catch errors:
 ### Transcription Errors
 
 If voide misheard you:
+
 - Say "oops" to delete the last word
 - Say "reset" to start over
 - Type corrections in the input field
@@ -309,6 +328,7 @@ If voide misheard you:
 ### API Errors
 
 If Claude doesn't respond:
+
 - Check your internet connection
 - Verify your API key is valid
 - Check API rate limits
@@ -316,6 +336,7 @@ If Claude doesn't respond:
 ### Recognition Failures
 
 If speech isn't recognized:
+
 - Check microphone permissions
 - Ensure you're in Chrome or Edge
 - Speak closer to the microphone

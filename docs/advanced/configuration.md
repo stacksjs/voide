@@ -319,8 +319,8 @@ export default {
     // Custom text processor
     textProcessor: (text) => {
       // Remove markdown formatting
-      text = text.replace(/\*\*(.*?)\*\*/g, '$1')
-      text = text.replace(/`(.*?)`/g, '$1')
+      text = text.replace(/\_\_(._?)\_\_/g, '$1')
+      text = text.replace(/`(._?)`/g, '$1')
 
       // Expand abbreviations
       text = text.replace(/e\.g\./g, 'for example')
@@ -488,8 +488,8 @@ export default {
       enabled: true,
       // Block certain patterns
       blockedPatterns: [
-        /password\s*[:=]\s*\S+/gi,
-        /api[_-]?key\s*[:=]\s*\S+/gi,
+        /password\s_[:=]\s_\S+/gi,
+        /api[_-]?key\s_[:=]\s_\S+/gi,
       ],
       // Replacement text
       replacement: '[REDACTED]',

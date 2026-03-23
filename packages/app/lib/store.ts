@@ -1,10 +1,12 @@
 /**
  * Voide Store System
  *
+ // eslint-disable-next-line pickier/no-unused-vars
  * A lightweight reactive store implementation based on STX's state-management.
  * Designed to work in the browser with localStorage persistence.
  */
 
+// eslint-disable-next-line pickier/no-unused-vars
 export type Subscriber<T> = (value: T, previousValue: T | undefined) => void
 export type Unsubscribe = () => void
 
@@ -15,12 +17,15 @@ export interface StoreOptions<T> {
     storage?: 'local' | 'session'
     debounce?: number
   }
+  // eslint-disable-next-line pickier/no-unused-vars
   onChange?: (value: T, prev: T | undefined) => void
 }
 
 export interface Store<T> {
   get: () => T
+  // eslint-disable-next-line pickier/no-unused-vars
   set: (value: T | ((prev: T) => T)) => void
+  // eslint-disable-next-line pickier/no-unused-vars
   update: (partial: Partial<T> | ((prev: T) => Partial<T>)) => void
   subscribe: (subscriber: Subscriber<T>) => Unsubscribe
   reset: () => void
@@ -73,11 +78,13 @@ export function createStore<T extends object>(
   }
 
   // Notify all subscribers
+  // eslint-disable-next-line pickier/no-unused-vars
   const notify = (newValue: T, prevValue: T | undefined) => {
     for (const subscriber of subscribers) {
       try {
         subscriber(newValue, prevValue)
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('[voide-store] Subscriber error:', error)
       }
     }
@@ -92,6 +99,7 @@ export function createStore<T extends object>(
     set: (value) => {
       const prevValue = currentValue
       const newValue = typeof value === 'function'
+        // eslint-disable-next-line pickier/no-unused-vars
         ? (value as (prev: T) => T)(currentValue)
         : value
 
@@ -105,6 +113,7 @@ export function createStore<T extends object>(
     update: (partial) => {
       const prevValue = currentValue
       const updates = typeof partial === 'function'
+        // eslint-disable-next-line pickier/no-unused-vars
         ? (partial as (prev: T) => Partial<T>)(currentValue)
         : partial
 
@@ -140,7 +149,9 @@ export function createStore<T extends object>(
 // defineStore API (Clean Import Pattern)
 // =============================================================================
 
+// eslint-disable-next-line pickier/no-unused-vars
 export interface DefineStoreOptions<S, G extends Record<string, (state: S) => any>, A extends Record<string, (...args: any[]) => any>> {
+  // eslint-disable-next-line pickier/no-unused-vars
   state: S | (() => S)
   getters?: G
   actions?: A
@@ -150,13 +161,16 @@ export interface DefineStoreOptions<S, G extends Record<string, (state: S) => an
   } | boolean
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 export type WatchCallback<R> = (newVal: R, oldVal: R | undefined) => void
 
 export interface DefinedStore<S> {
   $state: S
   $subscribe: (callback: Subscriber<S>) => Unsubscribe
+  // eslint-disable-next-line pickier/no-unused-vars
   $watch: <R>(getter: (state: S) => R, callback: WatchCallback<R>) => Unsubscribe
   $reset: () => void
+  // eslint-disable-next-line pickier/no-unused-vars
   $patch: (partial: Partial<S> | ((state: S) => void)) => void
   $id: string
   _store: Store<S>
@@ -171,6 +185,7 @@ const storeRegistry = new Map<string, any>()
  */
 export function defineStore<
   S extends object,
+  // eslint-disable-next-line pickier/no-unused-vars
   G extends Record<string, (state: S) => any> = Record<string, never>,
   A extends Record<string, (...args: any[]) => any> = Record<string, never>,
 >(
@@ -209,18 +224,22 @@ export function defineStore<
       if (propStr === '$state') return store.get()
       if (propStr === '$subscribe') return store.subscribe
       if (propStr === '$watch') {
+        // eslint-disable-next-line pickier/no-unused-vars
         return <R>(getter: (state: S) => R, callback: WatchCallback<R>) => {
           let oldVal = getter(store.get())
           let initialized = false
+          // eslint-disable-next-line pickier/no-unused-vars
           return store.subscribe((state) => {
             if (!initialized) {
               initialized = true
               return
             }
+            // eslint-disable-next-line pickier/no-unused-vars
             const newVal = getter(state)
             if (newVal !== oldVal) {
               const prev = oldVal
               oldVal = newVal
+              // eslint-disable-next-line pickier/no-unused-vars
               callback(newVal, prev)
             }
           })
@@ -228,6 +247,7 @@ export function defineStore<
       }
       if (propStr === '$reset') return store.reset
       if (propStr === '$patch') {
+        // eslint-disable-next-line pickier/no-unused-vars
         return (partial: Partial<S> | ((state: S) => void)) => {
           if (typeof partial === 'function') {
             const currentState = store.get()
@@ -256,6 +276,7 @@ export function defineStore<
 
       // Handle state properties
       const state = store.get()
+      // eslint-disable-next-line pickier/no-unused-vars
       if (state && typeof state === 'object' && propStr in state) {
         return (state as Record<string, unknown>)[propStr]
       }
@@ -289,12 +310,14 @@ export function defineStore<
         propStr === '_store' ||
         propStr in getters ||
         propStr in actions ||
+        // eslint-disable-next-line pickier/no-unused-vars
         (state && typeof state === 'object' && propStr in state)
       )
     },
 
     ownKeys() {
       const state = store.get()
+      // eslint-disable-next-line pickier/no-unused-vars
       const stateKeys = state && typeof state === 'object' ? Object.keys(state) : []
       return [
         ...stateKeys,

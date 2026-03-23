@@ -120,9 +120,11 @@ Shorter prompts = faster responses:
 export default {
   anthropic: {
     systemPrompt: `You are voide. Be concise.
+
 - Short answers preferred
 - Code only when needed
 - Ask before long explanations`,
+
   },
 }
 ```

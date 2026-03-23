@@ -226,6 +226,7 @@ export async function askConfirm(
   return defaultValue
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 export async function askText(
   context: ToolContext,
   message: string,

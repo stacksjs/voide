@@ -25,6 +25,7 @@
 
     const { appStore, chatStore, settingsStore, uiStore } = window.__STX_STORES__;
 
+    // eslint-disable-next-line no-console
     console.log('[VoideCore] Initializing...');
 
     // =========================================================================
@@ -49,6 +50,7 @@
         window.craft.tray.onClickToggleWindow();
         chatStore.addMessage('system', 'Running as native app - system tray enabled', 'System');
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.log('[VoideCore] Native features not fully available:', e);
       }
     }
@@ -108,6 +110,7 @@
     }
 
     function clearInvalidRepoPath(path, showMessage) {
+      // eslint-disable-next-line no-console
       console.log('[VoideCore] Clearing invalid repo path:', path);
 
       // Clear from all stores
@@ -137,6 +140,7 @@
           }
         }
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.log('[VoideCore] Error clearing localStorage:', e);
       }
 
@@ -198,6 +202,7 @@
     initNativeFeatures();
     initUrlRouting();
 
+    // eslint-disable-next-line no-console
     console.log('[VoideCore] Initialized');
   }
 

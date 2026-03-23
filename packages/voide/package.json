@@ -35,8 +35,8 @@
     "lint:fix": "bunx --bun pickier run --mode lint --fix"
   },
   "dependencies": {
-    "@stacksjs/clapp": "link:@stacksjs/clapp",
-    "bunfig": "link:bunfig",
+    "@stacksjs/clapp": "workspace:*",
+    "bunfig": "workspace:*",
     "ts-error-handling": "^0.1.0"
   },
   "devDependencies": {

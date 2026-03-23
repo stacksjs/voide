@@ -185,6 +185,7 @@ async function listDirectory(
   }
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 function formatEntries(
   entries: DirEntry[],
   longFormat: boolean,

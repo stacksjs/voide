@@ -180,6 +180,7 @@ export async function listSessions(options: {
 }
 
 // Get session details for display
+// eslint-disable-next-line pickier/no-unused-vars
 export async function getSessionDetails(sessionId: string): Promise<{
   session: Session
   stats: {
@@ -331,6 +332,7 @@ export async function mergeSessions(
 }
 
 // Archive old sessions
+// eslint-disable-next-line pickier/no-unused-vars
 export async function archiveSessions(olderThanDays: number): Promise<{
   archived: string[]
   failed: string[]

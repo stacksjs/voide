@@ -10,6 +10,7 @@ const MDNS_ADDRESS = '224.0.0.251'
 const VOIDE_SERVICE_TYPE = '_voide._tcp.local'
 
 export interface DiscoveredServer {
+  // eslint-disable-next-line pickier/no-unused-vars
   name: string
   host: string
   port: number
@@ -34,6 +35,7 @@ class DnsMessage {
   }
 
   // Build a DNS query
+  // eslint-disable-next-line pickier/no-unused-vars
   static buildQuery(name: string, type: number = 255 /* ANY */): Buffer {
     const msg = new DnsMessage()
 
@@ -276,7 +278,9 @@ export class MdnsDiscovery extends EventEmitter {
 
         // SRV record - service location
         if (answer.type === 33) {
+          // eslint-disable-next-line pickier/no-unused-vars
           const priority = answer.data.readUInt16BE(0)
+          // eslint-disable-next-line pickier/no-unused-vars
           const weight = answer.data.readUInt16BE(2)
           const port = answer.data.readUInt16BE(4)
 
@@ -407,6 +411,7 @@ export async function discoverServers(options: DiscoveryOptions = {}): Promise<D
 }
 
 // Announce a Voide server on the network
+// eslint-disable-next-line pickier/no-unused-vars
 export async function announceServer(
   name: string,
   port: number,

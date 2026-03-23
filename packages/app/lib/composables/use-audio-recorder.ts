@@ -347,7 +347,7 @@ export function useAudioRecorder(options: AudioRecorderOptions = {}): AudioRecor
       recognition.onresult = (event: any) => {
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) {
-            transcript += event.results[i][0].transcript + ' '
+            transcript += `${event.results[i][0].transcript} `
           }
         }
       }

@@ -292,6 +292,7 @@ export class SessionProcessor {
       ask: async (question, options) => {
         // For now, auto-deny interactive questions in CLI mode
         // This should be hooked up to clapp prompts
+        // eslint-disable-next-line no-console
         console.log(`Tool asking: ${question}`)
         return 'no'
       },

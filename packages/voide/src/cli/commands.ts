@@ -88,15 +88,18 @@ export async function registerCommands(cli: CLI): Promise<void> {
   cli
     .command('agents', 'List available agents')
     .action(() => {
-      console.log('\n' + tui.bold('Available Agents:'))
+      // eslint-disable-next-line no-console
+      console.log(`\n${tui.bold('Available Agents:')}`)
       const agents = getAvailableAgents(config)
       for (const name of agents) {
         const isDefault = name === config.agents.default
         const builtIn = config.agents.builtIn as Record<string, { description?: string } | undefined>
         const agentConfig = builtIn[name] || config.agents.custom[name]
         const desc = agentConfig?.description || ''
+        // eslint-disable-next-line no-console
         console.log(`  ${tui.primary(name)}${isDefault ? tui.muted(' (default)') : ''} - ${desc}`)
       }
+      // eslint-disable-next-line no-console
       console.log('')
     })
 
@@ -115,16 +118,21 @@ export async function registerCommands(cli: CLI): Promise<void> {
       const limited = sessions.slice(0, limit)
 
       if (limited.length === 0) {
-        console.log('\n' + tui.muted('No sessions found.'))
+        // eslint-disable-next-line no-console
+        console.log(`\n${tui.muted('No sessions found.')}`)
         return
       }
 
-      console.log('\n' + tui.bold('Recent Sessions:'))
+      // eslint-disable-next-line no-console
+      console.log(`\n${tui.bold('Recent Sessions:')}`)
       for (const session of limited) {
         const date = new Date(session.updatedAt).toLocaleString()
+        // eslint-disable-next-line no-console
         console.log(`  ${tui.primary(session.id)} - ${session.title}`)
+        // eslint-disable-next-line no-console
         console.log(`    ${tui.muted(date)} • ${session.messageCount} messages`)
       }
+      // eslint-disable-next-line no-console
       console.log('')
     })
 
@@ -155,11 +163,17 @@ export async function registerCommands(cli: CLI): Promise<void> {
     .command('config', 'Show current configuration')
     .action(() => {
       const configPath = getConfigPath()
-      console.log('\n' + tui.bold('Configuration:'))
+      // eslint-disable-next-line no-console
+      console.log(`\n${tui.bold('Configuration:')}`)
+      // eslint-disable-next-line no-console
       console.log(`  ${tui.muted('Path:')} ${configPath || 'Using defaults'}`)
+      // eslint-disable-next-line no-console
       console.log(`  ${tui.muted('Provider:')} ${config.providers.default}`)
+      // eslint-disable-next-line no-console
       console.log(`  ${tui.muted('Default Agent:')} ${config.agents.default}`)
+      // eslint-disable-next-line no-console
       console.log(`  ${tui.muted('Theme:')} ${config.tui.theme}`)
+      // eslint-disable-next-line no-console
       console.log('')
     })
 
@@ -202,14 +216,19 @@ export async function registerCommands(cli: CLI): Promise<void> {
       }
 
       const models = await provider.listModels()
-      console.log('\n' + tui.bold(`Models (${providerName}):`))
+      // eslint-disable-next-line no-console
+      console.log(`\n${tui.bold(`Models (${providerName}):`)}`)
       for (const model of models) {
+        // eslint-disable-next-line no-console
         console.log(`  ${tui.primary(model.id)}`)
+        // eslint-disable-next-line no-console
         console.log(`    ${tui.muted('Context:')} ${(model.contextLength / 1000).toFixed(0)}K`)
         if (model.inputPrice) {
+          // eslint-disable-next-line no-console
           console.log(`    ${tui.muted('Price:')} $${model.inputPrice}/M input, $${model.outputPrice}/M output`)
         }
       }
+      // eslint-disable-next-line no-console
       console.log('')
     })
 }
@@ -340,6 +359,7 @@ async function runChat(
       }
     }
 
-    console.log('\n' + tui.muted('Goodbye!') + '\n')
+    // eslint-disable-next-line no-console
+    console.log(`\n${tui.muted('Goodbye!')}\n`)
   }
 }

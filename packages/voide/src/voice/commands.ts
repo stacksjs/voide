@@ -233,7 +233,7 @@ export class VoiceCommands extends EventEmitter {
     for (const command of this.commands) {
       for (const pattern of command.patterns) {
         let confidence = 0
-        let params: Record<string, string> = {}
+        const params: Record<string, string> = {}
 
         if (typeof pattern === 'string') {
           // Exact or fuzzy string match

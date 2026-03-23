@@ -127,6 +127,7 @@ git status --short
 // name: analyze
 // description: Analyze codebase
 // ---
+// eslint-disable-next-line no-console
 console.log("Analyzing...")
 `)
 

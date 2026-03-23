@@ -211,11 +211,17 @@ services:
   voide:
     build: .
     ports:
+
       - '3000:3000'
+
     environment:
+
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
     volumes:
+
       - ./data:/app/data
+
 ```
 
 ```sh
@@ -249,7 +255,7 @@ voide
 ### Test AI Integration
 
 ```sh
-# With voide running, speak:
+# With voide running, speak
 # "What's 2 plus 2?"
 # Claude should respond with "4"
 ```

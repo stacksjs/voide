@@ -213,7 +213,7 @@ function formatMatches(
       }
       result += `${m.file}:${m.line}:  ${m.content}`
       if (m.context?.after.length) {
-        result += '\n' + m.context.after.map((l, i) => `${m.file}:${m.line + 1 + i}-  ${l}`).join('\n')
+        result += `\n${m.context.after.map((l, i) => `${m.file}:${m.line + 1 + i}-  ${l}`).join('\n')}`
       }
       return result
     }).join('\n--\n')

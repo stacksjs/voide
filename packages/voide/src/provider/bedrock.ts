@@ -254,11 +254,11 @@ async function signAWSRequest(params: {
   const credentialScope = `${dateStamp}/${params.region}/${params.service}/aws4_request`
 
   // Create canonical request
-  const canonicalHeaders = [
+  const canonicalHeaders = `${[
     `host:${params.host}`,
     `x-amz-date:${amzDate}`,
     ...(params.sessionToken ? [`x-amz-security-token:${params.sessionToken}`] : []),
-  ].join('\n') + '\n'
+  ].join('\n')}\n`
 
   const signedHeaders = params.sessionToken
     ? 'host;x-amz-date;x-amz-security-token'
@@ -341,12 +341,13 @@ async function getSignatureKey(
   service: string,
 ): Promise<ArrayBuffer> {
   const encoder = new TextEncoder()
-  const kDate = await hmac(encoder.encode('AWS4' + secret), dateStamp)
+  const kDate = await hmac(encoder.encode(`AWS4${secret}`), dateStamp)
   const kRegion = await hmac(kDate, region)
   const kService = await hmac(kRegion, service)
   return hmac(kService, 'aws4_request')
 }
 
+// eslint-disable-next-line pickier/no-unused-vars
 function parseBedrockEventStream(chunk: string): Array<{
   type: string
   delta?: { text?: string }

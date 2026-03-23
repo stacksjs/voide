@@ -13,7 +13,7 @@ Voice commands are special phrases that trigger actions instead of being sent to
 3. If a command is detected, the action is executed
 4. Otherwise, the transcript is added to your input
 
-```
+```text
 "Create a function that validates emails send"
                                          ↑
                           Command detected, prompt is sent
@@ -32,9 +32,11 @@ Voice commands are special phrases that trigger actions instead of being sent to
 | **Send** | "go", "submit" | Send current input to Claude |
 
 Example:
-```
+
+```text
 "Write a function to sort an array send"
 ```
+
 Sends: "Write a function to sort an array"
 
 ### Editing Commands
@@ -45,7 +47,8 @@ Sends: "Write a function to sort an array"
 | **Oops** | Delete the last word |
 
 Examples:
-```
+
+```text
 "Create a class reset"
 → Input is cleared
 
@@ -111,7 +114,7 @@ voide automatically converts spoken punctuation to symbols:
 | "underscore" | `_` |
 | "slash" or "forward slash" | `/` |
 | "backslash" or "back slash" | `\` |
-| "pipe" | `|` |
+| "pipe" | &#124; |
 | "ampersand" | `&` |
 | "at sign" | `@` |
 | "hash" or "hashtag" or "pound sign" | `#` |
@@ -119,7 +122,7 @@ voide automatically converts spoken punctuation to symbols:
 | "percent" or "percent sign" | `%` |
 | "caret" | `^` |
 | "tilde" | `~` |
-| "backtick" or "grave" | `` ` `` |
+| "backtick" or "grave" | ````` |
 
 ### Operators
 
@@ -139,12 +142,14 @@ voide automatically converts spoken punctuation to symbols:
 
 ### Writing Code
 
-```
+```text
 "function add open paren a comma b close paren open brace
 return a plus b semicolon
 close brace"
 ```
+
 Result:
+
 ```javascript
 function add(a, b) {
 return a + b;
@@ -153,28 +158,33 @@ return a + b;
 
 ### Writing Documentation
 
-```
+```text
 "This function takes two parameters colon
 new line hyphen a colon the first number
 new line hyphen b colon the second number"
 ```
+
 Result:
-```
+
+```text
 This function takes two parameters:
+
 - a: the first number
 - b: the second number
+
 ```
 
 ### Editing Mistakes
 
-```
+```text
 "Create a funtion oops function that validates"
 ```
+
 Result: "Create a function that validates"
 
 ### Complex Workflow
 
-```
+```text
 You: "Write a TypeScript interface for a user with
       name comma email comma and optional phone send"
 
@@ -195,7 +205,7 @@ You: "Clear chat"
 
 Commands are detected at the end of utterances:
 
-```
+```text
 "Send an email to the user"     → NOT a command (send is in middle)
 "Write a function send"         → IS a command (send at end)
 "Send"                          → IS a command (standalone)
@@ -205,7 +215,7 @@ Commands are detected at the end of utterances:
 
 Commands are processed after a brief pause in speech:
 
-```
+```text
 [Speaking] "Create a function..."
 [Pause]
 [Speaking] "...send"
@@ -324,6 +334,7 @@ export default {
 ### Speak Clearly
 
 Commands work best when spoken clearly:
+
 - Pause briefly before the command
 - Enunciate the command word
 - Wait for the action before continuing
@@ -331,12 +342,14 @@ Commands work best when spoken clearly:
 ### Use Shortcuts
 
 For frequent actions, use the shortest trigger:
+
 - "Go" instead of "submit"
 - "Reset" instead of "clear everything"
 
 ### Combine with Keyboard
 
 Use voice for content, keyboard for quick edits:
+
 - Voice: Dictate your prompt
 - Keyboard: Fix typos
 - Voice: "Send"
