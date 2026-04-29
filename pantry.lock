@@ -1,0 +1,79 @@
+{
+  "version": "1.0.0",
+  "lockfileVersion": 2,
+  "workspaces": {
+    "": {
+      "name": "voide-monorepo",
+      "dependencies": {
+        "@anthropic-ai/claude-agent-sdk": "^0.1.76"
+      },
+      "devDependencies": {
+        "@cwcss/crosswind": "^0.1.3",
+        "@stacksjs/stx": "link:@stacksjs/stx",
+        "better-dx": "^0.2.6",
+        "bun-plugin-stx": "link:bun-plugin-stx"
+      }
+    },
+    "packages/app": {
+      "name": "voide",
+      "version": "0.0.1",
+      "dependencies": {
+        "@anthropic-ai/claude-agent-sdk": "^0.1.76"
+      },
+      "devDependencies": {
+        "@cwcss/crosswind": "^0.1.3",
+        "better-dx": "^0.2.6"
+      }
+    },
+    "packages/voide": {
+      "name": "@voide/cli",
+      "version": "0.0.1",
+      "dependencies": {
+        "@stacksjs/clapp": "workspace:*",
+        "bunfig": "workspace:*",
+        "ts-error-handling": "^0.1.0"
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "better-dx": "^0.2.6"
+      }
+    }
+  },
+  "packages": {
+    "@anthropic-ai/claude-agent-sdk@^0.1.76": {
+      "name": "@anthropic-ai/claude-agent-sdk",
+      "version": "^0.1.76",
+      "source": "npm"
+    },
+    "@cwcss/crosswind@^0.1.3": {
+      "name": "@cwcss/crosswind",
+      "version": "^0.1.3",
+      "source": "npm"
+    },
+    "@stacksjs/stx@link:@stacksjs/stx": {
+      "name": "@stacksjs/stx",
+      "version": "link:@stacksjs/stx",
+      "source": "npm"
+    },
+    "@types/bun@latest": {
+      "name": "@types/bun",
+      "version": "latest",
+      "source": "npm"
+    },
+    "better-dx@^0.2.6": {
+      "name": "better-dx",
+      "version": "^0.2.6",
+      "source": "npm"
+    },
+    "bun-plugin-stx@link:bun-plugin-stx": {
+      "name": "bun-plugin-stx",
+      "version": "link:bun-plugin-stx",
+      "source": "npm"
+    },
+    "ts-error-handling@^0.1.0": {
+      "name": "ts-error-handling",
+      "version": "^0.1.0",
+      "source": "npm"
+    }
+  }
+}
