@@ -1,7 +1,7 @@
 /**
  * Voide Store System
  *
- // eslint-disable-next-line pickier/no-unused-vars
+// eslint-disable-next-line pickier/no-unused-vars
  * A lightweight reactive store implementation based on STX's state-management.
  * Designed to work in the browser with localStorage persistence.
  */

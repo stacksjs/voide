@@ -127,7 +127,7 @@ const middlewareRegistry = new Map<string, MiddlewareFn>()
 /**
  * Register a named middleware
  * @example
- * registerMiddleware('auth', (ctx) => {
+ * registerMiddleware('auth', (_ctx) => {
  *   if (!isAuthenticated()) return { redirect: '/login' }
  * })
  */
